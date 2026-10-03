@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { EMAIL_CACHE_TTL_MS, invalidateEmailCache, latestEmails } from '@/lib/connectors/email';
 
@@ -91,8 +91,10 @@ describe('boot warm-up', () => {
     expect(inst).toMatch(/FOUNDER_OS_SKIP_WARMUP/);
   });
 
-  test('the hook is actually enabled, or the file never runs', () => {
-    expect(read('next.config.mjs')).toMatch(/instrumentationHook: true/);
+  test('instrumentation runs: root file exports register, no obsolete flag', () => {
+    expect(existsSync(join(process.cwd(), 'instrumentation.ts'))).toBe(true);
+    expect(inst).toMatch(/export async function register\(/);
+    expect(read('next.config.mjs')).not.toMatch(/instrumentationHook/);
   });
 });
 

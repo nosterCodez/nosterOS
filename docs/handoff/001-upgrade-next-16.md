@@ -1,6 +1,6 @@
 # 001: Upgrade to Next.js 16 and React 19
 
-Status: blocked - Claude review needed for obsolete test assertion
+Status: done
 Review by Claude: yes (touches the login gate)
 
 ## Goal
@@ -67,6 +67,7 @@ land before the app goes on a public URL.
   the terminal.
 
 ## Report (Codex fills this in)
+- Review follow-up (Oct 3): DONE. Applied Claude's exact approved assertion and existsSync import. Typecheck and Turbopack build pass; tests: 3450 passed / 4 failed, 306 passed / 7 failed files, all remaining failures are the documented Windows baseline. No other assertions changed. Prior gate/runtime checks and Claude's proxy approval remain applicable. Dev server left running. The entries below preserve the original pre-review report.
 - Status: Upgrade implemented and runtime verified locally on Node v24.18.0; not complete because an assertion change requires Claude approval under AGENTS.md.
 - Commits: 3ac7046 (agreement/spec, already pushed before upgrade); 6f87588 (Next 16.3.8 / React 19 dependencies); 82449e1 (async request API and middleware-to-proxy codemods); b81f4a7 (configuration, React ref typing, promised test fixtures, generated framework config). This report is committed separately.
 - Typecheck: PASS, including a repeat after Next generated its updated TypeScript configuration.
@@ -79,3 +80,31 @@ land before the app goes on a public URL.
 - Other dependencies bumped: None beyond requested next, react, react-dom, @types/react, @types/react-dom and their lockfile dependency changes. Used individual next-async-request-api and middleware-to-proxy codemods instead of upgrade latest to retain the exact requested Next version.
 - What changed beyond the spec, and why: Next automatically changed tsconfig.json to react-jsx and added .next/dev/types; next dev appended its version-matched documentation block to AGENTS.md. Kept those framework-generated updates. Route fixtures now use Promise.resolve and WorkflowTree's ref permits null for React 19; no test assertions, features, UI, seed data, or gate logic changed.
 - Questions or blockers for Claude: Approve a replacement for the obsolete comms-perf instrumentationHook assertion that verifies stable instrumentation behavior on Next 16. Then rerun tests and complete review of proxy.ts before considering this ready for a public URL.
+
+## Claude review (Oct 3)
+
+Approved, with one follow-up. proxy.ts reviewed: same gate logic as the old
+middleware.ts, renamed per the v16 guide, and the three curl checks are
+correct.
+
+**Approved assertion change** in `tests/comms-perf.test.ts`, the test
+'the hook is actually enabled, or the file never runs'. Its purpose is to
+prove instrumentation.ts runs. In Next 15+ a root `instrumentation.ts` that
+exports `register` runs with no config flag, and `instrumentationHook` is
+an obsolete key. Replace that one test with exactly this (add `existsSync`
+to the `node:fs` import):
+
+```ts
+  test('instrumentation runs: root file exports register, no obsolete flag', () => {
+    expect(existsSync(join(process.cwd(), 'instrumentation.ts'))).toBe(true);
+    expect(inst).toMatch(/export async function register\(/);
+    expect(read('next.config.mjs')).not.toMatch(/instrumentationHook/);
+  });
+```
+
+Then: rerun typecheck and tests, set Status to done, commit as
+'Replace obsolete instrumentationHook assertion (approved in 001 review)',
+push.
+
+The 12 Turbopack tracing warnings and the 20 non-Next audit findings are
+noted; they get their own spec before the Railway deploy. Not part of 001.
