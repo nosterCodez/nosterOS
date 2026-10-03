@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
-import { equalSecret, internalAllowed } from '@/lib/auth-boundary';
+import { equalSecret, internalAllowed, safeNext } from '@/lib/auth-boundary';
 import { GATE_COOKIE } from '@/lib/access-gate';
 import { redirect } from 'next/navigation';
 import { openWorkspaceDb } from '@/lib/workspace-storage';
@@ -34,7 +34,7 @@ export async function requireWorkspace(minRole: WorkspaceRole = 'viewer', input?
   const h = input ?? new Headers(await headers());
   const session = await requireSession(h, true);
   if (!session) {
-    if (mode === 'page') redirect('/sign-in');
+    if (mode === 'page') redirect(`/sign-in?next=${encodeURIComponent(safeNext(h.get('x-nosteros-path')))}`);
     throw new SessionError('Sign in required');
   }
   if (!session.session.activeOrganizationId) {

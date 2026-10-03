@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { betterAuth } from 'better-auth';
+import { APIError } from 'better-auth/api';
 import { getMigrations } from 'better-auth/db/migration';
 import { magicLink, organization } from 'better-auth/plugins';
 import { controlDbPath } from '@/lib/paths';
@@ -15,6 +16,16 @@ export function createAuth(database: Database.Database, options: {
   return betterAuth({
     database, baseURL: options.baseURL, secret: options.secret,
     trustedOrigins: [new URL(options.baseURL).origin],
+    databaseHooks: { user: { create: { before: async user => {
+      const list = process.env.NOSTEROS_SIGNUP_ALLOWLIST;
+      if (!list?.trim() && process.env.NODE_ENV !== 'production') return;
+      const email = user.email.trim().toLowerCase();
+      const domain = email.slice(email.lastIndexOf('@'));
+      const allowed = (list ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+      if (allowed.includes(email) || allowed.includes(domain)) return;
+      const invited = database.prepare("SELECT id FROM invitation WHERE lower(email)=? AND status='pending' AND expiresAt>? LIMIT 1").get(email, Date.now());
+      if (!invited) throw new APIError('FORBIDDEN', { message: 'Registration requires an invitation.' });
+    } } } },
     session: { cookieCache: { enabled: false } },
     rateLimit: { enabled: true, storage: 'database', window: 60, max: 100,
       customRules: { '/sign-in/*': { window: 60, max: 5 } } },

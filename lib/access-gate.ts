@@ -8,7 +8,9 @@
  * and the read-only demo deployment are unaffected.
  */
 
-export const GATE_COOKIE = 'founder_os_access';
+import { equalSecret } from '@/lib/auth-boundary';
+
+export { GATE_COOKIE } from '@/lib/auth-constants';
 
 export type GateDecision =
   | { kind: 'open' } // no token configured — gate disabled
@@ -24,8 +26,8 @@ export function gateDecision(input: {
   const token = input.token?.trim();
   if (!token) return { kind: 'open' };
   // fresh correct query token wins even over a stale cookie
-  if (input.queryToken === token) return { kind: 'set-cookie', value: token };
-  if (input.cookie === token) return { kind: 'pass' };
+  if (equalSecret(input.queryToken, token)) return { kind: 'set-cookie', value: token };
+  if (equalSecret(input.cookie, token)) return { kind: 'pass' };
   return { kind: 'challenge' };
 }
 

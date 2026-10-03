@@ -11,6 +11,18 @@ test('no session cannot open any workspace database', async () => {
   await expect(requireWorkspace('viewer', h, 'api')).rejects.toMatchObject({ status: 401 });
   expect(mocks.open).not.toHaveBeenCalled();
 });
+test('page redirects keep safe destinations but reject external URLs', async () => {
+  mocks.session.mockResolvedValue(null);
+  for (const [destination, expected] of [['/brain', '/brain'], ['//evil.example', '/']]) {
+    try {
+      await requireWorkspace('viewer', new Headers({ ...Object.fromEntries(h), 'x-nosteros-path': destination }));
+      throw new Error('Expected redirect');
+    } catch (error) {
+      expect((error as { digest: string }).digest).toContain(`/sign-in?next=${encodeURIComponent(expected)}`);
+    }
+  }
+  expect(mocks.open).not.toHaveBeenCalled();
+});
 test('no active workspace returns API 403 without a fallback', async () => {
   mocks.session.mockResolvedValue({ session: {} });
   await expect(requireWorkspace('viewer', h, 'api')).rejects.toMatchObject({ status: 403 });

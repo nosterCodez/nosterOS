@@ -111,3 +111,33 @@ The instrumentation test changes are approved: send `x-nosteros-internal`
 using `NOSTEROS_INTERNAL_SECRET`, and also send the `founder_os_access`
 cookie when `FOUNDER_OS_ACCESS_TOKEN` is configured. Retain empty-secret
 and failed-response checks. The outer password gate still applies.
+
+## Claude architect review (Oct 3, second session)
+
+Reviewed `bcd0fd3` (proxy.ts, lib/auth.ts, lib/session.ts,
+lib/auth-boundary.ts, lib/auth-access.ts, lib/system-mail.ts,
+app/layout.tsx, the auth route). Linux clone: 328 files / 3,523 tests pass,
+typecheck clean. **M1 is accepted.** Good work on the AST route audit, the
+path-header overwrite and the origin check.
+
+Three follow-ups. Fold them into the M2 work (small commits, tests for each);
+no separate spec needed:
+1. **Sign-up allowlist until M3 (required before any deploy).** Magic link
+   creates an account for any email, and until M3 every workspace's
+   connectors read the owner's env credentials. The shared beta token is the
+   only thing in the way. Add `NOSTEROS_SIGNUP_ALLOWLIST` (comma-separated
+   emails and `@domain` entries). In a Better Auth
+   `databaseHooks.user.create.before`, reject a new user unless the email
+   matches the allowlist OR has a pending invitation. When
+   `NODE_ENV=production` and the variable is unset, only invited emails can
+   sign up (fail closed). Tests: allowed, invited, rejected, production
+   with no list.
+2. **Beta gate compare.** `gateDecision` uses `===` on the token. Switch to
+   `equalSecret` from `lib/auth-boundary.ts`.
+3. **Redirect keeps the destination.** `requireWorkspace` page mode
+   redirects to bare `/sign-in`; pass `?next=` through `safeNext` the same
+   way the layout does.
+
+Accepted as is: cookie-presence check in the proxy plus real validation
+server-side; `cookieCache` off (instant revocation); `.npmrc`
+`legacy-peer-deps` (it also unblocks the deferred vitest upgrade).

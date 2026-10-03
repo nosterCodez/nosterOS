@@ -127,8 +127,66 @@ it says "one file per workspace" to "one directory per workspace".
 - Seed classification: Structural defaults currently implemented: departments, agents, agent_crons, tools, workflows, skills, personas; seed_meta stores their version. Demo-only seeded data: people, lead_magnets, sop_tasks, agent_tasks, agent_runs, roadmap_items, metrics, domains, phases, social_accounts, social_snapshots, social_dms, social_dm_snapshots, social_dm_messages, email_list_snapshots, social_posts, funnel_contacts, funnel_touches, proposals, trading_snapshots, trading_positions, trading_activity. Other runtime/history tables are not populated by seedStructure. The legacy seedDatabase still exists for old callers/tests; complete its split/removal during caller conversion. Workspace PayKit initialization explicitly suppresses the invented historical customer snapshot unless DEMO_GATE=1.
 - Caches converted: None of the existing data caches yet. New app/bank/ledger/paykit handle pools use fully resolved workspace paths (paykit also uses account) as keys and cap at 50 with close-on-eviction. Before request-context wiring, account for handles held across awaits so concurrent requests cannot evict an in-use handle.
 - Call sites changed: 0 legacy getDb call sites converted. Added requireWorkspace(minRole, headers, page-or-api) returning explicit user/workspace/role/db and rejecting missing or mismatched membership. Audit found 75 app/lib files mentioning getDb, including seed comments. No AsyncLocalStorage introduced.
-- Migration results (dry run and real, on a copy): Not implemented or run. Original data files untouched. Owner email/account must be confirmed before running a real-data copy migration.
+- Migration results: offline migration is now implemented and tested on temporary fixtures (see checkpoint below). A real-data copy migration has not run. Original data files untouched. Owner email is confirmed; Noe's real local account still needs its first sign-in.
 - Self-review: workspaceDir rejects all but Better Auth 1.7.7's default 32-character ASCII alphanumeric IDs before joining paths. Tests reject empty, traversal, absolute and wrong-length IDs. Separate workspace app/bank records remain separate; payment stores start empty. Session tests prove unauthenticated/missing-active/insufficient-role/mismatched-workspace requests never open a database. Full cache/route/fan-out security review remains pending until those conversions exist.
 - Decisions you made beyond this spec, and why: Preserve existing shared callers during this foundation checkpoint rather than partially route real data into unmigrated workspace folders. Keep legacy PayKit behavior for existing callers/tests through an explicit seed parameter; new workspace stores disable it. Updated architecture to the directory-per-workspace and explicit-context decisions in this spec. Retained Next's auto-generated AGENTS instructions.
-- Questions for Noe: Which email owns the nosterCodes workspace? It must be a real M1 account, not a test identity. Separate pending approval: generate private local auth/internal/beta secrets in .env.local. Until answered, browser verification used only temporary DATA_DIR and nonproduction fixture values, with SMTP/background jobs disabled and loopback binding.
+- Noe's approvals received: owner email is `noster@nostermarketing.com`; local auth/internal/beta secrets generated privately. No production secrets created. The initial M1 browser checks used temporary fixtures; the current preview uses the private local configuration with background jobs disabled and loopback binding.
 - Next implementation: finish seed classification/split; convert all pages/routes and library callers to explicit ctx/db; workspace-scope all four stores and AdPilot/ad-intel; audit and partition connector/brain caches; fan out background work; implement idempotent verified-copy migration and complete the two-workspace end-to-end tests. Re-run full checks, self-review and fill final Report before calling M2 complete.
+
+## Claude architect decisions (Oct 3, second session): unblocks the rest of M2
+
+Answers to the Report's questions, plus review of `cac3e84`:
+1. **Owner of the nosterCodes workspace:** `noster@nostermarketing.com`
+   (Noe decided this earlier). Set `NOSTEROS_OWNER_EMAIL` to it locally.
+   Noe signs in once with that email by magic link (console link, no SMTP
+   needed locally) before you run the real migration.
+2. **Local secrets:** approved. Generate random values for
+   `BETTER_AUTH_SECRET`, `NOSTEROS_INTERNAL_SECRET` and
+   `FOUNDER_OS_ACCESS_TOKEN` with `crypto.randomBytes(32)` into `.env.local`
+   on Noe's PC only. Never print them in chat, logs or reports, never
+   commit them. Production values are generated separately at deploy time.
+3. **Handle eviction (your open note).** Don't close an evicted handle
+   immediately. Move it to a "closing" list and close it after 60 seconds
+   (`setTimeout(...).unref()`), so a request that holds `ctx.db` across an
+   `await` never hits a closed connection. If the same key is requested
+   during the grace period, revive that handle instead of opening a second
+   one. Test with fake timers.
+4. **Structure re-seed must not overwrite user edits.** The repos use
+   `INSERT OR REPLACE`, so a `SEED_VERSION` bump would reset a workspace's
+   edited agents, disabled crons, workflows and skills. `seedStructure`
+   inserts only rows whose id is missing (add `insertIfMissing` or
+   `INSERT OR IGNORE` variants used only by seeding). Test: edit an agent,
+   bump the version, re-seed, edit survives.
+5. **Retire `seedDatabase`.** Old tests that need demo rows call
+   `seedStructure` + `seedDemo` explicitly with `DEMO_GATE=1` set in that
+   test. Nothing in `app/` or `lib/` may call `seedDatabase` after M2
+   (add it to the audit test).
+6. **Root layout** (`paletteAgents()` uses `getDb()`): call
+   `requireWorkspace` there on non-public pages and pass `ctx.db`.
+7. **Order of work** so the app is never half-migrated on `main`: do the
+   library signature changes and call-site conversion on a branch
+   `m2-isolation`, merge to `main` only when every route/page goes through
+   `requireWorkspace`, the audit test is green and the migration script is
+   tested. Small commits on the branch are fine.
+8. **nosterLogistics:** retired. Remove it from `lib/businesses.ts` in M2.
+   It has no stored data of its own in the metric store yet; if you find
+   rows keyed to it, keep them and list them in the Report rather than
+   deleting.
+
+After M2 is merged and reported, go straight to M3 (write the spec
+yourself per HANDOFF-TO-ASTRA.md). Railway stays blocked on Noe approving
+the paid project, so don't wait on it.
+
+## Report checkpoint: Oct 3, local setup and migration safeguards
+- M2 remains incomplete: no legacy shared-data callers or connector caches converted yet; not safe for customer workspaces or public deployment.
+- Committed requested reel reference and new-Claude handoff in `0ff3f22`. No visual redesign or GLADOS rebrand performed in this checkpoint.
+- Generated 48-byte random local auth/internal/beta secrets in gitignored `.env.local`; set approved owner email and a team email signup allowlist. Values were never printed or committed; setup script preserves nonempty values.
+- Implemented offline SQLite online-backup migration, per-table row-count/integrity verification, file-tree hashing, ownership checks, preserved originals, repeat-run no-op and a migration lock. Custom storage overrides fail closed rather than silently omit data.
+- Migration tests: dry run changes no files; missing owner, corrupted backup, occupied target, wrong ownership and stale lock fail safely; verified migration preserves originals; recreated legacy data is detected. Failed/interrupted copies are retained for inspection, never automatically deleted or overwritten.
+- Original data migration not run. The real local owner account database is not initialized; Noe must sign in once before the real-data-copy rehearsal. App/job shutdown is required before running migration with `--server-stopped`.
+- Added explicit reference-counted handle leases and scoped helpers. Engineering adjustment to the 60-second grace suggestion: leases do not assume an async request finishes within 60 seconds; leased handles cannot be evicted, and a fully busy pool fails at its capacity instead of opening unbounded connections. Request-context integration remains pending.
+- Applied M1 review follow-ups: signup allowlist/invitation hook, production invite-only default, timing-safe beta comparison, safe destination-preserving sign-in redirect. Boot constants split out to avoid importing Node crypto into Edge instrumentation.
+- Security self-review: exact-domain matches reject lookalikes; expired/canceled invitations cannot register; missing workspace/role checks still precede storage access; corruption/ownership/overwrite/lock migration tests pass. Complete route/cache isolation review remains outstanding.
+- Verification: typecheck passes; production build passes with zero warnings. Full Windows suite: 3,535 passed, 4 failed; 324 passing files, 7 failing files, all failures in the documented baseline. Final focused security/storage suite: 43/43 pass.
+- Local preview restarted from real local configuration at `http://localhost:4100`, bound to loopback, launcher PID 28632, background warmup/jobs disabled. Sign-in returns 200, unauthenticated root redirects, unauthenticated agents API returns 401.
+- Next: library signature/caller conversion on `m2-isolation`, insert-only structure seeding, workspace-scoped files/caches/background tasks, complete migration rehearsal and two-workspace browser verification; then M3. Paid deployment remains separate and unapproved.

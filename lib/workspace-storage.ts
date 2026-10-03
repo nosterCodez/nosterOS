@@ -29,4 +29,8 @@ export function openWorkspaceDb(id: string) { return app.get(directory(id)); }
 export function openWorkspaceBank(id: string) { return banks.get(directory(id)); }
 export function openWorkspaceLedger(id: string) { return ledgers.get(directory(id)); }
 export function openWorkspacePaykit(id: string, account: string) { return paykits.get(JSON.stringify([directory(id), account])); }
+export function withWorkspaceDb<R>(id: string, work: (db: ReturnType<typeof openDb>) => R | Promise<R>) { return app.withHandle(directory(id), work); }
+export function withWorkspaceBank<R>(id: string, work: (db: ReturnType<typeof openBankStore>) => R | Promise<R>) { return banks.withHandle(directory(id), work); }
+export function withWorkspaceLedger<R>(id: string, work: (db: ReturnType<typeof openLedger>) => R | Promise<R>) { return ledgers.withHandle(directory(id), work); }
+export function withWorkspacePaykit<R>(id: string, account: string, work: (db: ReturnType<typeof openPaykitHistory>) => R | Promise<R>) { return paykits.withHandle(JSON.stringify([directory(id), account]), work); }
 export function closeWorkspaceStores() { app.closeAll(); banks.closeAll(); ledgers.closeAll(); paykits.closeAll(); }

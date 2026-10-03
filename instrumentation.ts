@@ -12,7 +12,7 @@
  * 'stream'") — a runtime guard is too late, because the import is traced at
  * build time. A fetch has no such problem.
  */
-import { GATE_COOKIE } from '@/lib/access-gate';
+import { GATE_COOKIE } from '@/lib/auth-constants';
 
 export function internalRequestHeaders(secret: string | undefined, token = process.env.FOUNDER_OS_ACCESS_TOKEN): Record<string, string> {
   return { ...(secret ? { 'x-nosteros-internal': secret } : {}), ...(token ? { Cookie: `${GATE_COOKIE}=${token}` } : {}) };
