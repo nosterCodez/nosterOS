@@ -117,6 +117,21 @@ progress.
 - No secrets in git. No real emails, DMs or charges without Noe's approval.
 - Keep `tests/no-upsell.test.ts` green.
 
+## Decided by Noe (Oct 3)
+- **Legal business name:** nosterCodes. Use it on the privacy policy,
+  terms, OAuth consent screens and Meta Business Verification.
+- **Web address:** `https://logistics.noepenaa.com`. The old nosterLogistics
+  slot is being repurposed for nosterOS: set `NOSTEROS_BASE_URL` to that,
+  use it for every OAuth redirect URI, and publish the privacy policy and
+  terms there. nosterLogistics is treated as retired, so remove
+  `nosterlogistics` from `lib/businesses.ts` in the next spec that touches
+  it (ask Noe first if any of its data should be kept).
+- **Mailing address:** 2330 E Freddy Gonzalez Dr. PMB 502, Edinburg, TX
+  78542.
+- Before pointing DNS at Railway, check what currently serves
+  logistics.noepenaa.com; that site goes offline when the record changes,
+  so confirm with Noe right before switching.
+
 ## Open items only Noe can close
 - Legal business name that operates nosterOS (Meta Business Verification
   and Google app verification both need it).
