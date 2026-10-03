@@ -94,12 +94,12 @@ same single database, so keep the outer password gate on until M2 ships.
   keeps running (log line).
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Better Auth version and compatibility check:
-- Typecheck / tests / build:
-- Manual flow results:
-- API routes not calling the session helper (should be none):
-- New env vars:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+- Status: Stopped at the AGENTS.md test-assertion approval rule before implementation. No auth code or dependency changes made.
+- Commits: `8f10a12` commits the two architecture/spec documents; pushed to main. This report is a separate documentation commit.
+- Better Auth version and compatibility check: npm reports 1.7.7, with Next ^16 and React/React DOM ^19 peer ranges. Official SQLite adapter documentation explicitly supports better-sqlite3 (https://better-auth.com/docs/adapters/sqlite). Declared compatibility matches the requested stack; runtime integration remains untested.
+- Typecheck / tests / build: Not rerun for this documentation-only stop; no implementation to validate. Prior Linux results are Claude's reported 3,483 passing tests and zero production audit findings, not a new local run.
+- Manual flow results: Existing dev server left running; GET http://localhost:4100 returned 200. New account/workspace flows have not been built or tested.
+- API routes not calling the session helper (should be none): Session helper not implemented; route audit remains pending.
+- New env vars: None added yet.
+- What changed beyond the spec, and why: Nothing. Newly appeared untracked `docs/handoff/HANDOFF-TO-ASTRA.md` was read but not edited, committed, or applied as a replacement for the user's explicit stop-rule instruction.
+- Questions or blockers for Claude: `tests/instrumentation-auth.test.ts` currently requires `Cookie: founder_os_access=test123` in both the helper test and every-fetch test, with `FOUNDER_OS_ACCESS_TOKEN` as its fixture. M1 necessarily changes those assertions. Please approve replacing them with `x-nosteros-internal: test123` and the `NOSTEROS_INTERNAL_SECRET` fixture, retaining the missing/empty-secret and failed-response handling assertions. AGENTS.md explicitly requires handback when assertions must change. Please also confirm whether the newly added architect/builder handoff now supersedes that stop rule; the current chat request says to stop per AGENTS.md.
