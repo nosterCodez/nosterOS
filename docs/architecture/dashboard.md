@@ -85,7 +85,8 @@ One Google Cloud project and one Meta developer app cover most of it.
 ## Collectors
 
 `lib/collectors/<source>.ts`, each implementing the `Collector` interface
-from spec 003, registered in `lib/collectors/index.ts` with a cron schedule.
+from spec 003, registered in `lib/collectors/index.ts` with a fixed interval
+(`everyMinutes`, 15 min to 1 week).
 The existing cron tick runs whatever is due. Every run writes a
 `collector_runs` row. A failure never deletes or overwrites good data; the
 dashboard shows the last good value as stale with the error.
@@ -130,6 +131,7 @@ Each line becomes a spec in `docs/handoff/`.
 | 001 | Upgrade to Next.js 16 / React 19 | |
 | 002 | Deploy-safe: no fake connector status, cron tick works behind login | |
 | 003 | Metric store, registry, collector framework, staleness | 001 |
+| 003b | Security fixes + build-warning cleanup (from the 16-agent triage) | 003 |
 | 004 | Encrypted token store + Google OAuth | 003 |
 | 005 | Search Console + GA4 + Business Profile collectors | 004 |
 | 006 | Stripe collector per business | 003 |
@@ -145,3 +147,25 @@ Each line becomes a spec in `docs/handoff/`.
 | 015 | TikTok organic + ads | TikTok app approval |
 | 016 | LinkedIn, or its fallback | LinkedIn decision |
 | 017 | nosterHealth / nosterLogistics product metrics | DB confirmed |
+
+## Security notes
+
+- **Outbound mail.** `lib/mail-guard.mjs` allows only an internal
+  allowlist (placeholder `*.example.com` addresses today) unless
+  `MAIL_ALLOW_EXTERNAL=1`, which turns the guard off for the whole process.
+  The outreach feature must not use that switch. It needs a per-message
+  approval record (who approved, when, the exact recipient and body hash)
+  that the send path checks before every external email.
+- **Deploy from GitHub only.** `data/` (real SQLite files) and `.env.local`
+  are gitignored, so a GitHub-based Railway build never sees them. Never
+  deploy with `railway up` from the local folder. If we ever switch to
+  Docker or `output: 'standalone'`, add a `.dockerignore` and
+  `outputFileTracingExcludes` for `data/**` and `.env*` first.
+- **Railway settings the deploy spec must include:**
+  `FOUNDER_OS_ACCESS_TOKEN` set (the login is off when it's unset),
+  `DATA_DIR` pointing at the volume, `poppler-utils` added as a runtime apt
+  package for PDF bank statements (Railpack:
+  `RAILPACK_DEPLOY_APT_PACKAGES`), and `DEMO_GATE` left unset.
+- **Accepted risk:** the Tailwind 3 / braces advisory (build-time only, no
+  patched version exists). Revisit when braces ships a fix. The vitest
+  chain is test-only and gets upgraded in its own spec.

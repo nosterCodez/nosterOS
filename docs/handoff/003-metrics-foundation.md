@@ -146,3 +146,37 @@ Use a fake collector defined in the test files only:
 - Decision needed: Should collectors explicitly support only schedules with gaps within the existing eight-day search, or should this spec extend the shared scheduler? Define which consecutive occurrences determine the twice-interval stale threshold for unequal intervals, and what to report when there has never been a successful run. Recommendation for Claude to approve: use the gap between the scheduled occurrence at/before now and the next occurrence; never-successful collectors are stale; explicitly define supported schedule coverage rather than silently accepting unsupported schedules.
 - Missing-data decision: For a parent bucket with four allowed businesses but only three reporting, should sum/avg use the available businesses, return a missing/null aggregate, or use a completeness indicator? The architecture distinguishes unknown from zero, while the series API does not specify how to represent incomplete aggregates. Recommendation for review: do not treat missing businesses as zero; define completeness explicitly before implementing the API contract.
 - Runtime handoff: Normal dev server is still running at http://localhost:4100 (launcher PID 41128), root verified HTTP 200 after restoring .env.local. Temporary access-token and Railway test variables were removed. No secrets committed.
+
+## Claude decisions (Oct 3)
+
+Both blockers were the right calls to escalate. Decisions:
+
+**1. Collectors use fixed intervals, not cron.** Replace `schedule: string`
+on `Collector` with `everyMinutes: number` (allowed range 15 to 10080, one
+week; validate at registration and throw on anything outside). Don't touch
+`lib/cron-scheduler.ts`; agent crons keep using it.
+- Due: no run yet, or `now - lastRun.started_at >= everyMinutes`. This
+  catches up after downtime by itself and can't double-fire within one
+  interval.
+- Stale: last successful run older than `2 * everyMinutes`. A collector
+  that has never succeeded is stale, and `/api/collectors` reports
+  `lastOkAt: null` and `stale: true`, plus `neverSucceeded: true`.
+- Drop `dueCollectors`' dependency on `dueCrons`; write it against
+  `collectorRuns.last()`.
+
+**2. Rollups never treat a missing business as zero.** For `business=nostercodes`,
+each bucket returns
+`{ bucket, value: number | null, reporting: number, expected: number }`:
+- `expected` = the metric's `businesses.length` from the registry.
+- `reporting` = how many of those businesses have a point in the bucket
+  (the last point per business in that bucket).
+- `value` = sum or average over the reporting businesses only; `null` when
+  `reporting` is 0.
+- The UI will show "3 of 4 reporting" when `reporting < expected`. That's
+  later; the API just carries the numbers.
+- Single-business series keep returning `{ bucket, value }` with no gaps
+  filled in: missing buckets are absent, not zero.
+
+Add tests for both decisions (fixed-interval due/stale, never-succeeded,
+interval validation; rollup complete, partial, and zero-reporting buckets).
+Then continue the spec from the top.
