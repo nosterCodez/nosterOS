@@ -7,7 +7,7 @@ import { GET as points } from '@/app/api/metrics/points/route';
 import { POST as tick } from '@/app/api/cron/tick/route';
 
 let db: FounderDb;
-vi.mock('@/lib/data', () => ({ getDb: () => db }));
+vi.mock('@/tests/fixture-db', () => ({ getDb: () => db }));
 beforeEach(() => { db = openDb(':memory:'); });
 afterEach(() => { db.close(); COLLECTORS.splice(0); METRICS.splice(0); });
 const query = (over: Record<string, string> = {}) => new Request('http://localhost/api/metrics/points?' + new URLSearchParams({ metric: 'test.count', business: 'nostercodes', from: '2026-10-01T00:00:00Z', to: '2026-10-02T00:00:00Z', bucket: 'day', ...over }));

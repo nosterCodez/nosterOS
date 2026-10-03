@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { buildHierarchy, describeScope, indexHierarchy } from '@/lib/blueprint/hierarchy';
 import { chat, llmStatus } from '@/lib/connectors/llm';
@@ -33,6 +33,9 @@ function plainText(s: string): string {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/blueprint/ask', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: { question?: unknown; selected?: unknown };
   try {
@@ -51,7 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'AI Gateway not configured on this host' }, { status: 503 });
   }
 
-  const graph = await compileBlueprint(getDb(), { llm });
+  const graph = await compileBlueprint(workspace.db, { llm });
   const h = buildHierarchy(graph);
   const idx = indexHierarchy(h);
   const ctx = describeScope(h, idx, selected);

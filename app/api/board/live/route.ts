@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents, paperclipIssues, paperclipRuns } from '@/lib/connectors/paperclip';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import type { BoardLivePayload } from '@/lib/board-live';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/board/live', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
+
 
   const [agents, issues, runs] = await Promise.all([
     paperclipAgents(),
@@ -27,7 +30,7 @@ export async function GET() {
   ]);
   // The operator's approve / dismiss calls on board tasks, from the same store the
   // deliverables queue writes to, so the poll never loses one
-  const decisions = getDb().deliverableDecisions.all();
+  const decisions = workspace.db.deliverableDecisions.all();
   const payload: BoardLivePayload = {
     connected: agents.length > 0,
     agents,

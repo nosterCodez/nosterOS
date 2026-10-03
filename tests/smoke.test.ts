@@ -1,10 +1,16 @@
-import { beforeAll, describe, expect, test, vi } from 'vitest';
-import { mkdtempSync, readdirSync } from 'node:fs';
+import { beforeAll, afterAll, describe, expect, test, vi } from 'vitest';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
-vi.mock('@/lib/session', () => ({ requireSession: async () => ({ user: { id: 'smoke' }, session: { activeOrganizationId: 'smoke-workspace' } }) }));
+vi.mock('@/lib/session', () => ({
+  requireSession: async () => ({ user: { id: 'smoke' }, session: { activeOrganizationId: 'smoke-workspace' } }),
+  requireWorkspace: async () => ({
+    user: { id: 'smoke' }, workspace: { id: 'S'.repeat(32), name: 'Smoke', kind: 'agency' }, role: 'owner',
+    db: (await import('@/tests/fixture-db')).getDb(),
+  }),
+}));
 vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: {
   getActiveMember: async () => ({ role: 'owner' }),
   getFullOrganization: async () => ({ members: [], invitations: [] }),
@@ -13,9 +19,18 @@ vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: {
 // Pages read the DB path at first access, so point it at a fresh seeded temp DB
 // before any page module is imported. FUNNEL_PROVIDER keeps /funnel off the
 // live Attio API in tests.
+let root: string;
 beforeAll(() => {
-  process.env.FOUNDER_OS_DB = path.join(mkdtempSync(path.join(tmpdir(), 'founder-os-smoke-')), 'test.db');
-  process.env.FUNNEL_PROVIDER = 'seed';
+  root = mkdtempSync(path.join(tmpdir(), 'founder-os-smoke-'));
+  vi.stubEnv('DATA_DIR', root);
+  vi.stubEnv('FOUNDER_OS_DB', path.join(root, 'test.db'));
+  vi.stubEnv('FUNNEL_PROVIDER', 'seed');
+});
+afterAll(async () => {
+  (await import('@/lib/workspace-storage')).closeWorkspaceStores();
+  (await import('@/tests/fixture-db')).getDb().close();
+  vi.unstubAllEnvs();
+  rmSync(root, { recursive: true, force: true });
 });
 
 type PageEntry = {

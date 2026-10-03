@@ -2,7 +2,7 @@ import { CalendarDays, Hash, Mail, MessageSquare, Mic, type LucideIcon } from 'l
 import { CommsTabs } from '@/components/CommsTabs';
 import { CommsDigestPanel } from '@/components/CommsDigestPanel';
 import { Rise } from '@/components/motion';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import type { DigestRunResult } from '@/lib/comms-digest-run';
 import { gatherCommsLanes } from '@/lib/comms-lanes';
 import { gatherRecordings } from '@/lib/recordings';
@@ -26,14 +26,16 @@ const SOURCE_ICON: Record<string, LucideIcon> = {
 };
 
 export default async function CommsPage() {
+  const workspace = await requireWorkspace();
+
   const [{ lanes, emailState, whatsappState }, { cards: slackCards, status: slackState }, channels, calendar, weekEvents, recordings] =
     await Promise.all([
-      gatherCommsLanes(),
+      gatherCommsLanes(workspace.db),
       gatherSlackClientBoard(),
       listChannels(),
       calendarStatus(),
       upcomingEvents(undefined, { days: 7, limit: 200 }),
-      gatherRecordings(30),
+      gatherRecordings(workspace.db, 30),
     ]);
 
   const calLegend = caldavAccounts().map((a) => ({ name: a.name, color: a.color }));
@@ -43,7 +45,7 @@ export default async function CommsPage() {
 
   // The 09:00 cron writes this; reading the stored row keeps the page fast
   // (a live re-scrape of six connectors is ~20s cold).
-  const stored = getDb().commsDigests.latest();
+  const stored = workspace.db.commsDigests.latest();
   let digestRun: DigestRunResult | null = null;
   if (stored) {
     try {
@@ -144,7 +146,7 @@ export default async function CommsPage() {
           initial={digestRun?.digest ?? null}
           sources={digestRun?.sources ?? []}
           generatedAt={stored?.generatedAt ?? null}
-          initialRead={getDb().digestReads.keys()}
+          initialRead={workspace.db.digestReads.keys()}
         />
       </Rise>
 

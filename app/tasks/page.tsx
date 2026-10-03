@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { paperclipIssues } from '@/lib/connectors/paperclip';
 import { scheduledJobRows } from '@/lib/scheduled-jobs';
 import { tasksVolume } from '@/lib/tasks-volume';
@@ -21,7 +21,9 @@ const WINDOW_DAYS = 14;
  * from i={6}.
  */
 export default async function TasksPage() {
-  const db = getDb();
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const tasks = db.agentTasks.all();
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
   // The REAL org's queue rides on top: live board issues + a composer that

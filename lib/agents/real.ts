@@ -12,7 +12,7 @@ import { arcadsStatus } from '@/lib/connectors/arcads';
 import { whatsappStatus } from '@/lib/connectors/whatsapp';
 import { wisprStatus } from '@/lib/connectors/wispr';
 import { localStackStatus } from '@/lib/connectors/local-stack';
-import { getDb } from '@/lib/data';
+
 import type { LlmToolSpec } from '@/lib/connectors/llm';
 import type { AgentRunResult, RuntimeAgent } from '@/lib/agents/runtime';
 import { brandDealAgent } from '@/lib/agents/brand-deal-agent';
@@ -121,7 +121,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Conductor',
     description: 'Broadcast fan-out + instance host availability (Clawline gateway, Ollama, tmux) for future bindings.',
     departmentId: 'dept-tech',
-    async run() {
+    async run(db) {
       const stack = await localStackStatus();
       return {
         ok: stack.state === 'connected',
@@ -138,9 +138,9 @@ export const realAgents: RuntimeAgent[] = [
     description:
       'The 9am report: scrapes the last 24h across all four inboxes, WhatsApp and Slack, and ranks who Alex needs to respond to — calls first, then clients, students and family, brand deals, group chats, companies last. Also lists what to unsubscribe from.',
     departmentId: 'dept-comms',
-    async run(): Promise<AgentRunResult> {
+    async run(db): Promise<AgentRunResult> {
       const { runAndStoreCommsDigest, digestSummary } = await import('@/lib/comms-digest-run');
-      const result = await runAndStoreCommsDigest();
+      const result = await runAndStoreCommsDigest(db);
       // ok only when at least one channel answered — an all-dead run is a
       // failure worth seeing in the cron stats, not a cheerful empty report
       const ok = result.sources.some((s) => s.ok);
@@ -152,7 +152,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Comms Agent',
     description: 'Aggregates the Gmail/WhatsApp/Slack workers that feed the unified /comms view.',
     departmentId: 'dept-comms',
-    async run() {
+    async run(db) {
       const [gmail, whatsapp, slack] = await Promise.all([gmailRun(), whatsappRun(), slackRun()]);
       const live = [gmail, whatsapp, slack].filter((r) => r.ok).length;
       return {
@@ -172,10 +172,10 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Social Agent',
     description: 'Aggregates the Postly publishing and Adsmith ad-generation workers.',
     departmentId: 'dept-marketing-growth',
-    async run() {
+    async run(db) {
       const [zernio, arcads] = await Promise.all([zernioRun(), arcadsRun()]);
       const live = [zernio, arcads].filter((r) => r.ok).length;
-      const queued = getDb().socialPosts.queued().length;
+      const queued = db.socialPosts.queued().length;
       const queueNote = queued > 0 ? `${queued} post${queued === 1 ? '' : 's'} queued for publish` : 'no posts queued';
       return {
         ok: live > 0,
@@ -191,7 +191,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Reelkit Editor',
     description: 'Editing and rendering pipeline for social clips, captions, and promotional cuts.',
     departmentId: 'dept-marketing-growth',
-    async run() {
+    async run(db) {
       const stack = await localStackStatus();
       return {
         ok: stack.state === 'connected',
@@ -205,7 +205,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Renderly Creative',
     description: 'Renderly creative generation for campaign visuals and product assets.',
     departmentId: 'dept-marketing-growth',
-    async run() {
+    async run(db) {
       const stack = await localStackStatus();
       return {
         ok: stack.state === 'connected',
@@ -228,7 +228,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Sales Agent',
     description: 'Aggregates the revenue pipeline workers for Sales.',
     departmentId: 'dept-sales',
-    async run() {
+    async run(db) {
       const [crm, processors] = await Promise.all([attioStatus(), processorConfirmationRun()]);
       return {
         ok: crm.state === 'connected' || processors.ok,
@@ -245,7 +245,7 @@ export const realAgents: RuntimeAgent[] = [
     description:
       'Launchpad Cohort sales lane: Trakyo revenue attribution, plus offer/call/payment context.',
     departmentId: 'dept-sales',
-    async run() {
+    async run(db) {
       const trakyo = await trakyoStatus();
       const live = trakyo.state === 'connected';
       return {
@@ -298,7 +298,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Sales Calls Data',
     description: 'Sales call recordings, notes, outcomes, and follow-up context: Recall on the calls, Plaud in the room.',
     departmentId: 'dept-sales',
-    async run() {
+    async run(db) {
       const { plaudStatus } = await import('@/lib/connectors/plaud');
       const { ingestPlaudNow } = await import('@/lib/plaud-ingest');
       const { getDb } = await import('@/lib/data');
@@ -309,7 +309,7 @@ export const realAgents: RuntimeAgent[] = [
       // The actual work: file every newly transcribed Plaud recording into the
       // brain. Pure code (Plaud did the transcribing + summarising), so this is
       // safe to run on a 30-minute cron without touching an LLM seat.
-      const ingest = plaud.state === 'connected' ? await ingestPlaudNow(getDb()) : null;
+      const ingest = plaud.state === 'connected' ? await ingestPlaudNow(db) : null;
       const filed = ingest?.ingested.length ?? 0;
       const waiting = ingest?.skipped.notTranscribed.length ?? 0;
       const inBrain = ingest ? ingest.skipped.alreadyIngested.length + filed : 0;
@@ -334,7 +334,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Data Agent',
     description: 'Analyzes markdown + vector storage health and surfaces ideas; answers broadcasts by querying G-Brain.',
     departmentId: 'dept-tech',
-    async run() {
+    async run(db) {
       const overview = await createGBrainProvider().overview();
       const { store, doctor } = overview;
       const warnings = doctor.checks.filter((c) => c.status !== 'ok');
@@ -376,7 +376,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Markdown Auditor',
     description: 'Link health, orphans, duplicate titles and store-vs-index drift across the knowledge base.',
     departmentId: 'dept-tech',
-    async run() {
+    async run(db) {
       // It counted files until and reported green while the index
       // held Links: 0 on 1,038 pages. Counting is not auditing: this reads the
       // links, and compares the folder against the index search actually uses.
@@ -398,7 +398,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Vector Auditor',
     description: 'gbrain doctor: Supabase pgvector connection, embeddings, health score.',
     departmentId: 'dept-tech',
-    async run() {
+    async run(db) {
       const { doctor } = await createGBrainProvider().overview();
       const warn = doctor.checks.filter((c) => c.status !== 'ok');
       return {
@@ -417,7 +417,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Payments Pulse',
     description: 'Verifies payment processor connections and reports Stripe balance + recent charges.',
     departmentId: 'dept-finance',
-    async run() {
+    async run(db) {
       const configured = configuredProcessors(process.env).filter((p) => p.configured);
       if (configured.length === 0) {
         return { ok: false, summary: 'No payment processors configured — start with STRIPE_SECRET_KEY in .env.local' };
@@ -439,7 +439,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Ledger CRM',
     description: 'Queries the Ledger deals pipeline (Vantage + Launchpad Cohort). Read-scoped.',
     departmentId: 'dept-sales',
-    async run() {
+    async run(db) {
       const status = await attioStatus();
       return { ok: status.state === 'connected', summary: status.detail, data: status.meta };
     },
@@ -451,8 +451,8 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Client Roster',
     description: 'The live client list: funnel journeys reconciled with Ledger, counted by venture and status.',
     departmentId: 'dept-clients',
-    async run() {
-      const db = getDb();
+    async run(db) {
+
       const journeys = db.funnel.journeys();
       const converted = journeys.filter((j) => j.status === 'converted');
       const live = await attioClients();
@@ -480,7 +480,7 @@ export const realAgents: RuntimeAgent[] = [
     // onboarding SOP no longer provisions a Notion workspace.
     description: 'Readiness check for the onboarding SOP: the Ledger trigger plus the Slack workspace it provisions.',
     departmentId: 'dept-clients',
-    async run() {
+    async run(db) {
       const { slackStatus } = await import('@/lib/connectors/slack');
       const [attio, slack] = await Promise.all([attioStatus(), slackStatus()]);
       const live = [attio, slack].filter((s) => s.state === 'connected').length;
@@ -498,7 +498,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Client Success',
     description: 'Servicing rails: Recall call notes and Plaud in-person recordings for deliverable tracking plus Slack for the check-in cadence.',
     departmentId: 'dept-clients',
-    async run() {
+    async run(db) {
       const { slackStatus } = await import('@/lib/connectors/slack');
       const { plaudConfigured } = await import('@/lib/connectors/plaud');
       const slack = await slackStatus();
@@ -521,7 +521,7 @@ export const realAgents: RuntimeAgent[] = [
     name: 'Stack Monitor',
     description: 'Live check of the local creative/infra stack: Reelkit, Ollama, command-center, Clawline, tmux, whisper, ffmpeg, renderly, gh.',
     departmentId: 'dept-tech',
-    async run() {
+    async run(db) {
       const [stack, wispr] = await Promise.all([localStackStatus(), wisprStatus()]);
       return {
         ok: stack.state === 'connected',

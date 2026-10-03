@@ -5,7 +5,7 @@ import { XLogo } from '@/components/XLogo';
 /** Any icon that takes a className: the lucide set and the hand-rolled X mark
     both satisfy it, and the map does not care which it is holding. */
 type PlatformIcon = React.ComponentType<{ className?: string }>;
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { buildSocialDashboard, syncFromZernioConfig, audienceGrowthPct, PLATFORM_LABELS } from '@/lib/social';
 import { agentRunVolume, runsWithin } from '@/lib/analytics';
 import { analyticsVolume } from '@/lib/analytics-volume';
@@ -73,7 +73,9 @@ function MetricTileCard({ tile, spark }: { tile: MetricTile; spark: number[] }) 
 }
 
 export default async function AnalyticsPage() {
-  const db = getDb();
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   syncFromZernioConfig(db);
   const today = new Date().toISOString().slice(0, 10);
 

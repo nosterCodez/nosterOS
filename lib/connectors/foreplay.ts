@@ -9,7 +9,7 @@ import { FOREPLAY_KEY } from '@/lib/foreplay/client';
 import { adStore } from '@/lib/foreplay/store';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
-export async function foreplayStatus(): Promise<ConnectorStatus> {
+export async function foreplayStatus(workspaceId: string): Promise<ConnectorStatus> {
   const base = { id: 'foreplay', name: 'Foreplay', kind: 'creative' } as const;
   const key = resolveCred(FOREPLAY_KEY, [CRED_FILES.socialMedia, CRED_FILES.brainAgent]);
   if (!key) {
@@ -19,8 +19,8 @@ export async function foreplayStatus(): Promise<ConnectorStatus> {
       detail: 'Ad intelligence for Adscout (Spyder watchlist, Discovery search, sponsor dossiers). Set FOREPLAY_API_KEY in .env.local.',
     };
   }
-  const usage = adStore.readUsage();
-  const meta = adStore.readMeta();
+  const usage = adStore(workspaceId).readUsage();
+  const meta = adStore(workspaceId).readMeta();
   const credits = usage ? `${usage.remaining_credits.toLocaleString('en-US')}/${usage.total_credits.toLocaleString('en-US')} credits` : 'credits unknown until first sync';
   const synced = meta.lastSyncAt ? `last sync ${meta.lastSyncAt.slice(0, 16).replace('T', ' ')}` : 'never synced';
   return {

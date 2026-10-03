@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 
 /**
  * Lead magnets are created FROM the OS (the operator, 2026-08-14: "I want to be
@@ -53,24 +53,24 @@ describe('lead magnets created in the OS', () => {
   });
 
   it('seeded rows are marked origin seed', () => {
-    seedDatabase(db);
+    seedDemoFixture(db);
     const seeded = db.leadMagnets.all();
     expect(seeded.length).toBeGreaterThan(0);
     expect(seeded.every((r) => r.origin === 'seed')).toBe(true);
   });
 
   it('SURVIVES a re-seed — the seed may only prune its own rows', () => {
-    seedDatabase(db);
+    seedDemoFixture(db);
     db.leadMagnets.insert(made());
-    seedDatabase(db); // the destructive step
+    seedDemoFixture(db); // the destructive step
     const ids = db.leadMagnets.all().map((r) => r.id);
     expect(ids, 'an OS-created lead magnet must not be deleted by seeding').toContain('claude-trading');
   });
 
   it('still prunes a seeded row that has left the seed file', () => {
-    seedDatabase(db);
+    seedDemoFixture(db);
     db.leadMagnets.insert(made({ id: 'retired-seed-row', origin: 'seed' }));
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.leadMagnets.all().map((r) => r.id)).not.toContain('retired-seed-row');
   });
 

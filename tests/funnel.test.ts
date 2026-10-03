@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import {
   attentionQueue,
   funnelSummary,
@@ -110,7 +110,7 @@ describe('funnel repo', () => {
 describe('funnel seed', () => {
   test('seeds 4–5 touch journeys for both ventures, converted rows carry product + amount', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const all = db.funnel.journeys();
     expect(all.length).toBeGreaterThanOrEqual(10);
 
@@ -170,7 +170,7 @@ describe('funnel seed', () => {
     expect(freshest).toBeLessThanOrEqual(3);
 
     // re-seeding is idempotent
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.funnel.journeys()).toHaveLength(all.length);
   });
 });

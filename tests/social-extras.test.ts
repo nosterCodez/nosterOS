@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import {
   EmailListSnapshotSchema,
   SocialDmSchema,
@@ -114,7 +114,7 @@ describe('buildEmailList', () => {
 describe('DM totals', () => {
   test('seeded DB exposes per-platform DM counts that sum to the total', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const byPlatform = dmsByPlatform(db);
     expect(byPlatform.length).toBeGreaterThan(0);
     const sum = byPlatform.reduce((s, d) => s + d.count, 0);
@@ -209,7 +209,7 @@ describe('audience series + range growth', () => {
 describe('seed history is deep enough for growth math', () => {
   test('followers + DMs carry multi-month history; the real email list is young but honest', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     // followers span ~90 days, so the merged audience computes every window
     expect(audienceGrowthPct(db, 7)).not.toBeNull();
     expect(audienceGrowthPct(db, 30)).not.toBeNull();
@@ -226,9 +226,9 @@ describe('seed history is deep enough for growth math', () => {
 
   test('re-seed stays idempotent (no duplicate snapshot rows)', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const before = db.social.dmSnapshots().length;
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.social.dmSnapshots().length).toBe(before);
   });
 });

@@ -19,7 +19,7 @@ export type RuntimeAgent = {
   name: string;
   description: string;
   departmentId: string;
-  run(): Promise<AgentRunResult>;
+  run(db: FounderDb): Promise<AgentRunResult>;
   /**
    * Optional conversational entry point used by broadcasts. Agents that can
    * actually act on a message (e.g. the data agent querying G-Brain)
@@ -48,7 +48,7 @@ export function createRuntime(db: FounderDb, agents: RuntimeAgent[]) {
       const startedAt = new Date().toISOString();
       let result: AgentRunResult;
       try {
-        result = await agent.run();
+        result = await agent.run(db);
       } catch (err) {
         result = { ok: false, summary: err instanceof Error ? err.message : String(err) };
       }
@@ -79,7 +79,7 @@ export function createRuntime(db: FounderDb, agents: RuntimeAgent[]) {
         [...registry.values()].map(async (agent) => {
           let result: AgentRunResult;
           try {
-            result = await (agent.respond ? agent.respond(message) : agent.run());
+            result = await (agent.respond ? agent.respond(message) : agent.run(db));
           } catch (err) {
             result = { ok: false, summary: err instanceof Error ? err.message : String(err) };
           }

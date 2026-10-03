@@ -50,6 +50,14 @@ export async function requireWorkspace(minRole: WorkspaceRole = 'viewer', input?
   if (!metadata || !['founder', 'agency', 'client'].includes(metadata.kind)) throw new SessionError('Invalid workspace configuration', 403);
   return { user: session.user, workspace: { id: workspace.id, name: workspace.name, kind: metadata.kind }, role, db: openWorkspaceDb(workspace.id) };
 }
+/** API boundary preserves authorization status rather than leaking a redirect or 500. */
+export async function apiWorkspace(input?: Headers): Promise<WorkspaceCtx | Response> {
+  try { return await requireWorkspace('viewer', input, 'api'); }
+  catch (error) {
+    if (error instanceof SessionError) return Response.json({ error: error.message }, { status: error.status });
+    return Response.json({ error: 'Workspace unavailable' }, { status: 503 });
+  }
+}
 export async function apiSessionError(path: string, method: string, request?: Request): Promise<Response | null> {
   try {
     const h = request?.headers ?? new Headers(await headers());

@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { UsageSnapshotSchema } from '@/lib/usage';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/usage/push', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -26,6 +29,6 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message ?? 'invalid snapshot' }, { status: 400 });
   }
-  getDb().usageSnapshots.upsert({ ...parsed.data, source: 'push' });
+  workspace.db.usageSnapshots.upsert({ ...parsed.data, source: 'push' });
   return NextResponse.json({ ok: true, id: parsed.data.id });
 }

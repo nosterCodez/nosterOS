@@ -10,7 +10,7 @@ import {
   WORKSPACES_DIR,
 } from '@/lib/board-deliverables';
 import { clampPreview, previewKind } from '@/lib/deliverable-preview';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,13 +34,16 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/board/deliverables', 'GET', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const url = new URL(request.url);
   const file = url.searchParams.get('file');
 
   if (!file) {
     const files = listDeliverables();
-    const db = getDb();
+    const db = workspace.db;
     return NextResponse.json({
       groups: groupDeliverables(files, db.proposals.all()),
       deliverables: files,

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { Slab, SlabTitle, SlabCard, BigStat, Chip, MeterStack, InsightCard, PILL } from '@/components/slab';
 import { StepLine, DotMatrix } from '@/components/slab-charts';
 import { WorkflowTree, type AgentPresence } from '@/components/WorkflowTree';
@@ -28,8 +28,10 @@ const WINDOW_DAYS = 14;
  * Every number in the hero and second row comes from lib/workflows-volume,
  * fed with the same rows the panels below render.
  */
-export default function WorkflowsPage() {
-  const db = getDb();
+export default async function WorkflowsPage() {
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const workflows = db.workflows.all();
   const agents = db.agents.all();
 

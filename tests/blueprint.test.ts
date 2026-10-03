@@ -2,7 +2,7 @@ process.env.FOUNDER_OS_DB = ':memory:';
 process.env.LLM_PROVIDER = 'stub';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { realAgents } from '@/lib/agents/real';
 import { allConnectorStatuses } from '@/lib/connectors';
 import type { ConnectorStatus } from '@/lib/connectors/types';
@@ -30,7 +30,7 @@ let db: FounderDb;
 let graph: BlueprintGraph;
 beforeAll(async () => {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   graph = await compileBlueprint(db, { connectors: CONNECTORS, llm: LLM_UP });
 });
 
@@ -139,7 +139,7 @@ describe('blueprint: the map cannot drift from the system', () => {
   });
 
   test('the real connector registry compiles too (no injection), so a new connector shows up with zero edits here', async () => {
-    const real = await allConnectorStatuses();
+    const real = await allConnectorStatuses(db);
     const g = await compileBlueprint(db, { connectors: real, llm: LLM_UP });
     expect(g.nodes.filter((n) => n.kind === 'connector')).toHaveLength(real.length);
     expect(validateGraph(g)).toEqual([]);

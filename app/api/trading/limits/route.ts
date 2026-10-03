@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { TradingLimitsSchema } from '@/lib/schemas';
 import { DEFAULT_LIMITS, clampLimits, type EditableLimits } from '@/lib/trading-guardrails';
 
@@ -26,21 +26,27 @@ function editable(l: typeof DEFAULT_LIMITS): EditableLimits {
 export async function GET() {
   const authError = await apiSessionError('/api/trading/limits', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  const stored = getDb().trading.limits();
+
+  const stored = workspace.db.trading.limits();
   const { limits, clamped } = clampLimits(stored ?? editable(DEFAULT_LIMITS));
   return NextResponse.json({
     // the switch rides beside the numbers; the clamp only knows the numbers
     limits: { ...limits, autopilot: stored?.autopilot ?? false },
     clamped,
     source: stored ? 'stored' : 'default',
-    updatedAt: getDb().trading.limitsUpdatedAt(),
+    updatedAt: workspace.db.trading.limitsUpdatedAt(),
   });
 }
 
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/trading/limits', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -57,6 +63,6 @@ export async function POST(req: Request) {
   // would be worse than rejecting it.
   const { limits, clamped } = clampLimits(parsed.data);
   const stored = { ...limits, autopilot: parsed.data.autopilot };
-  getDb().trading.saveLimits(stored);
+  workspace.db.trading.saveLimits(stored);
   return NextResponse.json({ ok: true, limits: stored, clamped });
 }

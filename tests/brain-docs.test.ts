@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync, readdirSync } fro
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { buildBrainDocs, writeBrainDocs, GENERATED_MARKER } from '@/lib/brain-docs';
 
 let db: FounderDb;
@@ -14,7 +14,7 @@ afterEach(() => {
 
 function seeded(): FounderDb {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   return db;
 }
 

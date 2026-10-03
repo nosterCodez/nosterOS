@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Users } from 'lucide-react';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { paperclipAgents, type PaperclipAgent } from '@/lib/connectors/paperclip';
 import { LIVE_DOT, overlayLiveOrg } from '@/lib/org-live';
 import { buildHierarchy, flattenNodes, type AgentNode } from '@/lib/hierarchy';
@@ -75,8 +75,10 @@ function LiveChip({ agent }: { agent: PaperclipAgent }) {
 }
 
 export default async function OrgChartPage(props: { searchParams?: Promise<{ venture?: string }> }) {
+  const workspace = await requireWorkspace();
+
   const searchParams = await props.searchParams;
-  const db = getDb();
+  const db = workspace.db;
   const departments = db.departments.all();
   const agents = db.agents.all();
   // The REAL company: live agents from the Paperclip board (private network). Name

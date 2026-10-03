@@ -10,10 +10,9 @@ import {
   DECLARED_EXPENSES,
 } from '@/lib/finances';
 import type { IncomeBand } from '@/lib/finances';
-import { openLedger } from '@/lib/ledger';
-import { openPaykitHistory, type PaykitHistory } from '@/lib/paykit-history';
+import { requireWorkspace } from '@/lib/session';
+import { openWorkspaceLedger, openWorkspaceBank, withWorkspacePaykit } from '@/lib/workspace-storage';
 import type { SpendRow } from '@/lib/spend-report';
-import { openBankStore } from '@/lib/bank';
 import { businessSeries } from '@/lib/bank-statements';
 import { StatementUploader } from '@/components/StatementUploader';
 import { MonthlyExpenses } from '@/components/MonthlyExpenses';
@@ -36,6 +35,7 @@ function ago(unix: number): string {
 }
 
 export default async function FinancesPage() {
+  const workspace = await requireWorkspace();
   const stripeKeyed = configuredProcessors(process.env).some((p) => p.id === 'stripe' && p.configured);
 
   // Stripe is only "live" when the API actually answers  -  a present-but-invalid
@@ -67,22 +67,11 @@ export default async function FinancesPage() {
   // The PayKit pull is handed a snapshot store, so this render both READS
   // /customers and keeps it. A month bracketed by two stored snapshots comes
   // back exact rather than bounded. See lib/paykit-history.ts and OS-658.
-  let fbHistory: PaykitHistory | null = null;
-  try {
-    fbHistory = openPaykitHistory();
-  } catch {
-    fbHistory = null; // No writable data dir  -  the band below still renders.
-  }
-  let fbAa: Awaited<ReturnType<typeof paykitMonthToDateIncome>> = null;
-  let stripeMer: Awaited<ReturnType<typeof stripeMtdForKey>> = null;
-  try {
-    [fbAa, stripeMer] = await Promise.all([
-      paykitMonthToDateIncome(process.env.PAYKIT_LC_KEY, undefined, fbHistory ?? undefined).catch(() => null),
-      stripeMtdForKey(process.env.STRIPE_VANTAGE_KEY).catch(() => null),
-    ]);
-  } finally {
-    fbHistory?.close();
-  }
+  const [fbAa, stripeMer] = await Promise.all([
+    withWorkspacePaykit(workspace.workspace.id, 'paykit-lc', history =>
+      paykitMonthToDateIncome(process.env.PAYKIT_LC_KEY, undefined, history)).catch(() => null),
+    stripeMtdForKey(process.env.STRIPE_VANTAGE_KEY).catch(() => null),
+  ]);
   // A PayKit month the snapshots do not reach back before stays a BAND, not a
   // number: the API alone cannot split a repeat buyer's lifetime spend across
   // months, so the card shows "floor - ceiling" rather than the old confident
@@ -103,12 +92,11 @@ export default async function FinancesPage() {
   let ledgerSpend: { category: string; total: number }[] = [];
   let ledgerMonth: string | null = null;
   try {
-    const ledger = openLedger();
+    const ledger = openWorkspaceLedger(workspace.workspace.id);
     ledgerRows = ledger.allRows();
     ledgerMonths = ledger.monthsAscending();
     ledgerSpend = ledger.monthly();
     ledgerMonth = ledger.latestMonth();
-    ledger.close();
   } catch {
     ledgerRows = [];
     ledgerMonths = [];
@@ -118,9 +106,8 @@ export default async function FinancesPage() {
   // Per-business income from uploaded bank statements (Vantage, General Ops…).
   let bankSeries: ReturnType<typeof businessSeries> = [];
   try {
-    const bank = openBankStore();
+    const bank = openWorkspaceBank(workspace.workspace.id);
     bankSeries = businessSeries(bank.all());
-    bank.close();
   } catch {
     bankSeries = [];
   }

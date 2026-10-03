@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { TradeAnalysisSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -10,6 +10,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/trading/analysis', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -21,6 +24,6 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.issues }, { status: 400 });
   }
-  getDb().trading.recordAnalysis(parsed.data);
+  workspace.db.trading.recordAnalysis(parsed.data);
   return NextResponse.json({ ok: true, id: parsed.data.id, rows: parsed.data.rows.length });
 }

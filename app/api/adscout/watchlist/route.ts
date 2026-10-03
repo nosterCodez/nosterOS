@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -13,8 +14,11 @@ export const runtime = 'nodejs';
 export async function GET() {
   const authError = await apiSessionError('/api/adscout/watchlist', 'GET');
   if (authError) return authError;
+  const context = await apiWorkspace();
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
-  return NextResponse.json({ ok: true, watchlist: readWatchEntries() });
+  return NextResponse.json({ ok: true, watchlist: readWatchEntries(workspaceId) });
 }
 
 const AddSchema = z.union([
@@ -25,13 +29,16 @@ const AddSchema = z.union([
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'POST', request);
   if (authError) return authError;
+  const context = await apiWorkspace();
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const parsed = AddSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: 'pass a domain, or a brandId + name' }, { status: 400 });
   }
   if ('brandId' in parsed.data) {
-    const list = addWatchEntry({ id: parsed.data.brandId, name: parsed.data.name, avatar: parsed.data.avatar ?? null });
+    const list = addWatchEntry(workspaceId, { id: parsed.data.brandId, name: parsed.data.name, avatar: parsed.data.avatar ?? null });
     return NextResponse.json({ ok: true, watchlist: list });
   }
   const client = createForeplayClient();
@@ -42,11 +49,11 @@ export async function POST(request: Request) {
     );
   }
   try {
-    const entry = await addWatchDomain(client, parsed.data.domain);
+    const entry = await addWatchDomain(workspaceId, client, parsed.data.domain);
     if (!entry) {
       return NextResponse.json({ ok: false, error: `no Foreplay brand found for ${parsed.data.domain}` }, { status: 404 });
     }
-    return NextResponse.json({ ok: true, added: entry, watchlist: readWatchEntries() });
+    return NextResponse.json({ ok: true, added: entry, watchlist: readWatchEntries(workspaceId) });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err instanceof Error ? err.message : 'lookup failed' }, { status: 502 });
   }
@@ -57,8 +64,11 @@ const RemoveSchema = z.object({ brandId: z.string().min(1) });
 export async function DELETE(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'DELETE', request);
   if (authError) return authError;
+  const context = await apiWorkspace();
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const parsed = RemoveSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'brandId required' }, { status: 400 });
-  return NextResponse.json({ ok: true, watchlist: removeWatchEntry(parsed.data.brandId) });
+  return NextResponse.json({ ok: true, watchlist: removeWatchEntry(workspaceId, parsed.data.brandId) });
 }

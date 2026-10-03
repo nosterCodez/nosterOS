@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowUpRight, BarChart3, Brain, Clapperboard, ExternalLink, Megaphone, Play } from 'lucide-react';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { contentAgents } from '@/lib/content';
 import { contentVolume } from '@/lib/content-volume';
 import { zernioRecentPosts, zernioPostDaysKnown } from '@/lib/connectors/zernio';
@@ -86,7 +86,9 @@ function BacklinkCard({
 }
 
 export default async function ContentPage() {
-  const db = getDb();
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const crew = contentAgents(db.agents.all());
   const leadMagnets = db.leadMagnets.all();
   const lead = crew[0] ?? null;

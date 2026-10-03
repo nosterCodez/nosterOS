@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { createForeplayClient } from '@/lib/foreplay/client';
@@ -10,6 +11,9 @@ export const runtime = 'nodejs';
 export async function POST() {
   const authError = await apiSessionError('/api/adscout/sync', 'POST');
   if (authError) return authError;
+  const context = await apiWorkspace();
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const client = createForeplayClient();
   if (!client) {
@@ -19,7 +23,7 @@ export async function POST() {
     );
   }
   try {
-    const result = await runSyncCycle(client);
+    const result = await runSyncCycle(workspaceId, client);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err instanceof Error ? err.message : 'sync failed' }, { status: 502 });

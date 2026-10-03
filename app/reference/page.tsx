@@ -1,11 +1,13 @@
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { PageHeader } from '@/components/PageHeader';
 import { Rise } from '@/components/motion';
 
 export const dynamic = 'force-dynamic';
 
-export default function ReferencePage() {
-  const db = getDb();
+export default async function ReferencePage() {
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const domains = db.domains.all();
 
   return (

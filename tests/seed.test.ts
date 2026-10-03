@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 
 let db: FounderDb;
 
@@ -8,10 +8,10 @@ afterEach(() => {
   db?.close();
 });
 
-describe('seedDatabase', () => {
+describe('seedDemoFixture', () => {
   test('populates every entity', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.departments.all().length).toBeGreaterThanOrEqual(5);
     expect(db.agents.all().length).toBeGreaterThanOrEqual(5);
     expect(db.tools.all().length).toBeGreaterThanOrEqual(8);
@@ -27,7 +27,7 @@ describe('seedDatabase', () => {
 
   test('every agent belongs to an existing department', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const deptIds = new Set(db.departments.all().map((d) => d.id));
     for (const agent of db.agents.all()) {
       expect(deptIds.has(agent.departmentId)).toBe(true);
@@ -37,7 +37,7 @@ describe('seedDatabase', () => {
   test('every seeded agent maps to a real runtime agent — no demo', async () => {
     const { realAgents } = await import('@/lib/agents/real');
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const runtimeIds = new Set(realAgents.map((a) => a.id));
     for (const agent of db.agents.all()) {
       expect(runtimeIds.has(agent.id)).toBe(true);
@@ -46,7 +46,7 @@ describe('seedDatabase', () => {
 
   test('the six operating pillars, in order', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.departments.all().map((d) => d.name)).toEqual([
       'Sales',
       'Marketing/Growth',
@@ -59,7 +59,7 @@ describe('seedDatabase', () => {
 
   test('agents are homed in the right department', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const byId = new Map(db.agents.all().map((a) => [a.id, a.departmentId]));
     // Sales: the deal / account / CRM lanes
     for (const id of [
@@ -103,17 +103,17 @@ describe('seedDatabase', () => {
     }
   });
 
-  test('re-seeding removes departments that left the model', () => {
+  test('re-seeding preserves custom departments', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     db.departments.insert({ id: 'dept-ghost', name: 'Ghost', slug: 'ghost', tagline: '', color: '#fff', order: 99 });
-    seedDatabase(db);
-    expect(db.departments.all().some((d) => d.id === 'dept-ghost')).toBe(false);
+    seedDemoFixture(db);
+    expect(db.departments.all().some((d) => d.id === 'dept-ghost')).toBe(true);
   });
 
   test('instance agents have task workers parented beneath them', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const byId = new Map(db.agents.all().map((a) => [a.id, a]));
 
     // Comms: the channel workers that feed /comms hang off the comms agent
@@ -151,26 +151,26 @@ describe('seedDatabase', () => {
     expect(byId.get('comms-agent')?.instance).not.toBe('');
   });
 
-  test('re-seeding removes agents that left the roster', () => {
+  test('re-seeding preserves custom agents', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     db.agents.insert({
       id: 'ghost', departmentId: 'dept-tech', name: 'Ghost', role: 'r', status: 'active',
       tier: 'lead', description: '', model: 'm', tools: [], parentId: null, instance: 'builtin',
     });
-    seedDatabase(db);
-    expect(db.agents.all().some((a) => a.id === 'ghost')).toBe(false);
+    seedDemoFixture(db);
+    expect(db.agents.all().some((a) => a.id === 'ghost')).toBe(true);
   });
 
   test('is idempotent — seeding twice does not duplicate rows', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const counts = {
       departments: db.departments.all().length,
       agents: db.agents.all().length,
       tools: db.tools.all().length,
     };
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.departments.all().length).toBe(counts.departments);
     expect(db.agents.all().length).toBe(counts.agents);
     expect(db.tools.all().length).toBe(counts.tools);
@@ -178,7 +178,7 @@ describe('seedDatabase', () => {
 
   test('email list reflects the real Beehiiv account, not the retired ~30k demo', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const snaps = db.emailList.snapshots();
     expect(snaps.length).toBeGreaterThan(0);
     // Latest count is the seeded newsletter subscriber count.
@@ -192,11 +192,11 @@ describe('seedDatabase', () => {
 
   test('re-seeding reconciles email history: stale dummy dropped, live snapshots kept', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     // an older DB still holding retired ~30k dummy history + a live Beehiiv snapshot
     db.emailList.insertSnapshot({ capturedAt: '2026-03-14', subscribers: 25800, source: 'seed-dummy' });
     db.emailList.insertSnapshot({ capturedAt: '2026-07-07', subscribers: 4830, source: 'beehiiv' });
-    seedDatabase(db);
+    seedDemoFixture(db);
     const snaps = db.emailList.snapshots();
     // retired dummy history is reconciled away on re-seed...
     expect(snaps.some((s) => s.source === 'seed-dummy')).toBe(false);
@@ -207,7 +207,7 @@ describe('seedDatabase', () => {
 
   test('seeded data passes schema validation end to end', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     // openDb repos parse rows through Zod on the way out, so a full read
     // of every table proves the seed data conforms to every schema.
     expect(() => {
@@ -226,7 +226,7 @@ describe('roadmap grouping', () => {
   test('groups roadmap items by quarter in chronological order', async () => {
     const { groupRoadmapByQuarter } = await import('@/lib/roadmap');
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const grouped = groupRoadmapByQuarter(db.roadmap.all());
     const quarters = grouped.map((g) => g.quarter);
     expect(quarters.length).toBeGreaterThanOrEqual(3);

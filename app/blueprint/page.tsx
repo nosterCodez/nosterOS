@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { BlueprintCanvasLazy } from '@/components/blueprint/BlueprintCanvasLazy';
 
@@ -22,7 +22,9 @@ function relativeTime(iso: string): string {
  * map itself genuinely change when the system does.
  */
 export default async function BlueprintPage() {
-  const graph = await compileBlueprint(getDb());
+  const workspace = await requireWorkspace();
+
+  const graph = await compileBlueprint(workspace.db);
   const count = (kind: string) => graph.nodes.filter((n) => n.kind === kind).length;
   const subline = `${graph.nodes.length} components · ${count('agent')} agents · ${count('daemon')} daemons · ${count('host')} machines · compiled ${relativeTime(graph.compiledAt)}`;
   return <BlueprintCanvasLazy graph={graph} subline={subline} />;

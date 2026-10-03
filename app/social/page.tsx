@@ -6,7 +6,7 @@ import { XLogo } from '@/components/XLogo';
 /** Any icon that takes a className: the lucide set and the hand-rolled X mark
     both satisfy it, and the map does not care which it is holding. */
 type PlatformIcon = React.ComponentType<{ className?: string }>;
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import {
   audienceGrowth,
   audienceSeries,
@@ -92,7 +92,9 @@ function agoFrom(iso: string | null): string {
 }
 
 export default async function SocialPage() {
-  const db = getDb();
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   // Live follower-count sync from Zernio/Late (falls back to static config when
   // the API is unreachable). This makes every figure on the page real-time.
   await syncFromZernioLive(db);

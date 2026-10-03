@@ -52,10 +52,10 @@ export function toWallAd(ad: ForeplayAd, brandName?: string): WallAd {
 }
 
 /** Everything in the store as wall ads, longevity-ranked, live first. */
-export function storeWall(limit = 60): WallAd[] {
+export function storeWall(workspaceId: string, limit = 60): WallAd[] {
   const out: WallAd[] = [];
-  for (const brand of readWatchEntries()) {
-    for (const ad of adStore.readBrandAds(brand.id)) out.push(toWallAd(ad, brand.name));
+  for (const brand of readWatchEntries(workspaceId)) {
+    for (const ad of adStore(workspaceId).readBrandAds(brand.id)) out.push(toWallAd(ad, brand.name));
   }
   return out
     .sort((a, b) => Number(b.live) - Number(a.live) || b.daysRunning - a.daysRunning)

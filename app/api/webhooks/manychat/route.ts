@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { parseManyChatWebhook } from '@/lib/connectors/manychat-webhook';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request): Promise<Response> {
   const authError = await apiSessionError('/api/webhooks/manychat', 'POST', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const secret = process.env.MANYCHAT_WEBHOOK_SECRET;
   if (secret && request.headers.get('x-manychat-secret') !== secret) {
@@ -30,7 +33,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ error: 'payload missing a subscriber id' }, { status: 400 });
   }
 
-  getDb().social.upsertDmMessage(message);
+  workspace.db.social.upsertDmMessage(message);
   return NextResponse.json({ ok: true, id: message.id, subscriberId: message.subscriberId });
 }
 
@@ -38,12 +41,15 @@ export async function POST(request: Request): Promise<Response> {
 export async function GET(): Promise<Response> {
   const authError = await apiSessionError('/api/webhooks/manychat', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
+
 
   const secret = process.env.MANYCHAT_WEBHOOK_SECRET;
   return NextResponse.json({
     ok: true,
     endpoint: 'manychat-webhook',
     secured: Boolean(secret),
-    stored: getDb().social.dmMessages('instagram').length,
+    stored: workspace.db.social.dmMessages('instagram').length,
   });
 }

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { chatWithAgent, systemPromptFor } from '@/lib/agents/chat';
 import { realAgents } from '@/lib/agents/real';
 import { AMBIENT_BUDGET_CHARS, ambientPack, clearAmbientCache } from '@/lib/agents/ambient';
@@ -57,9 +57,20 @@ describe('every agent can read the knowledge base', () => {
 });
 
 describe('ambientPack', () => {
+  test('the same agent cannot reuse another workspace brief', () => {
+    const a = openDb(':memory:'), b = openDb(':memory:');
+    try {
+      a.departments.insert({ id: 'dept-sales', name: 'PRIVATE A', slug: 'sales', tagline: '', color: '#fff', order: 0 });
+      b.departments.insert({ id: 'dept-sales', name: 'PRIVATE B', slug: 'sales', tagline: '', color: '#fff', order: 0 });
+      const agent = { ...agentById('crm-pulse'), departmentId: 'dept-sales' };
+      expect(ambientPack(a, agent)).toContain('PRIVATE A');
+      expect(ambientPack(b, agent)).toContain('PRIVATE B');
+      expect(ambientPack(b, agent)).not.toContain('PRIVATE A');
+    } finally { a.close(); b.close(); clearAmbientCache(); }
+  });
   test('tells the agent where it sits and what the OS knows right now', () => {
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     db.agentRuns.insert({
       id: 'run-1',
       agentId: 'crm-pulse',

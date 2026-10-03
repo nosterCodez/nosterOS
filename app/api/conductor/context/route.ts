@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
@@ -26,6 +27,9 @@ async function conductorModel(): Promise<string | null> {
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/conductor/context', 'GET', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const path = new URL(req.url).searchParams.get('path') ?? '/';
   const fallback = new Promise<{ title: string; context: string; quickActions: ReturnType<typeof quickActionsFor> }>(
@@ -41,7 +45,7 @@ export async function GET(req: Request) {
       ),
   );
   const [resolved, model] = await Promise.all([
-    Promise.race([screenContextFor(path), fallback]),
+    Promise.race([screenContextFor(workspace.db, path), fallback]),
     Promise.race([conductorModel(), new Promise<null>((r) => setTimeout(() => r(null), CONTEXT_BUDGET_MS))]),
   ]);
   return NextResponse.json({ ...resolved, model });

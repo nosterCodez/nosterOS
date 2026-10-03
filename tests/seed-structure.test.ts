@@ -1,0 +1,29 @@
+import { afterEach, expect, test, vi } from 'vitest';
+import { openDb } from '@/lib/db';
+import { seedStructure, SEED_VERSION } from '@/lib/seed';
+const handles: ReturnType<typeof openDb>[] = [];
+afterEach(() => { for (const db of handles.splice(0)) db.close(); vi.unstubAllEnvs(); });
+test('structure upgrades preserve customized agents, disabled schedules, workflows, skills and extra rows', () => {
+  const db = openDb(':memory:'); handles.push(db); seedStructure(db);
+  const agent = { ...db.agents.all()[0], name: 'My agent', model: 'custom-model' };
+  const workflow = { ...db.workflows.all()[0], name: 'My workflow' };
+  const skill = { ...db.skills.all()[0], markdown: 'My instructions' };
+  const cron = db.agentCrons.all()[0];
+  db.agents.insert(agent); db.workflows.insert(workflow); db.skills.insert(skill);
+  db.agentCrons.setEnabled(cron.id, false);
+  db.agents.insert({ ...agent, id: 'custom-agent' });
+  db.meta.set('structure_seed_version', 'old-version'); seedStructure(db);
+  expect(db.agents.all().find(a => a.id === agent.id)).toEqual(agent);
+  expect(db.workflows.get(workflow.id)).toEqual(workflow);
+  expect(db.skills.all().find(s => s.id === skill.id)).toEqual(skill);
+  expect(db.agentCrons.all().find(c => c.id === cron.id)?.enabled).toBe(false);
+  expect(db.agents.all().some(a => a.id === 'custom-agent')).toBe(true);
+  expect(db.meta.get('structure_seed_version')).toBe(SEED_VERSION);
+});
+test('structure seeding restores missing defaults without demo clients or activity', () => {
+  const db = openDb(':memory:'); handles.push(db); seedStructure(db);
+  const workflow = db.workflows.all()[0]; db.workflows.remove(workflow.id);
+  seedStructure(db);
+  expect(db.workflows.get(workflow.id)).toEqual(workflow);
+  expect(db.people.all()).toEqual([]); expect(db.agentRuns.recent(10)).toEqual([]);
+});

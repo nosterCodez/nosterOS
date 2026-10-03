@@ -3,7 +3,7 @@ process.env.FOUNDER_OS_DB = ':memory:';
 import { describe, expect, test } from 'vitest';
 import { GET, POST } from '@/app/api/workflows/route';
 import { PATCH, DELETE } from '@/app/api/workflows/[id]/route';
-import { getDb } from '@/lib/data';
+import { getDb } from '@/tests/fixture-db';
 
 function post(body: unknown) {
   return POST(new Request('http://test/api/workflows', { method: 'POST', body: JSON.stringify(body) }));

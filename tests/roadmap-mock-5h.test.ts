@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { phaseProgress } from '@/lib/roadmap';
 import { RoadmapItemSchema } from '@/lib/schemas';
 import type { RoadmapItem } from '@/lib/schemas';
@@ -42,7 +42,7 @@ describe('/roadmap mock-5h: a phase owns real roadmap rows', () => {
 
   test('the seeded roadmap links every row to a phase that exists', () => {
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const phaseIds = new Set(db.phases.all().map((p) => p.id));
     const items = db.roadmap.all();
     expect(items.length).toBeGreaterThan(0);
@@ -54,7 +54,7 @@ describe('/roadmap mock-5h: a phase owns real roadmap rows', () => {
 
   test('every seeded phase has at least one row behind it', () => {
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const items = db.roadmap.all();
     for (const p of db.phases.all()) {
       expect(items.some((i) => i.phaseId === p.id), p.id).toBe(true);

@@ -111,13 +111,13 @@ describe('pickWikiEntries', () => {
 
 // ── the real store the OS generates, not a fixture ─────────────────────────
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { buildBrainDocs } from '@/lib/brain-docs';
 import { buildAgentWiki } from '@/lib/agent-wiki';
 
 describe('the wiki over the generated brain-store', () => {
   const db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   const agents = db.agents.all();
   const tools = db.tools.all();
   const docs = buildBrainDocs({

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { stripeSnapshot } from '@/lib/connectors/payments';
@@ -135,9 +135,11 @@ function StatTile({
 type DoneItem = { key: string; time: number; head: string; headClass: string; body: string; when: string };
 
 export default async function HomePage() {
-  const db = getDb();
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const [connections, overview, feed, stripe] = await Promise.all([
-    allConnectorStatuses(),
+    allConnectorStatuses(workspace.db),
     createGBrainProvider().overview(),
     gatherCommsFeed(),
     // Fail-soft: no key (or a Stripe outage) means no charges row, never a 500.

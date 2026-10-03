@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import {
   audienceSeries,
   dmSeries,
@@ -20,9 +20,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/social/series', 'GET', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const metric = new URL(request.url).searchParams.get('metric');
-  const db = getDb();
+  const db = workspace.db;
   syncFromZernioConfig(db);
 
   if (metric === 'audience') {

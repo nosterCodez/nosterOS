@@ -1,6 +1,6 @@
 # M2: One data directory per workspace
 
-Status: ready (after M1)
+Status: in progress on m2-isolation; not merged, not customer-safe
 Self-review required: yes (data isolation is the core security property)
 
 ## Goal
@@ -190,3 +190,18 @@ the paid project, so don't wait on it.
 - Verification: typecheck passes; production build passes with zero warnings. Full Windows suite: 3,535 passed, 4 failed; 324 passing files, 7 failing files, all failures in the documented baseline. Final focused security/storage suite: 43/43 pass.
 - Local preview restarted from real local configuration at `http://localhost:4100`, bound to loopback, launcher PID 28632, background warmup/jobs disabled. Sign-in returns 200, unauthenticated root redirects, unauthenticated agents API returns 401.
 - Next: library signature/caller conversion on `m2-isolation`, insert-only structure seeding, workspace-scoped files/caches/background tasks, complete migration rehearsal and two-workspace browser verification; then M3. Paid deployment remains separate and unapproved.
+
+## Report checkpoint: Oct 3, 12:59 CDT - explicit data conversion
+- Status: PARTIAL, on `m2-isolation`. Do not merge or deploy this checkpoint. M3 has not started; Railway still awaits Noe. M1 follow-ups and both architect review sections were already preserved in `f76ec76` before this branch.
+- Converted 100 legacy `getDb()` call expressions across 73 app/lib files; zero remain. The production data accessor requires explicit context and has no singleton. Root layout resolves workspace context and passes its database to the palette. Existing unit tests use a test-only demo fixture, never an app fallback.
+- Structure seed now uses transactional insert-if-missing variants for departments, agents, agent_crons, tools, workflows, skills and personas. Edited defaults and custom rows survive version refreshes; missing defaults return. Duplicate tool defaults resolve last-declaration-wins before insertion. `seedDatabase` is retired; demo population requires `DEMO_GATE=1`.
+- Seed classification remains the foundation classification above; demo population no longer prunes or overwrites the seven structural tables. Existing tests that demanded deletion of customized structure or automatic demo proposals/lead magnets were updated to the approved preservation/empty-workspace contract.
+- Handle pools retain reference-counted leases and add the requested 60-second delayed close with revival. Active handles are capped at 50 and pending closes at 50; saturation fails instead of early-closing an in-use handle. Fake-timer tests cover revival and delayed close.
+- Financial page/uploads now use workspace bank, ledger and PayKit stores; async PayKit and upload operations use scoped leases. AdPilot campaigns, ad-intel snapshots, watchlists and saved ads now require validated workspace IDs and ignore legacy shared path overrides at runtime. Originals were not touched.
+- Caches converted: brain memory/wiki and page client roster keyed by workspace; ambient agent briefs keyed by database identity in a WeakMap. Brain constellation reads workspace brain-store/vault paths and only uses a fabricated fallback in demo mode. Migration of existing external brain/vault folders remains outstanding.
+- Internal cron, failover and analytics requests now fan out through workspace jobs with leases, per-workspace failure handling and ID-prefixed logs; member requests remain active-workspace-only. Three tests cover failed middle job, independent results, denied requests and internal route allowlisting. Connectors invoked by these jobs still need cache/credential isolation; do not enable them for customer workspaces.
+- Removed retired nosterLogistics from active business configuration. Read-only inspection found zero legacy metric_points rows keyed to it; no stored data was deleted.
+- Verification: typecheck and production build pass, build has no warnings. Final full Windows suite: 3,546 passed / 4 failed assertions, 327 passing / 7 failing files; all seven failures match the documented Windows baseline. New audit blocks app singleton/raw-store/test-fixture imports and retired seeder calls; it is NOT yet the complete route/connector isolation audit.
+- Self-review: new tests prove cache A cannot serve B, ad watchlists/saves do not cross workspaces, path traversal fails, customized structure survives reseeding, and member job requests cannot fan out. The broader connector cache/file access surface remains unreviewed and incomplete, so no full isolation claim is made.
+- Remaining: scope all listed connector caches, brain providers/retrieval/archive and other host-file readers; validate every page/API entry (including connector-only routes); finish background collection and long-lived request leases; harden malformed control metadata handling; expand full two-workspace API/data coverage. Seed/brain CLI scripts also still need explicit workspace targets.
+- Real migration/rehearsal and two-workspace signed-in browser verification have not run. Local owner control database is not initialized; Noe needs first local sign-in. Preview remains running at localhost:4100: beta-authenticated sign-in 200, unauthenticated app redirect 307, agents API 401. Secrets were not printed or committed.

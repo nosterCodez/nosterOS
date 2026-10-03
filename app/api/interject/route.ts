@@ -2,7 +2,7 @@ import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBrainProvider } from '@/lib/brain';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { performInterject } from '@/lib/interject';
 import { createMemoryProvider, type MemoryBrain } from '@/lib/memory-provider';
 import { createPaperclipIssue } from '@/lib/connectors/paperclip';
@@ -19,6 +19,9 @@ const InterjectSchema = z.object({
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/interject', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -41,7 +44,7 @@ export async function POST(req: Request) {
     },
     async captureNote(input) {
       const brain: MemoryBrain = getBrainProvider();
-      const outcome = await createMemoryProvider({ db: getDb(), brain }).remember(input);
+      const outcome = await createMemoryProvider({ db: workspace.db, brain }).remember(input);
       return outcome.ok ? { ok: true, slug: outcome.slug } : { ok: false, error: outcome.error };
     },
   });

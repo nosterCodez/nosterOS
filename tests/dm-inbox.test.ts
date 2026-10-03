@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { dmThreads } from '@/lib/social';
 import type { SocialDmMessage } from '@/lib/schemas';
 
@@ -49,7 +49,7 @@ describe('social.dmMessages', () => {
 
   test('seed ships a realistic multi-conversation Instagram DM inbox', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const msgs = db.social.dmMessages('instagram');
     expect(msgs.length).toBeGreaterThan(3);
     expect(msgs.every((m) => m.platform === 'instagram')).toBe(true);

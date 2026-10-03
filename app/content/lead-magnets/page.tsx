@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft, Megaphone } from 'lucide-react';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { filterLeadMagnets, leadMagnetFilter, leadMagnetVolume, LEAD_MAGNET_FILTERS } from '@/lib/lead-magnet-volume';
 import { LeadMagnets } from '@/components/LeadMagnets';
 import { NewLeadMagnet } from '@/components/NewLeadMagnet';
@@ -23,8 +23,10 @@ const WINDOW_WEEKS = 12;
 export default async function LeadMagnetsPage(
   props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }
 ) {
+  const workspace = await requireWorkspace();
+
   const searchParams = (await props?.searchParams);
-  const all = getDb().leadMagnets.all();
+  const all = workspace.db.leadMagnets.all();
   const active = leadMagnetFilter(searchParams?.status);
   const rows = filterLeadMagnets(all, active);
   const v = leadMagnetVolume({ rows: all, today: new Date().toISOString().slice(0, 10), weeks: WINDOW_WEEKS });

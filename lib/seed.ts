@@ -1936,54 +1936,36 @@ export const SEED_VERSION = '2026-09-30-alex-first-name';
 
 /** Structural defaults only: no people, money, activity, clients or history. */
 export function seedStructure(db: FounderDb): void {
-  for (const d of departments) db.departments.insert(d);
-  for (const a of agents) db.agents.insert(a);
-  for (const c of seededCrons) db.agentCrons.insert(c);
-  for (const t of tools) db.tools.insert(t);
-  for (const w of workflows) db.workflows.insert(w);
-  for (const s of skills) db.skills.insert({ ...s, markdown: skillDoc(s) });
-  for (const p of PERSONAS) db.personas.insert(p);
+  for (const d of departments) db.departments.insertIfMissing(d);
+  for (const a of agents) db.agents.insertIfMissing(a);
+  for (const c of seededCrons) db.agentCrons.insertIfMissing(c);
+  for (const t of new Map(tools.map(tool => [tool.id, tool])).values()) db.tools.insertIfMissing(t);
+  for (const w of workflows) db.workflows.insertIfMissing(w);
+  for (const s of skills) db.skills.insertIfMissing({ ...s, markdown: skillDoc(s) });
+  for (const p of PERSONAS) db.personas.insertIfMissing(p);
   db.meta.set('structure_seed_version', SEED_VERSION);
 }
 
 /** Demo population is explicit; normal workspace initialization never calls it. */
 export function seedDemo(db: FounderDb): void {
   if (process.env.DEMO_GATE !== '1') throw new Error('Demo seeding requires DEMO_GATE=1');
-  seedDatabase(db);
-}
-
-export function seedDatabase(db: FounderDb): void {
   // INSERT OR REPLACE in every repo makes re-seeding idempotent by id.
-  for (const c of seededCrons) db.agentCrons.insert(c);
-  for (const d of departments) db.departments.insert(d);
-  for (const a of agents) db.agents.insert(a);
-  // The roster IS the runtime: rows that left the roster leave the DB too,
-  // and departments that left the operating model go with them.
-  db.agents.deleteWhereIdNotIn(agents.map((a) => a.id));
-  db.departments.deleteWhereIdNotIn(departments.map((d) => d.id));
   for (const p of people) db.people.insert(p);
   db.people.deleteWhereIdNotIn(people.map((p) => p.id));
   for (const m of leadMagnets) db.leadMagnets.insert(m);
   db.leadMagnets.deleteWhereIdNotIn(leadMagnets.map((m) => m.id));
   for (const t of sopTasks) db.sopTasks.insert(t);
   db.sopTasks.deleteWhereIdNotIn(sopTasks.map((t) => t.id));
-  db.tools.deleteWhereIdNotIn(tools.map((t) => t.id));
-  for (const w of workflows) db.workflows.insert(w);
-  db.workflows.deleteWhereIdNotIn(workflows.map((w) => w.id));
-  for (const s of skills) db.skills.insert({ ...s, markdown: skillDoc(s) });
-  db.skills.deleteWhereIdNotIn(skills.map((s) => s.id));
   for (const t of agentTasks) db.agentTasks.insert(t); // insert-by-id; user tasks coexist
   // Seeded run history (idempotent by id) so /agents shows runtimes + spend; the
   // operator's own real runs (uuid ids) coexist and add real token cost over time.
   for (const r of seededAgentRuns(agents)) db.agentRuns.insert(r);
-  for (const t of tools) db.tools.insert(t);
   for (const r of roadmap) db.roadmap.insert(r);
   // A row that left the seed left the plan: prune it so retired work cannot
   // outlive its removal on a long-lived install.
   db.roadmap.deleteWhereIdNotIn(roadmap.map((r) => r.id));
   for (const m of metrics) db.metrics.insert(m);
   for (const d of domains) db.domains.insert(d);
-  for (const p of PERSONAS) db.personas.insert(p);
   for (const p of phases) db.phases.insert(p);
   for (const a of socialAccounts) db.social.upsertAccount(a);
   for (const s of socialBaseline) db.social.insertSnapshot(s);

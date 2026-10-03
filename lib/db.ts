@@ -696,7 +696,14 @@ export function openDb(path: string) {
   migrateProposalsTable(db);
   migrateRoadmapTable(db);
 
+  function insertDefault<T extends { id: string }>(table: 'departments' | 'agents' | 'tools' | 'personas' | 'agent_crons' | 'workflows' | 'skills', row: T, insert: (value: T) => void): void {
+    db.transaction(() => {
+      if (!db.prepare(`SELECT 1 FROM ${table} WHERE id=?`).get(row.id)) insert(row);
+    }).immediate();
+  }
+
   const departments = {
+    insertIfMissing(d: Department): void { insertDefault('departments', d, departments.insert); },
     all(): Department[] {
       return db
         .prepare('SELECT * FROM departments ORDER BY "order"')
@@ -715,6 +722,7 @@ export function openDb(path: string) {
   };
 
   const agents = {
+    insertIfMissing(a: Agent): void { insertDefault('agents', a, agents.insert); },
     all(): Agent[] {
       return (db.prepare('SELECT * FROM agents ORDER BY tier, name').all() as AgentRow[]).map(rowToAgent);
     },
@@ -740,6 +748,7 @@ export function openDb(path: string) {
   };
 
   const tools = {
+    insertIfMissing(t: Tool): void { insertDefault('tools', t, tools.insert); },
     all(): Tool[] {
       return db
         .prepare('SELECT * FROM tools ORDER BY category, name')
@@ -855,6 +864,7 @@ export function openDb(path: string) {
   };
 
   const personas = {
+    insertIfMissing(p: Persona): void { insertDefault('personas', p, personas.insert); },
     all(): Persona[] {
       return db
         .prepare('SELECT * FROM personas ORDER BY ord')
@@ -1198,6 +1208,7 @@ export function openDb(path: string) {
   };
 
   const agentCrons = {
+    insertIfMissing(c: AgentCron): void { insertDefault('agent_crons', c, agentCrons.insert); },
     insert(c: AgentCron): void {
       AgentCronSchema.parse(c);
       if (!isValidCron(c.schedule)) throw new Error(`invalid cron schedule: ${c.schedule}`);
@@ -1955,6 +1966,7 @@ export function openDb(path: string) {
   };
 
   const workflows = {
+    insertIfMissing(w: Workflow): void { insertDefault('workflows', w, workflows.insert); },
     all(): Workflow[] {
       return db
         .prepare('SELECT * FROM workflows ORDER BY ord, name')
@@ -2004,6 +2016,7 @@ export function openDb(path: string) {
   };
 
   const skills = {
+    insertIfMissing(s: Skill): void { insertDefault('skills', s, skills.insert); },
     all(): Skill[] {
       return db
         .prepare('SELECT * FROM skills ORDER BY ord, name')

@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { refreshExpiredOAuth } from '@/lib/oauth/store';
@@ -8,6 +9,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/connections', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
+
 
   // Refresh any OAuth token that has aged out before the connectors read it,
   // so a board load never reports "connected" as an error just because an
@@ -15,6 +19,6 @@ export async function GET() {
   // returns nothing and the status check proceeds as normal.
   await refreshExpiredOAuth().catch(() => []);
 
-  const connections = await allConnectorStatuses();
+  const connections = await allConnectorStatuses(workspace.db);
   return NextResponse.json({ connections });
 }

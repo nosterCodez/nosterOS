@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { scanClaudeProjects, defaultProjectsDir, seatId } from '@/lib/connectors/claude-usage';
 import { codexSeat } from '@/lib/connectors/codex-usage';
 import { ollamaLane } from '@/lib/connectors/ollama-usage';
@@ -20,12 +20,15 @@ export async function GET() {
   const authError = await apiSessionError('/api/usage', 'GET');
   if (authError) return authError;
 
+
   const now = new Date();
   // Public demo never scans the host's private model transcripts or services.
   if (isGated()) return NextResponse.json({
     generatedAt: now.toISOString(), claude: null, codex: null,
     ollama: combineOllama(null, [], now),
   });
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
   const errors: Record<string, string> = {};
 
   let local: SeatUsage | null = null;
@@ -37,7 +40,7 @@ export async function GET() {
 
   let pushed: SeatUsage[] = [];
   try {
-    pushed = getDb().usageSnapshots.all().filter((s) => s.id !== (local?.id ?? seatId()));
+    pushed = workspace.db.usageSnapshots.all().filter((s) => s.id !== (local?.id ?? seatId()));
   } catch (err) {
     errors.push = err instanceof Error ? err.message : String(err);
   }

@@ -9,7 +9,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedStructure, seedDemo } from '@/lib/seed';
 import { buildBrainDocs, writeBrainDocs } from '@/lib/brain-docs';
 
 const root =
@@ -19,7 +19,8 @@ const root =
 
 const dbPath = process.env.FOUNDER_OS_DB ?? path.join(process.cwd(), 'data', 'founder-os.db');
 const db = openDb(dbPath);
-seedDatabase(db);
+seedStructure(db);
+if (process.env.DEMO_GATE === '1') seedDemo(db);
 
 const docs = buildBrainDocs({
   departments: db.departments.all(),

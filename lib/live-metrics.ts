@@ -28,7 +28,7 @@
  */
 
 import type { MetricInput } from '@/lib/operating-metrics';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { getBrainProvider } from '@/lib/brain';
 import { parseInboxConfigs, unreadCounts } from '@/lib/connectors/email';
 import { stripeSnapshot } from '@/lib/connectors/payments';
@@ -111,8 +111,8 @@ async function readBrainPages(): Promise<Read> {
  * agent so /agents looks alive on a fresh clone (~300 rows), and counting those
  * here would replace a seeded zero with a seeded three hundred.
  */
-function readAgentRuns(): Read {
-  return { value: getDb().agentRuns.countReal(), source: 'agent runtime · all time, excludes seeded demo runs' };
+function readAgentRuns(db: FounderDb): Read {
+  return { value: db.agentRuns.countReal(), source: 'agent runtime · all time, excludes seeded demo runs' };
 }
 
 const asMetric = (
@@ -136,13 +136,14 @@ const asMetric = (
  * bounds the response, and no source can take another one down with it.
  */
 export async function liveMetrics(
+  db: FounderDb,
   env: Record<string, string | undefined> = process.env,
 ): Promise<LiveMetric[]> {
   const [unread, stripe, brain, runs] = await Promise.all([
     guarded('inbox read', () => readUnread(env)),
     guarded('Stripe balance read', () => readStripeAvailable(env)),
     guarded('brain-store read', () => readBrainPages()),
-    guarded('agent run count', async () => readAgentRuns()),
+    guarded('agent run count', async () => readAgentRuns(db)),
   ]);
   return [
     asMetric('metric-unread', 'unread_total', 'Unread (all inboxes)', 'emails', unread),

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { LeadMagnetSchema } from '@/lib/schemas';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
@@ -17,7 +17,7 @@ let db: FounderDb;
 
 beforeAll(() => {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
 });
 
 describe('lead magnet rows', () => {
@@ -47,7 +47,7 @@ describe('lead magnet rows', () => {
 
   test('insert + re-seed is idempotent by id', () => {
     const before = db.leadMagnets.all().length;
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.leadMagnets.all().length).toBe(before);
   });
 });
@@ -63,12 +63,11 @@ describe('GET /api/lead-magnets', () => {
   });
 });
 
-describe('back-fill on existing databases', () => {
-  test('getDb re-seeds when the lead_magnets table is empty', () => {
-    // the operator's mini + Railway both carry databases created before this table
-    // existed; without a clause here the list would render empty forever.
+describe('workspace data does not invent lead magnets', () => {
+  test('the data accessor never triggers demo population', () => {
     const src = read('lib/data.ts');
-    expect(src).toContain('instance.leadMagnets.all().length === 0');
+    expect(src).not.toContain('seedDemo');
+    expect(src).not.toContain('leadMagnets');
   });
 });
 

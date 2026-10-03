@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { WorkflowSchema, type Workflow } from '@/lib/schemas';
 import { WorkflowInputSchema, buildWorkflowSteps, slugifyWorkflowName } from './shared';
 
@@ -13,8 +13,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/workflows', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  return NextResponse.json({ workflows: getDb().workflows.all() });
+
+  return NextResponse.json({ workflows: workspace.db.workflows.all() });
 }
 
 /** Creates a new workflow from the builder panel. Never touches an
@@ -23,11 +26,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/workflows', 'POST', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = WorkflowInputSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const db = getDb();
+  const db = workspace.db;
   const existing = db.workflows.all();
   const id = `wf-${slugifyWorkflowName(parsed.data.name)}-${randomUUID().slice(0, 6)}`;
   const order = existing.reduce((max, w) => Math.max(max, w.order), -1) + 1;

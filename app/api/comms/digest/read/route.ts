@@ -2,7 +2,7 @@ import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { READ_RETENTION_DAYS } from '@/lib/comms-digest';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -13,18 +13,24 @@ const Body = z.object({ key: z.string().min(1).max(400) });
 export async function GET() {
   const authError = await apiSessionError('/api/comms/digest/read', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  return NextResponse.json({ keys: getDb().digestReads.keys() });
+
+  return NextResponse.json({ keys: workspace.db.digestReads.keys() });
 }
 
 /** POST: mark one message read. DELETE: put it back (the undo). */
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/comms/digest/read', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'key required' }, { status: 400 });
-  const db = getDb();
+  const db = workspace.db;
   db.digestReads.mark(parsed.data.key);
   // keys older than the report window can never match again
   // Must outlive CARRY_MAX_DAYS: an entry now rides along until it is cleared,
@@ -36,9 +42,12 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const authError = await apiSessionError('/api/comms/digest/read', 'DELETE', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'key required' }, { status: 400 });
-  getDb().digestReads.unmark(parsed.data.key);
+  workspace.db.digestReads.unmark(parsed.data.key);
   return NextResponse.json({ ok: true });
 }

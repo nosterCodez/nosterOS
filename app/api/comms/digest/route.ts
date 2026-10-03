@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { runAndStoreCommsDigest } from '@/lib/comms-digest-run';
 import type { DigestRunResult } from '@/lib/comms-digest-run';
 
@@ -15,8 +15,11 @@ export const runtime = 'nodejs';
 export async function GET() {
   const authError = await apiSessionError('/api/comms/digest', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  const row = getDb().commsDigests.latest();
+
+  const row = workspace.db.commsDigests.latest();
   if (!row) return NextResponse.json({ digest: null, sources: [], generatedAt: null });
   try {
     const parsed = JSON.parse(row.payload) as DigestRunResult;
@@ -29,9 +32,12 @@ export async function GET() {
 export async function POST() {
   const authError = await apiSessionError('/api/comms/digest', 'POST');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
+
 
   try {
-    const result = await runAndStoreCommsDigest();
+    const result = await runAndStoreCommsDigest(workspace.db);
     return NextResponse.json({ ...result, generatedAt: result.digest.generatedAt });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });

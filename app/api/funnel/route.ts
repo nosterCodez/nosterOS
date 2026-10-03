@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { funnelSummary, splitFunnelJourneys } from '@/lib/funnel';
@@ -9,6 +10,9 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/funnel', 'GET', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const raw = new URL(req.url).searchParams.get('venture');
   let venture: FunnelVenture | undefined;
@@ -23,7 +27,7 @@ export async function GET(req: Request) {
   // One shared composer with the page: Attio ∪ GHL live journeys, Trakyo
   // touches + Stripe settled payments folded on, venture-filtered; seeded
   // funnel when nothing is live. Quiet >90d splits into `archived`.
-  const composed = await composeFunnelJourneys(now, venture);
+  const composed = await composeFunnelJourneys(workspace.db, now, venture);
   const { active, archived } = splitFunnelJourneys(composed.journeys, now);
   return NextResponse.json({
     summary: funnelSummary(active),

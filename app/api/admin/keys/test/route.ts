@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -23,6 +24,9 @@ const TestKeySchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/admin/keys/test', 'POST', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = TestKeySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
   }
 
   const started = Date.now();
-  const status = await connectorStatusById(slot.connectorId);
+  const status = await connectorStatusById(workspace.db, slot.connectorId);
   const ms = Date.now() - started;
   if (!status) {
     return NextResponse.json({ error: `unknown connector: ${slot.connectorId}` }, { status: 400 });

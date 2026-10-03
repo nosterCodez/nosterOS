@@ -22,17 +22,17 @@ export type SyncResult = {
 /** The API caps brand-ads pages at 75; newest+oldest union covers ≤150 live ads. */
 const PAGE = 75;
 
-export async function runSyncCycle(client: ForeplayClient, now = new Date()): Promise<SyncResult> {
+export async function runSyncCycle(workspaceId: string, client: ForeplayClient, now = new Date()): Promise<SyncResult> {
   const at = now.toISOString();
   const startCalls = client.callCount;
 
-  const brands = readWatchEntries();
+  const brands = readWatchEntries(workspaceId);
 
   const allSignals: Signal[] = [];
   let adsSeen = 0;
 
   for (const brand of brands) {
-    const prev = adStore.readBrandAds(brand.id);
+    const prev = adStore(workspaceId).readBrandAds(brand.id);
     // Live ads only, from both ends of the catalog: `newest` catches fresh
     // launches, `oldest` catches the long-running winners (the whole thesis)
     // that a recency window would silently drop.
@@ -56,31 +56,31 @@ export async function runSyncCycle(client: ForeplayClient, now = new Date()): Pr
     // merge, with fresh rows winning.
     const merged = new Map(prev.map((a) => [a.id, a]));
     for (const ad of next) merged.set(ad.id, ad);
-    adStore.writeBrandAds(brand.id, [...merged.values()]);
+    adStore(workspaceId).writeBrandAds(brand.id, [...merged.values()]);
 
     allSignals.push(...diffBrandAds({ brandId: brand.id, brandName: brand.name, prev, next, at }));
 
     const series = await client.brandAnalytics(brand.id).catch(() => []);
     if (series.length > 0) {
-      adStore.writeAnalytics(brand.id, series);
-      const velocity = velocitySignal({ brandId: brand.id, brandName: brand.name, series: adStore.readAnalytics(brand.id), at });
+      adStore(workspaceId).writeAnalytics(brand.id, series);
+      const velocity = velocitySignal({ brandId: brand.id, brandName: brand.name, series: adStore(workspaceId).readAnalytics(brand.id), at });
       if (velocity) allSignals.push(velocity);
     }
   }
 
-  adStore.appendSignals(allSignals);
+  adStore(workspaceId).appendSignals(allSignals);
 
   let remainingCredits: number | null = null;
   try {
     const usage = await client.usage();
-    adStore.writeUsage(usage);
+    adStore(workspaceId).writeUsage(usage);
     remainingCredits = usage.remaining_credits;
   } catch {
     // usage is bookkeeping: a failed read never fails the cycle
   }
 
   const apiCalls = client.callCount - startCalls;
-  adStore.writeMeta({ lastSyncAt: at, lastSyncCalls: apiCalls });
+  adStore(workspaceId).writeMeta({ lastSyncAt: at, lastSyncCalls: apiCalls });
 
   return { brands: brands.length, adsSeen, signals: allSignals, digest: digest(allSignals), apiCalls, remainingCredits };
 }

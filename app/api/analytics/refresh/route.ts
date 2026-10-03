@@ -1,6 +1,5 @@
 import { apiSessionError } from '@/lib/session';
-import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { workspaceJob } from '@/lib/workspace-jobs';
 import { syncFromZernioConfig } from '@/lib/social';
 import { gatherOperatingMetrics } from '@/lib/analytics-refresh';
 import { latestEmails, unreadCounts } from '@/lib/connectors/email';
@@ -23,34 +22,35 @@ export async function POST() {
   const authError = await apiSessionError('/api/analytics/refresh', 'POST');
   if (authError) return authError;
 
-  const db = getDb();
-  try {
-    syncFromZernioConfig(db);
-  } catch {
-    // social sync degrading must not block the metric sweep
-  }
-  // Warm the comms caches here rather than making a person wait for them.
-  // /comms cold-renders in ~18s (four IMAP round trips plus a Slack scan);
-  // this job absorbs that so page views stay under a second.
-  await Promise.allSettled([latestEmails(40), unreadCounts(), recentMessages(30), recentChats(40), fetchBrandDeals()]);
+  return workspaceJob('/api/analytics/refresh', async ({ db, workspace }) => {
+    try {
+      syncFromZernioConfig(db);
+    } catch {
+      // social sync degrading must not block the metric sweep
+    }
+    // Warm the comms caches here rather than making a person wait for them.
+    // /comms cold-renders in ~18s (four IMAP round trips plus a Slack scan);
+    // this job absorbs that so page views stay under a second.
+    await Promise.allSettled([latestEmails(40), unreadCounts(), recentMessages(30), recentChats(40), fetchBrandDeals()]);
 
-  // Same principle for /brain: buildBrainGraph over the whole store+vault is
-  // ~9s of real CPU work (roughly 2,000 combined notes). It was
-  // already cached, but the cache lived only inside the page component with
-  // nothing to warm it — every TTL expiry put that 9s directly in a click.
-  // This is synchronous CPU work, not I/O, so it cannot be Promise.allSettled'd
-  // alongside the connector calls above without blocking them anyway; running
-  // it after they've already been fired keeps this sweep's own shape honest
-  // about where the time actually goes. Never throws by construction, but the
-  // sweep must survive regardless if the store ever changes that.
-  try {
-    warmBrainConstellation();
-  } catch {
-    // an unwarmed cache just means the next /brain click pays the cost itself
-  }
+    // Same principle for /brain: buildBrainGraph over the whole store+vault is
+    // ~9s of real CPU work (roughly 2,000 combined notes). It was
+    // already cached, but the cache lived only inside the page component with
+    // nothing to warm it — every TTL expiry put that 9s directly in a click.
+    // This is synchronous CPU work, not I/O, so it cannot be Promise.allSettled'd
+    // alongside the connector calls above without blocking them anyway; running
+    // it after they've already been fired keeps this sweep's own shape honest
+    // about where the time actually goes. Never throws by construction, but the
+    // sweep must survive regardless if the store ever changes that.
+    try {
+      warmBrainConstellation(workspace.id);
+    } catch {
+      // an unwarmed cache just means the next /brain click pays the cost itself
+    }
 
-  const { inputs } = await gatherOperatingMetrics(db);
-  const at = new Date().toISOString();
-  const recorded = recordOperatingSnapshots(db.metricSnapshots, inputs, at);
-  return NextResponse.json({ ok: true, recorded, of: inputs.length, at });
+    const { inputs } = await gatherOperatingMetrics(db);
+    const at = new Date().toISOString();
+    const recorded = recordOperatingSnapshots(db.metricSnapshots, inputs, at);
+    return { ok: true, recorded, of: inputs.length, at };
+  });
 }

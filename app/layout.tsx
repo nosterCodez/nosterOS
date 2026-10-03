@@ -7,12 +7,12 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { ConductorPanel } from '@/components/ConductorPanel';
 import { Toaster } from '@/components/Toaster';
 import { LensProvider } from '@/lib/hooks/useLens';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import type { PaletteAgent } from '@/lib/palette';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { requireSession } from '@/lib/session';
+import { requireSession, requireWorkspace } from '@/lib/session';
 import { publicAuthPath } from '@/lib/auth-boundary';
 
 const fontMono = JetBrains_Mono({
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 /** The palette builds its own Go-to group from lib/nav; the layout only feeds
     it the agent roster (serializable rows — this is a server component). The
     old per-tool command flood is gone: the Connections entry covers /integrations. */
-function paletteAgents(): PaletteAgent[] {
-  return getDb()
+function paletteAgents(db: FounderDb): PaletteAgent[] {
+  return db
     .agents.all()
     .map((a) => ({ id: a.id, name: a.name, role: a.role }));
 }
@@ -43,6 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (!publicPage && !session) redirect(`/sign-in?next=${encodeURIComponent(pathname)}`);
   if (!publicPage && pathname !== '/onboarding' && !session?.session.activeOrganizationId) redirect('/onboarding');
   const simple = publicPage || pathname === '/onboarding';
+  const workspace = simple ? null : await requireWorkspace('viewer', h);
   return (
     <html lang="en" className={fontMono.variable} suppressHydrationWarning>
       <head>
@@ -66,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
           </main>
         </div>
-        <CommandPalette agents={paletteAgents()} />
+        <CommandPalette agents={workspace ? paletteAgents(workspace.db) : []} />
         {/* Notion-style agent dock — the Conductor, aware of the current screen */}
         <ConductorPanel />
         </>}

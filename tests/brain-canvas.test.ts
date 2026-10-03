@@ -121,9 +121,9 @@ describe('the knowledge graph is a blank canvas', () => {
   test('no node label or id names one operator specific stack', async () => {
     const { buildKnowledgeGraph } = await import('@/lib/knowledge-graph');
     const { openDb } = await import('@/lib/db');
-    const { seedDatabase } = await import('@/lib/seed');
+    const { seedDemoFixture } = await import('@/tests/demo-fixture');
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const g = buildKnowledgeGraph(db.agents.all(), db.departments.all(), db.people.all(), db.sopTasks.all());
     db.close();
 

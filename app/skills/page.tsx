@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { SkillsGrid, type SkillCard } from '@/components/SkillsGrid';
 import { readPluginSkills, readUserSkills } from '@/lib/skills-catalog';
 import { skillsVolume } from '@/lib/skills-volume';
@@ -17,7 +17,9 @@ const truncate = (t: string, n = 110) => (t.length > n ? `${t.slice(0, n).replac
  * same rows the card wall renders; the wall keeps its filter, reader and
  * download and takes the stagger at i={6}.
  */
-export default function SkillsPage() {
+export default async function SkillsPage() {
+  const workspace = await requireWorkspace();
+
   // All three catalogs on one wall: the real Claude Code skills read live
   // from disk (user-scope ~/.claude/skills plus every installed plugin's
   // skills; SKILL.md loads on demand via /api/skills/[slug]) alongside the
@@ -33,7 +35,7 @@ export default function SkillsPage() {
     filePath: s.path,
   }));
 
-  const db = getDb();
+  const db = workspace.db;
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
   const operator = db.skills.all();
   const operatorCards: SkillCard[] = operator.map((s) => ({

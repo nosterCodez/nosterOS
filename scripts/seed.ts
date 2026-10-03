@@ -1,12 +1,13 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { openDb } from '../lib/db';
-import { seedDatabase } from '../lib/seed';
+import { seedStructure, seedDemo } from '../lib/seed';
 
 const dbPath = process.env.FOUNDER_OS_DB ?? path.join(process.cwd(), 'data', 'founder-os.db');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const db = openDb(dbPath);
-seedDatabase(db);
+seedStructure(db);
+if (process.env.DEMO_GATE === '1') seedDemo(db);
 console.log(`Seeded ${dbPath}`);
 console.log(`  departments: ${db.departments.all().length}`);
 console.log(`  agents:      ${db.agents.all().length}`);

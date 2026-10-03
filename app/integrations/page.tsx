@@ -1,3 +1,4 @@
+import { requireWorkspace } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { readEnvLocal } from '@/lib/creds';
 import { oauthReadiness } from '@/lib/oauth/store';
@@ -21,7 +22,9 @@ const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
  * accordion and key editor are unchanged.
  */
 export default async function ConnectionsPage() {
-  const statuses = await allConnectorStatuses();
+  const workspace = await requireWorkspace();
+
+  const statuses = await allConnectorStatuses(workspace.db);
   const env = readEnvLocal();
   const catalog = connectionCatalog(statuses, env);
   // Null for every tile whose provider has no usable authorization-code flow.

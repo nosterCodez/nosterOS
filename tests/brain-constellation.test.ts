@@ -32,7 +32,7 @@ beforeEach(() => {
 describe('memoryConstellation caching', () => {
   test('a cold call reads both sources and caches the result', () => {
     const d = deps();
-    const value = memoryConstellation(d);
+    const value = memoryConstellation('A'.repeat(32), d);
     expect(d.readStoreNotes).toHaveBeenCalledTimes(1);
     expect(d.readVaultNotes).toHaveBeenCalledTimes(1);
     expect(value).toBeDefined();
@@ -40,34 +40,50 @@ describe('memoryConstellation caching', () => {
 
   test('a call inside the TTL reuses the cache and touches neither source', () => {
     const d = deps();
-    memoryConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
     now += 1000;
-    memoryConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
     expect(d.readStoreNotes).toHaveBeenCalledTimes(1);
     expect(d.readVaultNotes).toHaveBeenCalledTimes(1);
   });
 
   test('a call past the TTL recomputes -- this IS the periodic cost, and it must land on the sweep, not a click', () => {
     const d = deps();
-    memoryConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
     now += MEMORY_TTL_MS + 1;
-    memoryConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
     expect(d.readStoreNotes).toHaveBeenCalledTimes(2);
   });
 
-  test('a store read failure falls back to the demo graph instead of throwing into the page', () => {
+  test('a store read failure does not fabricate a non-demo workspace graph', () => {
     const d = { readStoreNotes: vi.fn(() => { throw new Error('no store on this box'); }), readVaultNotes: vi.fn(() => []), now: () => now };
-    expect(() => memoryConstellation(d)).not.toThrow();
-    expect(memoryConstellation(d)).toBeDefined();
+    expect(() => memoryConstellation('A'.repeat(32), d)).not.toThrow();
+    expect(memoryConstellation('A'.repeat(32), d)).toBeUndefined();
   });
+});
+
+test('memory and wiki caches never reuse another workspace result', () => {
+  const a = deps();
+  const b = { ...deps(), readStoreNotes: vi.fn(() => [{ path: 'private-b.md', content: '# Only B' }]), readVaultNotes: vi.fn(() => []) };
+  const first = memoryConstellation('A'.repeat(32), a);
+  const second = memoryConstellation('B'.repeat(32), b);
+  expect(second).not.toEqual(first);
+  wikiFor('A'.repeat(32), ['a'], [], a);
+  wikiFor('B'.repeat(32), ['a'], [], b);
+  expect(a.readStoreNotes).toHaveBeenCalledTimes(2);
+  expect(b.readStoreNotes).toHaveBeenCalledTimes(2);
+  warmBrainConstellation('A'.repeat(32), a);
+  memoryConstellation('B'.repeat(32), b);
+  expect(b.readStoreNotes).toHaveBeenCalledTimes(2);
+  expect(() => memoryConstellation('../', a)).toThrow();
 });
 
 describe('wikiFor caching', () => {
   test('caches the built index and only re-subsets on repeat calls inside the TTL', () => {
     const d = deps();
-    wikiFor(['a'], [], d);
+    wikiFor('A'.repeat(32), ['a'], [], d);
     now += 1000;
-    wikiFor(['b'], [], d);
+    wikiFor('A'.repeat(32), ['b'], [], d);
     expect(d.readStoreNotes).toHaveBeenCalledTimes(1); // one build, two different subsets
   });
 });
@@ -75,33 +91,33 @@ describe('wikiFor caching', () => {
 describe('warmBrainConstellation', () => {
   test('forces both caches to rebuild right now, regardless of TTL state', () => {
     const d = deps();
-    memoryConstellation(d);
-    expect(isConstellationWarm(d)).toBe(true);
-    warmBrainConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
+    expect(isConstellationWarm('A'.repeat(32), d)).toBe(true);
+    warmBrainConstellation('A'.repeat(32), d);
     // still warm after an explicit warm call -- this is the sweep's job
-    expect(isConstellationWarm(d)).toBe(true);
+    expect(isConstellationWarm('A'.repeat(32), d)).toBe(true);
     expect(d.readStoreNotes.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
   test('after warming, the next page render pays nothing -- the whole point', () => {
     const d = deps();
-    warmBrainConstellation(d);
+    warmBrainConstellation('A'.repeat(32), d);
     const callsAfterWarm = d.readStoreNotes.mock.calls.length;
-    memoryConstellation(d);
-    wikiFor([], [], d);
+    memoryConstellation('A'.repeat(32), d);
+    wikiFor('A'.repeat(32), [], [], d);
     expect(d.readStoreNotes.mock.calls.length).toBe(callsAfterWarm); // no new reads
   });
 });
 
 describe('isConstellationWarm', () => {
   test('false before anything has been computed', () => {
-    expect(isConstellationWarm(deps())).toBe(false);
+    expect(isConstellationWarm('A'.repeat(32), deps())).toBe(false);
   });
 
   test('false again once the TTL has lapsed, so a health check can tell the sweep missed a beat', () => {
     const d = deps();
-    memoryConstellation(d);
+    memoryConstellation('A'.repeat(32), d);
     now += MEMORY_TTL_MS + 1;
-    expect(isConstellationWarm(d)).toBe(false);
+    expect(isConstellationWarm('A'.repeat(32), d)).toBe(false);
   });
 });

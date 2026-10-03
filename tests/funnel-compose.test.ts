@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, describe, it, expect } from 'vitest';
+import { openDb } from '@/lib/db';
+const db = openDb(':memory:');
+afterAll(() => db.close());
 import { composeFunnelJourneys, type FunnelComposeDeps } from '@/lib/funnel-compose';
 import type { StripeWin } from '@/lib/funnel-stripe';
 import type { FunnelJourney } from '@/lib/schemas';
@@ -33,7 +36,7 @@ const deps = (over: Partial<FunnelComposeDeps> = {}): FunnelComposeDeps => ({
 
 describe('composeFunnelJourneys', () => {
   it('surfaces a Stripe buyer with no CRM row as a converted journey (the page-drift bug)', async () => {
-    const c = await composeFunnelJourneys(new Date('2026-08-11'), undefined, deps({ stripe: async () => [win()] }));
+    const c = await composeFunnelJourneys(db, new Date('2026-08-11'), undefined, deps({ stripe: async () => [win()] }));
     expect(c.isLive).toBe(true);
     const buyer = c.journeys.find((j) => j.email === 'buyer@example.com');
     expect(buyer).toBeTruthy();
@@ -42,14 +45,14 @@ describe('composeFunnelJourneys', () => {
   });
 
   it('only counts as live off Stripe alone even when no CRM source answered', async () => {
-    const c = await composeFunnelJourneys(new Date('2026-08-11'), undefined, deps({ stripe: async () => [win()] }));
+    const c = await composeFunnelJourneys(db, new Date('2026-08-11'), undefined, deps({ stripe: async () => [win()] }));
     expect(c.isLive).toBe(true);
     expect(c.attioLive).toBeNull();
     expect(c.ghlLive).toBeNull();
   });
 
   it('filters journeys to the requested venture', async () => {
-    const c = await composeFunnelJourneys(
+    const c = await composeFunnelJourneys(db,
       new Date('2026-08-11'),
       'vantage',
       deps({ stripe: async () => [win({ id: 'ch_aa', venture: 'launchpad-cohort' })] }),
@@ -59,7 +62,7 @@ describe('composeFunnelJourneys', () => {
 
   it('falls back to seed when nothing is live', async () => {
     const seeded = [{ id: 'seed-1' }] as unknown as FunnelJourney[];
-    const c = await composeFunnelJourneys(new Date('2026-08-11'), undefined, deps({ seed: () => seeded }));
+    const c = await composeFunnelJourneys(db, new Date('2026-08-11'), undefined, deps({ seed: () => seeded }));
     expect(c.isLive).toBe(false);
     expect(c.journeys).toBe(seeded);
   });

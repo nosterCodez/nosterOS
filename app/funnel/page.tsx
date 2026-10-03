@@ -1,3 +1,4 @@
+import { requireWorkspace } from '@/lib/session';
 import Link from 'next/link';
 import { FunnelLayoutToggle } from '@/components/FunnelLayoutToggle';
 import {
@@ -296,6 +297,8 @@ export default async function FunnelPage(
     searchParams?: Promise<{ venture?: string; view?: string; stage?: string; layout?: string; lead?: string }>;
   }
 ) {
+  const workspace = await requireWorkspace();
+
   const searchParams = await props.searchParams;
   const parsed = FunnelVentureSchema.safeParse(searchParams?.venture);
   const venture = parsed.success ? parsed.data : undefined;
@@ -327,7 +330,7 @@ export default async function FunnelPage(
   // a source the route has (this is how every Stripe buyer went invisible):
   // Typeform leads, calendar bookings + Fathom calls, Trakyo attribution and
   // Stripe payments folded on, venture-filtered; seeded funnel otherwise.
-  const composed = await composeFunnelJourneys(now, venture);
+  const composed = await composeFunnelJourneys(workspace.db, now, venture);
   const { attioLive, ghlLive, isLive } = composed;
   const excludedCount = (attioLive?.closedLost ?? 0) + (ghlLive?.excluded ?? 0);
   const liveLabel = [

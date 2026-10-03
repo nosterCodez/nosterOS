@@ -2,7 +2,7 @@ import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { SocialPlatformSchema, type SocialPost } from '@/lib/schemas';
 import { zernioPublish } from '@/lib/connectors/zernio';
 
@@ -12,8 +12,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/social/posts', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  return NextResponse.json({ posts: getDb().socialPosts.all() });
+
+  return NextResponse.json({ posts: workspace.db.socialPosts.all() });
 }
 
 const CreateSchema = z.object({
@@ -34,6 +37,9 @@ const CreateSchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/social/posts', 'POST', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = CreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -69,7 +75,7 @@ export async function POST(request: Request) {
     scheduledFor: parsed.data.scheduledFor ?? null,
     createdAt: new Date().toISOString(),
   };
-  getDb().socialPosts.enqueue(post);
+  workspace.db.socialPosts.enqueue(post);
   return NextResponse.json(
     publishError ? { post, error: publishError } : { post },
     { status: publishError ? 502 : 201 },

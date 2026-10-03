@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { hasBrandMark } from '@/lib/brand-logos';
 import { TOOL_BRANDS, toolBrand } from '@/lib/workflow-tool-brands';
 
 describe('workflow tool brands', () => {
   test('every seeded workflow tool has an explicit entry that resolves to a real brand mark', () => {
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const tools = new Set(db.workflows.all().flatMap((w) => w.steps.flatMap((s) => s.tools)));
     db.close();
     expect(tools.size).toBeGreaterThanOrEqual(10);
