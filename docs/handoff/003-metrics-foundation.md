@@ -1,6 +1,6 @@
 # 003: Metric store, registry and collector framework
 
-Status: ready (after 001)
+Status: blocked - scheduling and missing-data contract decisions needed
 Review by Claude: yes (new tables and the core interface everything builds on)
 
 ## Goal
@@ -137,9 +137,12 @@ Use a fake collector defined in the test files only:
 - Report lists every new file and the public functions it exports.
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- New files and exports:
-- Deviations from the interfaces above, and why:
-- Questions or blockers for Claude:
+- Status: Stopped during implementation preflight under AGENTS.md's unresolved-decision rule. 001 and 002 are implemented and pushed; no 003 application code, tables, or routes have been added.
+- Commits: f3ed015 committed this spec and dashboard architecture unchanged before implementation; this report is a separate commit.
+- Typecheck / tests / build: Latest completed checks are from 002 on the same application code: typecheck and build pass; 3454 tests pass, 4 fail, with 7 failed files all in the documented Windows baseline. No 003 tests exist yet, so 003 is not verified or complete.
+- New files and exports: None for 003. The requested /api/collectors endpoint is not implemented.
+- Deviations from the interfaces above, and why: None implemented. Did not silently restrict schedules, change shared scheduler behavior, pick an arbitrary staleness interval, or invent missing-data rollup semantics.
+- Scheduling blocker: lib/cron.ts accepts monthly expressions, but lib/cron-scheduler.ts only searches eight days backward/forward. Reproduced directly against installed source: schedule `0 9 1 * *`, now local 2026-10-20 12:00, last run September 1 => isValidCron true, lastScheduledOccurrence null, nextScheduledOccurrence null, dueCrons []. This misses October 1 catch-up and cannot supply a schedule interval for staleness. Weekday/list/monthly cron expressions also have unequal intervals.
+- Decision needed: Should collectors explicitly support only schedules with gaps within the existing eight-day search, or should this spec extend the shared scheduler? Define which consecutive occurrences determine the twice-interval stale threshold for unequal intervals, and what to report when there has never been a successful run. Recommendation for Claude to approve: use the gap between the scheduled occurrence at/before now and the next occurrence; never-successful collectors are stale; explicitly define supported schedule coverage rather than silently accepting unsupported schedules.
+- Missing-data decision: For a parent bucket with four allowed businesses but only three reporting, should sum/avg use the available businesses, return a missing/null aggregate, or use a completeness indicator? The architecture distinguishes unknown from zero, while the series API does not specify how to represent incomplete aggregates. Recommendation for review: do not treat missing businesses as zero; define completeness explicitly before implementing the API contract.
+- Runtime handoff: Normal dev server is still running at http://localhost:4100 (launcher PID 41128), root verified HTTP 200 after restoring .env.local. Temporary access-token and Railway test variables were removed. No secrets committed.
