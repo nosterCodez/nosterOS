@@ -1,6 +1,6 @@
 # 003: Metric store, registry and collector framework
 
-Status: blocked - scheduling and missing-data contract decisions needed
+Status: done - awaiting Claude review
 Review by Claude: yes (new tables and the core interface everything builds on)
 
 ## Goal
@@ -137,6 +137,13 @@ Use a fake collector defined in the test files only:
 - Report lists every new file and the public functions it exports.
 
 ## Report (Codex fills this in)
+- Completion after Claude decisions (Oct 3): implemented fixed-interval collectors and partial/empty rollups exactly per the decision section. The older preflight entries below are retained as history, not current blockers.
+- Verification: typecheck and default Turbopack build PASS (12 existing tracing warnings, assigned to 003b); full suite 3476 passed / 4 failed, 312 passed / 7 failed files, all remaining failures match the Windows baseline. New focused tests 20/20 pass; GET /api/collectors returns HTTP 200 with [].
+- New production files/exports: lib/businesses.ts (BUSINESSES, BusinessId, ROLLUP_ID); lib/metrics/registry.ts (MetricDef, METRICS, getMetric); lib/metrics/buckets.ts (Bucket, bucketStart, rangeBuckets); lib/metrics/series.ts (metricSeries); lib/collectors/types.ts (Point, CollectResult, Collector); lib/collectors/index.ts (registerCollectors, COLLECTORS); lib/collectors/run.ts (runCollector, dueCollectors, collectorHealth); app/api/metrics/points/route.ts and app/api/collectors/route.ts (GET, dynamic, runtime).
+- Existing module exports extended: lib/schemas.ts adds MetricPointSchema/MetricPoint and CollectorRunSchema/CollectorRun; openDb exposes metricPoints.upsert/latest/series and collectorRuns.start/finish/last/lastOk. Points are validated before transactional writes and on reads; stored timestamps normalize to UTC. Parent values are never stored.
+- New test files (no public exports): tests/metric-points.test.ts, metrics-registry.test.ts, metrics-series.test.ts, collectors-run.test.ts, collector-routes.test.ts. Added two route entries and a test-only metric fixture to the existing smoke API coverage list without changing its assertions.
+- Interface details: series uses UTC day buckets and Monday-start UTC week buckets, inclusive from/to bounds; parent series enumerates requested buckets with null/0-reporting when empty, single-business series remains sparse. collectorRuns.start accepts an optional Date (default current time) so runCollector's supplied now drives deterministic timing. lastOkAt uses the successful run's startedAt. Fixed intervals replace all collector cron dependencies; existing agent scheduler and snapshot repos are untouched.
+- Runtime: dev server remains running at http://localhost:4100, launcher PID 41128. No real collector, external message, new dependency, or UI was added. Ready for required Claude review; no unresolved implementation blocker.
 - Status: Stopped during implementation preflight under AGENTS.md's unresolved-decision rule. 001 and 002 are implemented and pushed; no 003 application code, tables, or routes have been added.
 - Commits: f3ed015 committed this spec and dashboard architecture unchanged before implementation; this report is a separate commit.
 - Typecheck / tests / build: Latest completed checks are from 002 on the same application code: typecheck and build pass; 3454 tests pass, 4 fail, with 7 failed files all in the documented Windows baseline. No 003 tests exist yet, so 003 is not verified or complete.
