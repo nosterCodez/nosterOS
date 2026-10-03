@@ -10,11 +10,11 @@ function post(body: unknown) {
 }
 function patch(id: string, body: unknown) {
   return PATCH(new Request(`http://test/api/workflows/${id}`, { method: 'PATCH', body: JSON.stringify(body) }), {
-    params: { id },
+    params: Promise.resolve({ id }),
   });
 }
 function del(id: string) {
-  return DELETE(new Request(`http://test/api/workflows/${id}`, { method: 'DELETE' }), { params: { id } });
+  return DELETE(new Request(`http://test/api/workflows/${id}`, { method: 'DELETE' }), { params: Promise.resolve({ id }) });
 }
 
 const basicInput = {

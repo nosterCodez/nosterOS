@@ -38,14 +38,14 @@ describe('FOUNDER_OS_SKILLS_DIR override', () => {
 
 describe('GET /api/skills/[slug]', () => {
   it('returns JSON markdown by default (reader path unchanged)', async () => {
-    const res = await GET(new Request('http://x/api/skills/demo-skill'), { params: { slug: 'demo-skill' } });
+    const res = await GET(new Request('http://x/api/skills/demo-skill'), { params: Promise.resolve({ slug: 'demo-skill' }) });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { markdown: string };
     expect(body.markdown).toBe(MD);
   });
 
   it('?download=1 returns the raw file as a markdown attachment', async () => {
-    const res = await GET(new Request('http://x/api/skills/demo-skill?download=1'), { params: { slug: 'demo-skill' } });
+    const res = await GET(new Request('http://x/api/skills/demo-skill?download=1'), { params: Promise.resolve({ slug: 'demo-skill' }) });
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/markdown');
     expect(res.headers.get('content-disposition')).toBe('attachment; filename="demo-skill-SKILL.md"');
@@ -53,14 +53,14 @@ describe('GET /api/skills/[slug]', () => {
   });
 
   it('404s on a missing skill for both modes', async () => {
-    const plain = await GET(new Request('http://x/api/skills/nope'), { params: { slug: 'nope' } });
+    const plain = await GET(new Request('http://x/api/skills/nope'), { params: Promise.resolve({ slug: 'nope' }) });
     expect(plain.status).toBe(404);
-    const dl = await GET(new Request('http://x/api/skills/nope?download=1'), { params: { slug: 'nope' } });
+    const dl = await GET(new Request('http://x/api/skills/nope?download=1'), { params: Promise.resolve({ slug: 'nope' }) });
     expect(dl.status).toBe(404);
   });
 
   it('rejects path traversal slugs', async () => {
-    const res = await GET(new Request('http://x/api/skills/..%2F..'), { params: { slug: '../..' } });
+    const res = await GET(new Request('http://x/api/skills/..%2F..'), { params: Promise.resolve({ slug: '../..' }) });
     expect(res.status).toBe(404);
   });
 });

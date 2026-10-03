@@ -208,7 +208,7 @@ function WorkflowCard({
 }: {
   wf: Workflow;
   expanded: boolean;
-  cardRef?: RefObject<HTMLDivElement>;
+  cardRef?: RefObject<HTMLDivElement | null>;
   onOpen: () => void;
   onClose: () => void;
   onEdit: () => void;

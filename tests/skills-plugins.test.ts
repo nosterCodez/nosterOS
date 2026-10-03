@@ -101,7 +101,7 @@ describe('readSkillMarkdown with plugin slugs', () => {
 describe('GET /api/skills/[slug] with plugin slugs', () => {
   it('serves the plugin SKILL.md as JSON', async () => {
     const res = await GET(new Request('http://x/api/skills/myplugin:alpha'), {
-      params: { slug: 'myplugin:alpha' },
+      params: Promise.resolve({ slug: 'myplugin:alpha' }),
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as { markdown: string };
@@ -110,7 +110,7 @@ describe('GET /api/skills/[slug] with plugin slugs', () => {
 
   it('sanitizes the colon out of the download filename', async () => {
     const res = await GET(new Request('http://x/api/skills/myplugin:alpha?download=1'), {
-      params: { slug: 'myplugin:alpha' },
+      params: Promise.resolve({ slug: 'myplugin:alpha' }),
     });
     expect(res.status).toBe(200);
     expect(res.headers.get('content-disposition')).toBe('attachment; filename="myplugin-alpha-SKILL.md"');

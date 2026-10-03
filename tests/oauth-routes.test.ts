@@ -8,7 +8,7 @@ describe('GET /api/oauth/[provider]/start', () => {
   test('an unknown provider is a 404, not a redirect into nowhere', async () => {
     const mod = await import('@/app/api/oauth/[provider]/start/route');
     const res = await mod.GET(new Request('http://localhost/api/oauth/nope/start'), {
-      params: { provider: 'nope' },
+      params: Promise.resolve({ provider: 'nope' }),
     });
     expect(res.status).toBe(404);
   });
@@ -16,7 +16,7 @@ describe('GET /api/oauth/[provider]/start', () => {
   test('a known provider with no app registered explains itself instead of failing', async () => {
     const mod = await import('@/app/api/oauth/[provider]/start/route');
     const res = await mod.GET(new Request('http://localhost/api/oauth/github/start'), {
-      params: { provider: 'github' },
+      params: Promise.resolve({ provider: 'github' }),
     });
     // Either it redirects (credentials happen to be present) or it returns the
     // 400 that names the console URL and the exact redirect URI to register.

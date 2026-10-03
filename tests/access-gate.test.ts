@@ -47,9 +47,9 @@ describe('challenge page', () => {
 });
 
 describe('middleware wiring', () => {
-  const src = readFileSync(join(process.cwd(), 'middleware.ts'), 'utf8');
+  const src = readFileSync(join(process.cwd(), 'proxy.ts'), 'utf8');
 
-  test('middleware.ts exists and uses the pure gate', () => {
+  test('proxy.ts exists and uses the pure gate', () => {
     expect(src).toContain("from '@/lib/access-gate'");
     expect(src).toContain('FOUNDER_OS_ACCESS_TOKEN');
     // reads the cookie through the shared constant, not a re-typed literal

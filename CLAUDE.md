@@ -24,7 +24,7 @@ Node 22 is the supported runtime.
 
 ## Stack
 
-Next.js 14 App Router (server components) + TypeScript + Tailwind +
+Next.js 16 App Router (server components) + React 19 + TypeScript + Tailwind +
 better-sqlite3 (`data/founder-os.db`, WAL, auto-seeded on first touch) +
 Zod + Vitest.
 
