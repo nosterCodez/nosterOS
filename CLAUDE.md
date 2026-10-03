@@ -1,5 +1,8 @@
 # FOUNDER OS
 
+> nosterOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
+> spec handoff loop live in `AGENTS.md` and `docs/handoff/`. Read those first.
+
 Founder OS is a personal operating system for a one-person business: a web
 command center that runs a company as a set of AI-assisted departments. This
 file is the contributor guide for anyone (human or agent) working in the repo.
