@@ -35,6 +35,9 @@ describe('real Better Auth accounts and workspaces', () => {
   });
   test('invitation acceptance grants the invited role, not ownership', async () => {
     const invite = await auth.api.createInvitation({ headers: owner, body: { email: 'viewer@example.com', role: 'viewer', organizationId: workspaceId } });
+    const stored = db.prepare('SELECT typeof(expiresAt) AS storageType, expiresAt FROM invitation WHERE id=?').get(invite.id) as { storageType: string; expiresAt: string };
+    expect(stored.storageType).toBe('text');
+    expect(Date.parse(stored.expiresAt)).toBeGreaterThan(Date.now());
     viewer = await signIn('viewer@example.com');
     await auth.api.acceptInvitation({ headers: viewer, body: { invitationId: invite.id } });
     await auth.api.setActiveOrganization({ headers: viewer, body: { organizationId: workspaceId } });
