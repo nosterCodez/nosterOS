@@ -12,6 +12,12 @@
  * 'stream'") — a runtime guard is too late, because the import is traced at
  * build time. A fetch has no such problem.
  */
+import { GATE_COOKIE } from '@/lib/access-gate';
+
+export function internalRequestHeaders(token: string | undefined): Record<string, string> {
+  return token ? { Cookie: `${GATE_COOKIE}=${token}` } : {};
+}
+
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
   if (process.env.FOUNDER_OS_SKIP_WARMUP === '1') return;
@@ -20,8 +26,16 @@ export async function register() {
   // Fire and forget, after a beat so the server is actually listening.
   setTimeout(() => {
     const started = Date.now();
-    fetch(`http://127.0.0.1:${port}/api/analytics/refresh`, { method: 'POST' })
-      .then((r) => console.log(`[warmup] comms primed via refresh (${r.status}) in ${((Date.now() - started) / 1000).toFixed(1)}s`))
+    fetch(`http://127.0.0.1:${port}/api/analytics/refresh`, {
+      method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+    })
+      .then((r) => {
+        if (!r.ok) {
+          console.warn(`[warmup] priming failed: HTTP ${r.status}`);
+          return;
+        }
+        console.log(`[warmup] comms primed via refresh (${r.status}) in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+      })
       .catch((err) => console.warn('[warmup] priming failed:', err instanceof Error ? err.message : err));
   }, 4000).unref?.();
 
@@ -51,7 +65,13 @@ function startFailoverTick(port: string) {
 
   const tick = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/agents/failover`, { method: 'POST' });
+      const res = await fetch(`http://127.0.0.1:${port}/api/agents/failover`, {
+        method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+      });
+      if (!res.ok) {
+        console.warn(`[failover] tick failed: HTTP ${res.status}`);
+        return;
+      }
       const body = (await res.json()) as { actions?: unknown[]; exhausted?: string[]; notes?: string[] };
       // Quiet when there is nothing to do — this runs every few minutes forever.
       if (body.actions?.length) {
@@ -91,7 +111,13 @@ function startCronTick(port: string) {
 
   const tick = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/cron/tick`, { method: 'POST' });
+      const res = await fetch(`http://127.0.0.1:${port}/api/cron/tick`, {
+        method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+      });
+      if (!res.ok) {
+        console.warn(`[cron] tick failed: HTTP ${res.status}`);
+        return;
+      }
       const body = (await res.json()) as { ran?: { cronId: string; ok: boolean; summary: string }[] };
       // Silent when nothing is due — this runs every minute forever.
       for (const r of body.ran ?? []) {
