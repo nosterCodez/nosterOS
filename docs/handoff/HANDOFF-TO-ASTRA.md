@@ -120,8 +120,8 @@ progress.
 ## Decided by Noe (Oct 3)
 - **Legal business name:** nosterCodes. Use it on the privacy policy,
   terms, OAuth consent screens and Meta Business Verification.
-- **Web address:** `https://logistics.noepenaa.com`. The old nosterLogistics
-  slot is being repurposed for nosterOS: set `NOSTEROS_BASE_URL` to that,
+- **Web address:** `https://os.noepenaa.com` (latest decision confirmed in chat).
+  Set the deployed `NOSTEROS_BASE_URL` to that,
   use it for every OAuth redirect URI, and publish the privacy policy and
   terms there. nosterLogistics is treated as retired, so remove
   `nosterlogistics` from `lib/businesses.ts` in the next spec that touches
@@ -129,13 +129,12 @@ progress.
 - **Mailing address:** 2330 E Freddy Gonzalez Dr. PMB 502, Edinburg, TX
   78542.
 - Before pointing DNS at Railway, check what currently serves
-  logistics.noepenaa.com; that site goes offline when the record changes,
-  so confirm with Noe right before switching.
+  os.noepenaa.com and confirm with Noe right before switching. This decision
+  does not authorize changing DNS for logistics.noepenaa.com.
 
 ## Open items only Noe can close
-- Legal business name that operates nosterOS (Meta Business Verification
-  and Google app verification both need it).
-- The web address nosterOS will live at (for example `os.nostercodes.com`).
+- Business name and web address are decided above; platform verification
+  and deployment setup remain pending.
 - Business address for legal pages and verification, per Noe:
   **2330 E Freddy Gonzalez Dr. PMB 502, Edinburg, TX 78542**. Note it's a
   private mailbox; the legal pages should call it a mailing address, and
