@@ -1,6 +1,6 @@
 # 003b: Security fixes and build-warning cleanup
 
-Status: ready (after 003)
+Status: done - awaiting Claude review
 Review by Claude: yes (touches the mail-sending code)
 
 ## Goal
@@ -68,12 +68,15 @@ the repo, and the decisions are summarized here.
   (about 10 findings); paste the summary line.
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- Tracing warnings left:
-- `npm audit --omit=dev`:
-- Full `npm audit` summary:
-- @types/nodemailer kept or removed, and why:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+- Status: Implemented and verified on Node v24.18.0; ready for required Claude review, not deployed.
+- Commits: aa32abe (approved dependency upgrades), 62455e7 (tracing comments, persistent store path, tests); this report is committed separately.
+- Typecheck / tests / build: Typecheck PASS; default Turbopack build PASS. Full suite: 3479 passed / 4 failed, 314 passed / 7 failed files (321 total); only documented Windows baseline failures remain. Focused mail/guard/LLM/path tests: 42 passed; additional real Nodemailer dynamic-import/offline stream-transport test: 1 passed. No email was transmitted.
+- Tracing warnings left: None. Build log contains zero Dynamic filesystem access warnings; all twelve specified sites annotated without changing their runtime behavior. No webpack fallback.
+- `npm audit --omit=dev`: found 0 vulnerabilities.
+- Full `npm audit` summary: 10 vulnerabilities (3 moderate, 6 high, 1 critical). Remaining packages are @vitest/mocker, vite, vite-node, vitest, esbuild, braces, chokidar, fast-glob, micromatch, tailwindcss: only the deferred test/build chains approved in this spec.
+- @types/nodemailer kept or removed, and why: Removed. Nodemailer 10.0.13 ships dist/esm and dist/cjs declarations alongside exported modules; native type resolution and the existing sendEmailReply dynamic import both pass. lib/connectors/email.ts and lib/mail-guard.mjs behavior are unchanged.
+- Installed versions: nodemailer 10.0.13, imapflow 1.7.8, ai 6.0.300, axios 1.20.0, form-data 4.0.6, ip-address 10.7.3, browserslist 4.29.3, baseline-browser-mapping 2.11.27. Kept Vitest, Vite and Tailwind versions unchanged; no audit fix --force.
+- Lockfile transitive changes from the approved commands: @ai-sdk/gateway 3.0.209, @ai-sdk/provider 3.0.18, @ai-sdk/provider-utils 4.0.57, eventsource-parser 3.1.1, undici 6.29.0; mail chain @zone-eu/mailsplit 5.4.16, encoding-japanese 2.3.0, iconv-lite 0.7.3, libmime 5.4.3; browser metadata caniuse-lite 1.0.30001814, electron-to-chromium 1.5.444, node-releases 2.0.57, update-browserslist-db 1.3.3. No unrelated top-level dependency added.
+- What changed beyond the spec, and why: No feature changes. Added tests/foreplay-store-path.test.ts for DATA_DIR/override/local paths and tests/nodemailer-compat.test.ts to verify real MIME generation via an offline transport. saved.ts already uses storeDir(), so no duplicate path fix needed. Blueprint now describes the actual GitHub npm build/start process. Added final 003 commit IDs to its Report.
+- Runtime: dev server remains running at http://localhost:4100 (launcher PID 41128). /, /comms and /api/collectors all HTTP 200 after updates. No secret, real message, production deployment, or new service provisioned.
+- Questions or blockers for Claude: None. Please review the dependency/mail compatibility changes as specified; existing mail approval behavior and accepted test/build-only advisories remain unchanged.
