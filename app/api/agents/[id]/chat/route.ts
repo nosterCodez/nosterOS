@@ -8,14 +8,16 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs'; // better-sqlite3 is native — keep off the edge runtime
 
 /** Stored history for one agent's conversation — the /chats thread view. */
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (params.id !== 'conductor' && !realAgents.some((a) => a.id === params.id)) {
     return NextResponse.json({ error: `unknown agent: ${params.id}` }, { status: 404 });
   }
   return NextResponse.json({ messages: getDb().agentMessages.byAgent(params.id) });
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   let message = '';
   let screenContext: string | undefined;
   try {

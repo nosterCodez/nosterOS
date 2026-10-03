@@ -24,7 +24,8 @@ const PatchSchema = z
   })
   .partial();
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
@@ -39,7 +40,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   return NextResponse.json({ leadMagnet: updated });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const removed = getDb().leadMagnets.remove(params.id);
   if (!removed) return NextResponse.json({ error: 'lead magnet not found' }, { status: 404 });
   return NextResponse.json({ ok: true, id: params.id });

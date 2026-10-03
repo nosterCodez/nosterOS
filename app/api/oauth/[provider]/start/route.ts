@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic';
  * (localhost on the box, or the private network name). Registering both in the app's
  * console is what makes either work.
  */
-export async function GET(req: Request, { params }: { params: { provider: string } }) {
+export async function GET(req: Request, props: { params: Promise<{ provider: string }> }) {
+  const params = await props.params;
   const p = oauthProvider(params.provider);
   if (!p) return NextResponse.json({ ok: false, error: 'unknown provider' }, { status: 404 });
 

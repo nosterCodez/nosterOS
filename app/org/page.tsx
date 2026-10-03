@@ -74,7 +74,8 @@ function LiveChip({ agent }: { agent: PaperclipAgent }) {
   );
 }
 
-export default async function OrgChartPage({ searchParams }: { searchParams?: { venture?: string } }) {
+export default async function OrgChartPage(props: { searchParams?: Promise<{ venture?: string }> }) {
+  const searchParams = await props.searchParams;
   const db = getDb();
   const departments = db.departments.all();
   const agents = db.agents.all();

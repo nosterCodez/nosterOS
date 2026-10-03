@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
  *  step id from scratch (same `buildWorkflowSteps` the create route uses),
  *  so an edit that reorders or removes a step never leaves a stale branch
  *  pointer behind. */
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = getDb();
   const existing = db.workflows.get(params.id);
   if (!existing) return NextResponse.json({ error: `unknown workflow: ${params.id}` }, { status: 404 });
@@ -34,7 +35,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
 /** Deletes one workflow. The builder gates this behind an explicit confirm
  *  step client-side; the route itself just does the honest thing: 404 for
  *  an id that's already gone, 200 for a real delete. */
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const db = getDb();
   const existing = db.workflows.get(params.id);
   if (!existing) return NextResponse.json({ error: `unknown workflow: ${params.id}` }, { status: 404 });

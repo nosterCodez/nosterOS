@@ -291,11 +291,12 @@ function JourneyRow({
   );
 }
 
-export default async function FunnelPage({
-  searchParams,
-}: {
-  searchParams?: { venture?: string; view?: string; stage?: string; layout?: string; lead?: string };
-}) {
+export default async function FunnelPage(
+  props: {
+    searchParams?: Promise<{ venture?: string; view?: string; stage?: string; layout?: string; lead?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const parsed = FunnelVentureSchema.safeParse(searchParams?.venture);
   const venture = parsed.success ? parsed.data : undefined;
   const view = searchParams?.view === 'archive' ? 'archive' : 'live';

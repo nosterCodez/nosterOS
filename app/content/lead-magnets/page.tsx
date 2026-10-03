@@ -20,8 +20,10 @@ const WINDOW_WEEKS = 12;
  */
 // Props stay required in the signature (Next's PageProps check rejects an
 // optional parameter); the smoke test may still call it bare, hence `props?.`.
-export default function LeadMagnetsPage(props: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const searchParams = props?.searchParams;
+export default async function LeadMagnetsPage(
+  props: { searchParams?: Promise<Record<string, string | string[] | undefined>> }
+) {
+  const searchParams = (await props?.searchParams);
   const all = getDb().leadMagnets.all();
   const active = leadMagnetFilter(searchParams?.status);
   const rows = filterLeadMagnets(all, active);

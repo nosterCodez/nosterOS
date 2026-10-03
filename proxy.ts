@@ -6,7 +6,7 @@ import { challengePage, gateDecision, GATE_COOKIE } from '@/lib/access-gate';
  * (production deployments on public URLs); unset keeps dev and the demo
  * completely open. See lib/access-gate.ts for the decision logic + tests.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const decision = gateDecision({
     token: process.env.FOUNDER_OS_ACCESS_TOKEN,
     cookie: req.cookies.get(GATE_COOKIE)?.value ?? null,
