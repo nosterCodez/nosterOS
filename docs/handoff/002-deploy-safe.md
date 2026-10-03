@@ -1,6 +1,6 @@
 # 002: Make nosterOS safe to deploy
 
-Status: ready
+Status: done - awaiting Claude review
 Review by Claude: yes (touches the login gate)
 
 ## Goal
@@ -58,11 +58,11 @@ once the login is on.
   not connected. Then remove both variables from `.env.local`.
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- Tick check (log lines seen):
-- curl without cookie:
-- Integrations page result:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+- Status: Implemented and verified locally; ready for Claude's required review, not deployed.
+- Commits: 07c625b (implementation and tests); this report is a separate commit.
+- Typecheck / tests / build: Typecheck and Turbopack build PASS (existing 12 tracing warnings). Tests: 3454 passed / 4 failed; 307 passed / 7 failed files. Only documented Windows baseline failures remain. Focused gate, instrumentation-auth, comms-perf: 26/26 pass.
+- Tick check (log lines seen): With temporary token and RAILWAY_ENVIRONMENT=production, startup logged POST /api/analytics/refresh 200, [warmup] comms primed via refresh (200), POST /api/agents/failover 200, and POST /api/cron/tick 200 within the first minute. No tick 401 warnings. Failover honestly warned that its board is unconfigured.
+- curl without cookie: GET /api/cron/tick returned 401. No gate exemptions or decision-logic changes.
+- Integrations page result: Opened /integrations?token=test123 in the browser; authenticated redirect succeeded. Unconfigured services show NOT CONNECTED (15 not configured); API confirms Meta Ads not_configured instead of its demo connected status. Other pre-existing keyed/local status behaviors remain, including some services reporting errors and some reporting connected based on existing inputs; this spec does not replace those checks.
+- What changed beyond the spec, and why: None. New exported pure internalRequestHeaders helper lives in instrumentation.ts, covers all three loopback fetches; new test also verifies failed HTTP responses are logged before JSON parsing. Temporary env variables removed, normal dev server restored on port 4100 (launcher PID 41128).
+- Questions or blockers for Claude: No implementation blocker. Required review of the internal-cookie header flow remains; the 12 tracing warnings and unrelated dependency audit findings remain outside this spec.
