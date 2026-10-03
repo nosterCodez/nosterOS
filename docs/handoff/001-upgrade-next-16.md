@@ -1,6 +1,6 @@
 # 001: Upgrade to Next.js 16 and React 19
 
-Status: ready
+Status: blocked - Claude review needed for obsolete test assertion
 Review by Claude: yes (touches the login gate)
 
 ## Goal
@@ -67,11 +67,15 @@ land before the app goes on a public URL.
   the terminal.
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- npm audit (next):
-- Gate checks (three curl results):
-- Other dependencies bumped:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+- Status: Upgrade implemented and runtime verified locally on Node v24.18.0; not complete because an assertion change requires Claude approval under AGENTS.md.
+- Commits: 3ac7046 (agreement/spec, already pushed before upgrade); 6f87588 (Next 16.3.8 / React 19 dependencies); 82449e1 (async request API and middleware-to-proxy codemods); b81f4a7 (configuration, React ref typing, promised test fixtures, generated framework config). This report is committed separately.
+- Typecheck: PASS, including a repeat after Next generated its updated TypeScript configuration.
+- Tests: 3449 passed / 5 failed (3454); 305 passed / 8 failed files (313). Four failed tests and three cleanup failures match the Windows baseline: interaction-layer, paths, skills-plugins, superset-dispatch, lead-magnet-actions, lead-magnets-route, roadmap-mock-5h. API and seed passed this run.
+- New test failure: tests/comms-perf.test.ts:95 requires /instrumentationHook: true/ in next.config.mjs. This spec explicitly removes that obsolete Next 14 flag; instrumentation is stable in Next 16. Assertion was NOT changed or bypassed. Implementation stopped here; remaining work only collected validation evidence and restored the requested dev server.
+- Build: PASS using default Turbopack, with 12 dynamic-filesystem/project-tracing warnings. No webpack fallback. Review these warnings before public deployment because tracing can include the whole project in server output.
+- npm audit (next): No next advisories. Entire dependency tree still has 20 other vulnerabilities (3 low, 4 moderate, 12 high, 1 critical); unrelated dependencies were not upgraded.
+- Gate checks (three curl results): GET / => 401 with challenge HTML; GET /?token=test123 => 307 to / with founder_os_access cookie (HttpOnly, SameSite=lax, Path=/); GET / with x-middleware-subrequest: middleware => 401. Temporary FOUNDER_OS_ACCESS_TOKEN was removed from .env.local afterward. lib/access-gate.ts is unchanged.
+- Dev verification: /, /funnel, /agents, /comms all HTTP 200; stderr empty and no terminal errors. Normal boot warmup returned 200. Background npm run dev remains running at http://localhost:4100, launcher PID 11456; stop with taskkill /PID 11456 /T /F. Logs: %TEMP%/nosteros-dev.stdout.log and nosteros-dev.stderr.log.
+- Other dependencies bumped: None beyond requested next, react, react-dom, @types/react, @types/react-dom and their lockfile dependency changes. Used individual next-async-request-api and middleware-to-proxy codemods instead of upgrade latest to retain the exact requested Next version.
+- What changed beyond the spec, and why: Next automatically changed tsconfig.json to react-jsx and added .next/dev/types; next dev appended its version-matched documentation block to AGENTS.md. Kept those framework-generated updates. Route fixtures now use Promise.resolve and WorkflowTree's ref permits null for React 19; no test assertions, features, UI, seed data, or gate logic changed.
+- Questions or blockers for Claude: Approve a replacement for the obsolete comms-perf instrumentationHook assertion that verifies stable instrumentation behavior on Next 16. Then rerun tests and complete review of proxy.ts before considering this ready for a public URL.
