@@ -17,7 +17,7 @@ export type AdpilotFile = { campaigns: Campaign[]; syncedAt: string | null };
 
 export function readAdpilotFile(): AdpilotFile {
   try {
-    const raw = JSON.parse(fs.readFileSync(adpilotDataPath(), 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ adpilotDataPath(), 'utf8'));
     const parsed = FileSchema.parse(raw);
     return { campaigns: parsed.campaigns, syncedAt: parsed.syncedAt ?? null };
   } catch {

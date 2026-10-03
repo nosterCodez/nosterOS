@@ -56,7 +56,7 @@ function tokenFilePath(): string {
 
 function readTokenFile(): TokenSet | null {
   try {
-    const raw = JSON.parse(fs.readFileSync(tokenFilePath(), 'utf8')) as Partial<TokenSet>;
+    const raw = JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ tokenFilePath(), 'utf8')) as Partial<TokenSet>;
     if (typeof raw.refresh_token !== 'string' || !raw.refresh_token) return null;
     return {
       access_token: typeof raw.access_token === 'string' ? raw.access_token : '',

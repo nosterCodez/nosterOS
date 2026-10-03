@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { dataDir } from '@/lib/paths';
 import type { AnalyticsDay, ForeplayAd, ForeplayUsage, SpyderBrand } from '@/lib/foreplay/client';
 import type { Signal } from '@/lib/foreplay/signals';
 
@@ -12,16 +13,16 @@ import type { Signal } from '@/lib/foreplay/signals';
  */
 
 export function storeDir(): string {
-  return process.env.ADSCOUT_STORE_DIR ?? path.join(process.cwd(), 'data', 'ad-intel');
+  return process.env.ADSCOUT_STORE_DIR ?? path.join(dataDir(), 'ad-intel');
 }
 
 function fileFor(name: string): string {
-  return path.join(storeDir(), name);
+  return path.join(/*turbopackIgnore: true*/ storeDir(), name);
 }
 
 function readJson<T>(name: string, fallback: T): T {
   try {
-    return JSON.parse(fs.readFileSync(fileFor(name), 'utf8')) as T;
+    return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ fileFor(name), 'utf8')) as T;
   } catch {
     return fallback;
   }

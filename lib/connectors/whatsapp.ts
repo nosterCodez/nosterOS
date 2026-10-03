@@ -146,7 +146,7 @@ export async function whatsappStatus(): Promise<ConnectorStatus> {
   } else {
     const read = await boundedRead(dbPath, 'status');
     if (read.ok) {
-      const minutesAgo = Math.max(0, Math.round((now - fs.statSync(dbPath).mtime.getTime()) / 60_000));
+      const minutesAgo = Math.max(0, Math.round((now - fs.statSync(/*turbopackIgnore: true*/ dbPath).mtime.getTime()) / 60_000));
       status = {
         ...base,
         state: 'connected',

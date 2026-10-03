@@ -69,7 +69,7 @@ export function readVaultNotes(vaultPath: string = VAULT): { path: string; conte
 
 export async function obsidianStatus(): Promise<ConnectorStatus> {
   if (GATED) return gatedConnected('obsidian', 'Obsidian', 'knowledge', '800+ notes indexed');
-  if (!fs.existsSync(VAULT)) {
+  if (!fs.existsSync(/*turbopackIgnore: true*/ VAULT)) {
     return {
       id: 'obsidian',
       name: 'Obsidian Vault',
@@ -81,7 +81,7 @@ export async function obsidianStatus(): Promise<ConnectorStatus> {
   try {
     // Documents/ is TCC-protected: reading throws EPERM unless the process
     // (Terminal/launchd job) has Files & Folders access — surface that honestly.
-    fs.readdirSync(VAULT);
+    fs.readdirSync(/*turbopackIgnore: true*/ VAULT);
   } catch {
     return {
       id: 'obsidian',

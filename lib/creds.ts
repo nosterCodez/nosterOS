@@ -84,7 +84,7 @@ export function upsertEnvLocal(values: Record<string, string>): void {
   const file = envLocalPath();
   let raw = '';
   try {
-    raw = fs.readFileSync(file, 'utf8');
+    raw = fs.readFileSync(/*turbopackIgnore: true*/ file, 'utf8');
   } catch {
     raw = '';
   }
@@ -109,7 +109,7 @@ export function removeEnvLocal(keys: string[]): void {
   const file = envLocalPath();
   let raw = '';
   try {
-    raw = fs.readFileSync(file, 'utf8');
+    raw = fs.readFileSync(/*turbopackIgnore: true*/ file, 'utf8');
   } catch {
     return;
   }

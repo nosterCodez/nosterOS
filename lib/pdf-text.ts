@@ -14,7 +14,7 @@ export function pdfToText(buf: Buffer): Promise<string> {
     const tryRun = (i: number) => {
       if (i >= candidates.length) return reject(new Error('pdftotext not installed (brew install poppler)'));
       const child = execFile(
-        candidates[i],
+        /*turbopackIgnore: true*/ candidates[i],
         ['-layout', '-', '-'],
         { maxBuffer: 25 * 1024 * 1024, encoding: 'utf8' },
         (err, stdout) => {

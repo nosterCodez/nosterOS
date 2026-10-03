@@ -31,7 +31,7 @@ const OPERATOR_NAME = process.env.FOUNDER_OPERATOR_NAME?.trim() || 'the operator
  *  live outside this repo's registries. Keep tiny and factual. */
 const HOSTS: BlueprintNode[] = [
   { id: 'host-workstation', kind: 'host', name: 'Workstation', layer: 4, status: 'live', blurb: 'Where the OS is built and operated; the dev server and the local CLIs run here.', facts: {}, icon: 'laptop' },
-  { id: 'host-railway', kind: 'host', name: 'Railway', layer: 4, status: 'configured', blurb: 'The production service (Dockerfile from GitHub) with a persistent volume at DATA_DIR. Reachability is not probed at compile time.', facts: { platform: 'Railway' }, icon: 'server' },
+  { id: 'host-railway', kind: 'host', name: 'Railway', layer: 4, status: 'configured', blurb: 'The production service (built from GitHub with npm run build / npm start) with a persistent volume at DATA_DIR. Reachability is not probed at compile time.', facts: { platform: 'Railway' }, icon: 'server' },
 ];
 
 const STORES: BlueprintNode[] = [

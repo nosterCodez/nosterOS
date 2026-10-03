@@ -24,5 +24,5 @@ export function resolveDbPath(
   override?: string,
   env: Record<string, string | undefined> = process.env,
 ): string {
-  return override ?? path.join(dataDir(env), filename);
+  return override ?? path.join(/*turbopackIgnore: true*/ dataDir(env), filename);
 }

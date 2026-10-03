@@ -19,7 +19,7 @@ type ZernioConfig = {
 
 function readConfig(): ZernioConfig {
   try {
-    return JSON.parse(fs.readFileSync(configPath(), 'utf8'));
+    return JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ configPath(), 'utf8'));
   } catch {
     return {};
   }
