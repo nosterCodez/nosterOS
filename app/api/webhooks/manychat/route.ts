@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { parseManyChatWebhook } from '@/lib/connectors/manychat-webhook';
@@ -15,6 +16,9 @@ export const dynamic = 'force-dynamic';
  * `x-manychat-secret` header (add it in the ManyChat External Request headers).
  */
 export async function POST(request: Request): Promise<Response> {
+  const authError = await apiSessionError('/api/webhooks/manychat', 'POST', request);
+  if (authError) return authError;
+
   const secret = process.env.MANYCHAT_WEBHOOK_SECRET;
   if (secret && request.headers.get('x-manychat-secret') !== secret) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -32,6 +36,9 @@ export async function POST(request: Request): Promise<Response> {
 
 /** Lightweight health check: how many DMs are stored. */
 export async function GET(): Promise<Response> {
+  const authError = await apiSessionError('/api/webhooks/manychat', 'GET');
+  if (authError) return authError;
+
   const secret = process.env.MANYCHAT_WEBHOOK_SECRET;
   return NextResponse.json({
     ok: true,

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -7,10 +8,16 @@ import { ContactTagSchema } from '@/lib/schemas';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const authError = await apiSessionError('/api/contacts/tags', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ tiers: CONTACT_TIERS, tags: getDb().contactTags.all() });
 }
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/contacts/tags', 'POST', request);
+  if (authError) return authError;
+
   const parsed = ContactTagSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -22,6 +29,9 @@ export async function POST(request: Request) {
 const RemoveSchema = z.object({ person: z.string().min(1), channel: z.string().min(1) });
 
 export async function DELETE(request: Request) {
+  const authError = await apiSessionError('/api/contacts/tags', 'DELETE', request);
+  if (authError) return authError;
+
   const parsed = RemoveSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

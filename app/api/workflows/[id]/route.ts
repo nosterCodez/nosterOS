@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { WorkflowSchema, type Workflow } from '@/lib/schemas';
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic';
  *  so an edit that reorders or removes a step never leaves a stale branch
  *  pointer behind. */
 export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/workflows/[id]', 'PATCH', request);
+  if (authError) return authError;
+
   const params = await props.params;
   const db = getDb();
   const existing = db.workflows.get(params.id);
@@ -36,6 +40,9 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
  *  step client-side; the route itself just does the honest thing: 404 for
  *  an id that's already gone, 200 for a real delete. */
 export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/workflows/[id]', 'DELETE', _request);
+  if (authError) return authError;
+
   const params = await props.params;
   const db = getDb();
   const existing = db.workflows.get(params.id);

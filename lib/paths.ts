@@ -14,6 +14,10 @@ export function dataDir(env: Record<string, string | undefined> = process.env): 
   return path.join(process.cwd(), 'data');
 }
 
+export function controlDbPath(env: Record<string, string | undefined> = process.env): string {
+  return resolveDbPath('control.db', undefined, env);
+}
+
 /**
  * Resolve a concrete DB file path. A file-specific override (FOUNDER_OS_DB /
  * LEDGER_DB / BANK_DB, or ':memory:' in tests) always wins; otherwise the file

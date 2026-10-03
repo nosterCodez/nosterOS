@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { authorizeUrl, oauthProvider, redirectUri } from '@/lib/oauth/providers';
 import { stateSecret } from '@/lib/oauth/store';
@@ -17,6 +18,9 @@ export const dynamic = 'force-dynamic';
  * console is what makes either work.
  */
 export async function GET(req: Request, props: { params: Promise<{ provider: string }> }) {
+  const authError = await apiSessionError('/api/oauth/[provider]/start', 'GET', req);
+  if (authError) return authError;
+
   const params = await props.params;
   const p = oauthProvider(params.provider);
   if (!p) return NextResponse.json({ ok: false, error: 'unknown provider' }, { status: 404 });

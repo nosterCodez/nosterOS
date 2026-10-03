@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { TradeAnalysisSchema } from '@/lib/schemas';
@@ -7,6 +8,9 @@ export const dynamic = 'force-dynamic';
 /** Agent-fed ingest: one run's reasoning — what it examined and why it did or
  *  did not trade (behind the application auth boundary). Idempotent on `id`. */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/trading/analysis', 'POST', req);
+  if (authError) return authError;
+
   let body: unknown;
   try {
     body = await req.json();

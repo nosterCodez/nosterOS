@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { createForeplayClient } from '@/lib/foreplay/client';
 import { runSyncCycle } from '@/lib/foreplay/sync';
@@ -7,6 +8,9 @@ export const runtime = 'nodejs';
 
 /** One real sync cycle over the local watchlist: the Sync now button. */
 export async function POST() {
+  const authError = await apiSessionError('/api/adscout/sync', 'POST');
+  if (authError) return authError;
+
   const client = createForeplayClient();
   if (!client) {
     return NextResponse.json(

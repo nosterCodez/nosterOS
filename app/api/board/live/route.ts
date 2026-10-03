@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents, paperclipIssues, paperclipRuns } from '@/lib/connectors/paperclip';
 import { getDb } from '@/lib/data';
@@ -12,6 +13,9 @@ export const dynamic = 'force-dynamic';
  * `connected: false` with empty lists, still a 200, never fake data.
  */
 export async function GET() {
+  const authError = await apiSessionError('/api/board/live', 'GET');
+  if (authError) return authError;
+
   const [agents, issues, runs] = await Promise.all([
     paperclipAgents(),
     // Must match the depth /agents renders with: this route overwrites that

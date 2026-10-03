@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { READ_RETENTION_DAYS } from '@/lib/comms-digest';
 import { z } from 'zod';
@@ -10,11 +11,17 @@ const Body = z.object({ key: z.string().min(1).max(400) });
 
 /** GET: which report entries the operator has already cleared. */
 export async function GET() {
+  const authError = await apiSessionError('/api/comms/digest/read', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ keys: getDb().digestReads.keys() });
 }
 
 /** POST: mark one message read. DELETE: put it back (the undo). */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/comms/digest/read', 'POST', req);
+  if (authError) return authError;
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'key required' }, { status: 400 });
   const db = getDb();
@@ -27,6 +34,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const authError = await apiSessionError('/api/comms/digest/read', 'DELETE', req);
+  if (authError) return authError;
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'key required' }, { status: 400 });
   getDb().digestReads.unmark(parsed.data.key);

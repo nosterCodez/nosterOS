@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -18,6 +19,9 @@ const ReplySchema = z.object({
  * a reply that didn't actually go out.
  */
 export async function POST(request: Request): Promise<Response> {
+  const authError = await apiSessionError('/api/social/dm/reply', 'POST', request);
+  if (authError) return authError;
+
   const parsed = ReplySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.flatten() }, { status: 400 });

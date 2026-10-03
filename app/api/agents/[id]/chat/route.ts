@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { realAgents } from '@/lib/agents/real';
@@ -9,6 +10,9 @@ export const runtime = 'nodejs'; // better-sqlite3 is native — keep off the ed
 
 /** Stored history for one agent's conversation — the /chats thread view. */
 export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/agents/[id]/chat', 'GET', _req);
+  if (authError) return authError;
+
   const params = await props.params;
   if (params.id !== 'conductor' && !realAgents.some((a) => a.id === params.id)) {
     return NextResponse.json({ error: `unknown agent: ${params.id}` }, { status: 404 });
@@ -17,6 +21,9 @@ export async function GET(_req: Request, props: { params: Promise<{ id: string }
 }
 
 export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/agents/[id]/chat', 'POST', req);
+  if (authError) return authError;
+
   const params = await props.params;
   let message = '';
   let screenContext: string | undefined;

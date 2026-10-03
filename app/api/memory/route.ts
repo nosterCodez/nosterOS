@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBrainProvider } from '@/lib/brain';
@@ -44,6 +45,9 @@ function provider() {
 }
 
 export async function GET(req: Request) {
+  const authError = await apiSessionError('/api/memory', 'GET', req);
+  if (authError) return authError;
+
   if (!authorized(req)) return unauthorized();
 
   const params = new URL(req.url).searchParams;
@@ -70,6 +74,9 @@ const RememberSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/memory', 'POST', req);
+  if (authError) return authError;
+
   if (!authorized(req)) return unauthorized();
 
   let body: unknown;

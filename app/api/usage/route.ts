@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { scanClaudeProjects, defaultProjectsDir, seatId } from '@/lib/connectors/claude-usage';
@@ -16,6 +17,9 @@ export const dynamic = 'force-dynamic';
  * incremental so the poll costs the appended bytes, not the archive.
  */
 export async function GET() {
+  const authError = await apiSessionError('/api/usage', 'GET');
+  if (authError) return authError;
+
   const now = new Date();
   // Public demo never scans the host's private model transcripts or services.
   if (isGated()) return NextResponse.json({

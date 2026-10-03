@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -8,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 /** Tasks + cron jobs for one agent (or all agents when no id given). */
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/agents/work', 'GET', request);
+  if (authError) return authError;
+
   const agentId = new URL(request.url).searchParams.get('agentId');
   const db = getDb();
   return NextResponse.json({
@@ -27,6 +31,9 @@ const CreateSchema = z.discriminatedUnion('kind', [
 ]);
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/agents/work', 'POST', request);
+  if (authError) return authError;
+
   const parsed = CreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const db = getDb();
@@ -52,6 +59,9 @@ const PatchSchema = z.discriminatedUnion('kind', [
 ]);
 
 export async function PATCH(request: Request) {
+  const authError = await apiSessionError('/api/agents/work', 'PATCH', request);
+  if (authError) return authError;
+
   const parsed = PatchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const db = getDb();
@@ -63,6 +73,9 @@ export async function PATCH(request: Request) {
 const DeleteSchema = z.object({ kind: z.enum(['task', 'cron']), id: z.string().min(1) });
 
 export async function DELETE(request: Request) {
+  const authError = await apiSessionError('/api/agents/work', 'DELETE', request);
+  if (authError) return authError;
+
   const parsed = DeleteSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const db = getDb();

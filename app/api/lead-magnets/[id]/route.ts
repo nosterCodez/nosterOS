@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -25,6 +26,9 @@ const PatchSchema = z
   .partial();
 
 export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/lead-magnets/[id]', 'PATCH', req);
+  if (authError) return authError;
+
   const params = await props.params;
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -41,6 +45,9 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
 }
 
 export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const authError = await apiSessionError('/api/lead-magnets/[id]', 'DELETE', _req);
+  if (authError) return authError;
+
   const params = await props.params;
   const removed = getDb().leadMagnets.remove(params.id);
   if (!removed) return NextResponse.json({ error: 'lead magnet not found' }, { status: 404 });

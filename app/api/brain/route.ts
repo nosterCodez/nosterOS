@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getBrainProvider } from '@/lib/brain';
 import { retrieveBrain } from '@/lib/brain-retrieval';
@@ -13,6 +14,9 @@ export const dynamic = 'force-dynamic';
 // Next requires the first param type be exactly `Request | NextRequest` — an
 // optional/defaulted param widens it to `Request | undefined` and fails the build.
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/brain', 'GET', request);
+  if (authError) return authError;
+
   const provider = getBrainProvider();
   const q = new URL(request.url).searchParams.get('q')?.trim();
   if (q) {

@@ -1,7 +1,14 @@
-import { beforeAll, describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test, vi } from 'vitest';
 import { mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+
+vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
+vi.mock('@/lib/session', () => ({ requireSession: async () => ({ user: { id: 'smoke' }, session: { activeOrganizationId: 'smoke-workspace' } }) }));
+vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: {
+  getActiveMember: async () => ({ role: 'owner' }),
+  getFullOrganization: async () => ({ members: [], invitations: [] }),
+} }) }));
 
 // Pages read the DB path at first access, so point it at a fresh seeded temp DB
 // before any page module is imported. FUNNEL_PROVIDER keeps /funnel off the
@@ -21,6 +28,10 @@ type PageEntry = {
 
 // Every app/**/page.tsx, with the props each needs to be invoked.
 const PAGES: PageEntry[] = [
+  { file: 'sign-in/page.tsx', load: () => import('@/app/sign-in/page'), props: { searchParams: Promise.resolve({}) } },
+  { file: 'onboarding/page.tsx', load: () => import('@/app/onboarding/page') },
+  { file: 'accept-invitation/page.tsx', load: () => import('@/app/accept-invitation/page'), props: { searchParams: Promise.resolve({ id: 'smoke-invite' }) } },
+  { file: 'settings/members/page.tsx', load: () => import('@/app/settings/members/page') },
   { file: 'page.tsx', load: () => import('@/app/page') },
   { file: 'comms/page.tsx', load: () => import('@/app/comms/page') },
   { file: 'social/page.tsx', load: () => import('@/app/social/page') },

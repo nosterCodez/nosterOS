@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { syncFromZernioConfig } from '@/lib/social';
@@ -19,6 +20,9 @@ export const dynamic = 'force-dynamic';
  * snapshots the values that exist, skips honest-pending nulls.
  */
 export async function POST() {
+  const authError = await apiSessionError('/api/analytics/refresh', 'POST');
+  if (authError) return authError;
+
   const db = getDb();
   try {
     syncFromZernioConfig(db);

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { syncFromZernioLive } from '@/lib/social-live';
@@ -21,9 +22,15 @@ async function runSync() {
 }
 
 export async function POST() {
+  const authError = await apiSessionError('/api/social/sync', 'POST');
+  if (authError) return authError;
+
   return runSync();
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/social/sync', 'GET');
+  if (authError) return authError;
+
   return runSync();
 }

@@ -5,6 +5,7 @@ import { Bot, Search } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { OsMark } from '@/components/OsMark';
 import { CONDUCTOR_OPEN_EVENT } from '@/components/ConductorPanel';
+import { WorkspaceSwitcher } from '@/components/WorkspaceSwitcher';
 
 const SEGMENT_LABELS: Record<string, string> = {
   '': 'home',
@@ -36,6 +37,7 @@ export function Topbar() {
         <span className="text-os-text">{here}</span>
       </div>
       <div className="ml-auto flex items-center gap-2.5">
+        <WorkspaceSwitcher />
         <ThemeToggle />
         <button
           onClick={openPalette}

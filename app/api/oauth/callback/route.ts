@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { oauthProvider, tokenRequestBody } from '@/lib/oauth/providers';
 import { accessTokenOf, saveTokens, stateSecret, type TokenResponse } from '@/lib/oauth/store';
@@ -8,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 /** One callback for every provider; `state` says which one it was. */
 export async function GET(req: Request) {
+  const authError = await apiSessionError('/api/oauth/callback', 'GET', req);
+  if (authError) return authError;
+
   const url = new URL(req.url);
   const back = (msg: string, ok = false) =>
     NextResponse.redirect(`${url.origin}/integrations?oauth=${ok ? 'ok' : 'error'}&msg=${encodeURIComponent(msg)}`, 302);

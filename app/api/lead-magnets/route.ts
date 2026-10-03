@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -38,10 +39,16 @@ function slugify(name: string): string {
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/lead-magnets', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ leadMagnets: getDb().leadMagnets.all() });
 }
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/lead-magnets', 'POST', req);
+  if (authError) return authError;
+
   const parsed = CreateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

@@ -36,7 +36,7 @@ describe('every top-level route has an instant loading state', () => {
         'adpilot', 'agents', 'analytics', 'blueprint', 'brain', 'brand-deals', 'chats', 'comms', 'content',
         'doctor', 'finances', 'funnel', 'integrations', 'org', 'personas',
         'reference', 'roadmap', 'skills', 'social', 'tasks', 'trading', 'usage',
-        'workflows',
+        'workflows', 'sign-in', 'onboarding', 'accept-invitation',
       ].sort(),
     );
   });

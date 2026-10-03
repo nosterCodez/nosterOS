@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { planFailover } from '@/lib/agent-failover';
 import {
@@ -45,11 +46,17 @@ async function currentPlan() {
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/agents/failover', 'GET');
+  if (authError) return authError;
+
   const { agents, plan } = await currentPlan();
   return NextResponse.json({ ok: true, applied: false, inspected: agents.length, ...plan });
 }
 
 export async function POST() {
+  const authError = await apiSessionError('/api/agents/failover', 'POST');
+  if (authError) return authError;
+
   const { agents, plan } = await currentPlan();
   const status = new Map(agents.map((a) => [a.id, a.status]));
   const applied: {

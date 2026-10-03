@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipCockpitThread, postCockpitMessage } from '@/lib/connectors/paperclip';
 
@@ -9,10 +10,16 @@ export const dynamic = 'force-dynamic';
  * Async by nature: POST wakes the Conductor; GET polls the thread for replies.
  */
 export async function GET() {
+  const authError = await apiSessionError('/api/conductor/chat', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ messages: await paperclipCockpitThread(50) });
 }
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/conductor/chat', 'POST', req);
+  if (authError) return authError;
+
   let body: { message?: string };
   try {
     body = (await req.json()) as typeof body;

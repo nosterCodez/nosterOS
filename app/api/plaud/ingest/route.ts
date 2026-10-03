@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { ingestPlaudNow } from '@/lib/plaud-ingest';
@@ -11,11 +12,17 @@ export const runtime = 'nodejs';
  * cron run). Pure code, no LLM: Plaud's transcript + AI note are filed as-is.
  */
 export async function GET() {
+  const authError = await apiSessionError('/api/plaud/ingest', 'GET');
+  if (authError) return authError;
+
   const rows = getDb().plaudIngests.all();
   return NextResponse.json({ ingested: rows.length, rows }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST() {
+  const authError = await apiSessionError('/api/plaud/ingest', 'POST');
+  if (authError) return authError;
+
   const result = await ingestPlaudNow(getDb());
   return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
 }

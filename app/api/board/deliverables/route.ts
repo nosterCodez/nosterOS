@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
@@ -31,6 +32,9 @@ export const dynamic = 'force-dynamic';
  * (logic + guard live in lib/board-deliverables).
  */
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/board/deliverables', 'GET', request);
+  if (authError) return authError;
+
   const url = new URL(request.url);
   const file = url.searchParams.get('file');
 

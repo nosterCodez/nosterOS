@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { fetchEmailThread } from '@/lib/connectors/email';
@@ -15,6 +16,9 @@ const ThreadQuerySchema = z
   .refine((value) => value.threadId || value.messageId || value.uid, 'a threadId, messageId, or uid is required');
 
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/comms/email/thread', 'GET', request);
+  if (authError) return authError;
+
   const url = new URL(request.url);
   const parsed = ThreadQuerySchema.safeParse(Object.fromEntries(url.searchParams));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

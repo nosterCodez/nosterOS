@@ -11,16 +11,18 @@ afterEach(() => {
 });
 
 describe('internal request authentication', () => {
-  test('only supplies a cookie when a token is configured', () => {
-    expect(internalRequestHeaders('test123')).toEqual({ Cookie: `${GATE_COOKIE}=test123` });
-    expect(internalRequestHeaders(undefined)).toEqual({});
-    expect(internalRequestHeaders('')).toEqual({});
+  test('supplies the internal header and optional outer-gate cookie', () => {
+    expect(internalRequestHeaders('test123', 'outer')).toEqual({ 'x-nosteros-internal': 'test123', Cookie: `${GATE_COOKIE}=outer` });
+    expect(internalRequestHeaders('test123', '')).toEqual({ 'x-nosteros-internal': 'test123' });
+    expect(internalRequestHeaders(undefined, '')).toEqual({});
+    expect(internalRequestHeaders('', '')).toEqual({});
   });
 
   test('every internal fetch is authenticated and failed ticks warn before parsing', async () => {
     vi.useFakeTimers();
     vi.stubEnv('NEXT_RUNTIME', 'nodejs');
     vi.stubEnv('FOUNDER_OS_ACCESS_TOKEN', 'test123');
+    vi.stubEnv('NOSTEROS_INTERNAL_SECRET', 'internal123');
     vi.stubEnv('FOUNDER_OS_SKIP_WARMUP', '0');
     vi.stubEnv('FOUNDER_OS_DISABLE_FAILOVER', '0');
     vi.stubEnv('FOUNDER_OS_DISABLE_CRON', '0');
@@ -32,7 +34,7 @@ describe('internal request authentication', () => {
     await vi.advanceTimersByTimeAsync(30_000);
     expect(fetcher).toHaveBeenCalledTimes(3);
     for (const [, options] of fetcher.mock.calls) {
-      expect(options.headers).toEqual({ Cookie: `${GATE_COOKIE}=test123` });
+      expect(options.headers).toEqual({ 'x-nosteros-internal': 'internal123', Cookie: `${GATE_COOKIE}=test123` });
     }
     expect(json).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith('[cron] tick failed: HTTP 401');

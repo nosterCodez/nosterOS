@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { parseStatementCsv, parseCardStatementText, categorize, type LedgerRow } from '@/lib/statements';
 import { normalizeCardId, type CardId } from '@/lib/cards';
@@ -26,6 +27,9 @@ function parseAny(text: string) {
  * is idempotent, so re-uploading a statement inserts nothing new.
  */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/finances/statements', 'POST', req);
+  if (authError) return authError;
+
   const ctype = req.headers.get('content-type') ?? '';
   const queryCard = new URL(req.url).searchParams.get('card');
   let card: CardId = normalizeCardId(queryCard);

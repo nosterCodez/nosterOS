@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { ingestBrainDump } from '@/lib/brain-dump';
@@ -13,6 +14,9 @@ const DumpSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/brain/dump', 'POST', request);
+  if (authError) return authError;
+
   const parsed = DumpSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -9,6 +10,9 @@ export const dynamic = 'force-dynamic';
 
 /** The post queue, newest first. */
 export async function GET() {
+  const authError = await apiSessionError('/api/social/posts', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ posts: getDb().socialPosts.all() });
 }
 
@@ -28,6 +32,9 @@ const CreateSchema = z.object({
  * under NODE_ENV=test so the suite never hits the live API.
  */
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/social/posts', 'POST', request);
+  if (authError) return authError;
+
   const parsed = CreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 

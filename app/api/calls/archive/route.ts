@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { archiveStatus, getArchiveJob, startArchiveJob, type ArchiveSource } from '@/lib/call-archive';
@@ -21,12 +22,18 @@ function jobView() {
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/calls/archive', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ archive: archiveStatus(gbrainStorePath()), job: jobView() }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 const Body = z.object({ sources: z.array(z.enum(['attio', 'fathom'])).min(1).optional() });
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/calls/archive', 'POST', req);
+  if (authError) return authError;
+
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const sources: ArchiveSource[] = parsed.data.sources ?? ['attio', 'fathom'];

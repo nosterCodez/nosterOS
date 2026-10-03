@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBrainProvider } from '@/lib/brain';
@@ -16,6 +17,9 @@ const InterjectSchema = z.object({
 
 /** The home composer: free text → board task / agent relay / G-Brain note. */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/interject', 'POST', req);
+  if (authError) return authError;
+
   let body: unknown;
   try {
     body = await req.json();

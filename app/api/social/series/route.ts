@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import {
@@ -17,6 +18,9 @@ export const dynamic = 'force-dynamic';
  * Growth per range is derived client-side from these points.
  */
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/social/series', 'GET', request);
+  if (authError) return authError;
+
   const metric = new URL(request.url).searchParams.get('metric');
   const db = getDb();
   syncFromZernioConfig(db);

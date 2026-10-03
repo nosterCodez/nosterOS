@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { INTEGRATIONS, connectKeysFor } from '@/lib/integrations-catalog';
@@ -27,6 +28,9 @@ function entryFor(slug: string) {
 }
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/connections/connect', 'POST', req);
+  if (authError) return authError;
+
   let body: z.infer<typeof ConnectBody>;
   try {
     body = ConnectBody.parse(await req.json());
@@ -60,6 +64,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const authError = await apiSessionError('/api/connections/connect', 'DELETE', req);
+  if (authError) return authError;
+
   let body: z.infer<typeof DisconnectBody>;
   try {
     body = DisconnectBody.parse(await req.json());

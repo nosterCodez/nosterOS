@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { searchInboxEmails } from '@/lib/connectors/email';
@@ -11,6 +12,9 @@ const SearchQuerySchema = z.object({
 });
 
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/comms/email/search', 'GET', request);
+  if (authError) return authError;
+
   const parsed = SearchQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const result = await searchInboxEmails(parsed.data.account, parsed.data.q, 50);

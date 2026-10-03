@@ -10,6 +10,10 @@ import { LensProvider } from '@/lib/hooks/useLens';
 import { getDb } from '@/lib/data';
 import type { PaletteAgent } from '@/lib/palette';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { requireSession } from '@/lib/session';
+import { publicAuthPath } from '@/lib/auth-boundary';
 
 const fontMono = JetBrains_Mono({
   subsets: ['latin'],
@@ -31,7 +35,14 @@ function paletteAgents(): PaletteAgent[] {
     .map((a) => ({ id: a.id, name: a.name, role: a.role }));
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const h = new Headers(await headers());
+  const pathname = h.get('x-nosteros-path') ?? '/';
+  const publicPage = publicAuthPath(pathname);
+  const session = await requireSession(h, true);
+  if (!publicPage && !session) redirect(`/sign-in?next=${encodeURIComponent(pathname)}`);
+  if (!publicPage && pathname !== '/onboarding' && !session?.session.activeOrganizationId) redirect('/onboarding');
+  const simple = publicPage || pathname === '/onboarding';
   return (
     <html lang="en" className={fontMono.variable} suppressHydrationWarning>
       <head>
@@ -40,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Toaster>
+        {simple ? <main className="mx-auto min-h-screen max-w-xl px-6 py-16">{children}</main> : <>
         <LensProvider />
         <Sidebar />
         {/* os-shell yields to the Conductor dock: the panel sets --conductor-w
@@ -57,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CommandPalette agents={paletteAgents()} />
         {/* Notion-style agent dock — the Conductor, aware of the current screen */}
         <ConductorPanel />
+        </>}
         </Toaster>
       </body>
     </html>

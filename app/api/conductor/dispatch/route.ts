@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { dispatchCodingTask } from '@/lib/connectors/superset';
 import { createPaperclipIssue } from '@/lib/connectors/paperclip';
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic';
  * fails the dispatch.
  */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/conductor/dispatch', 'POST', req);
+  if (authError) return authError;
+
   let body: { request?: string };
   try {
     body = (await req.json()) as typeof body;

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -7,6 +8,9 @@ import { RoadmapStatusSchema } from '@/lib/schemas';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const authError = await apiSessionError('/api/roadmap', 'GET');
+  if (authError) return authError;
+
   const db = getDb();
   return NextResponse.json({ quarters: groupRoadmapByQuarter(db.roadmap.all()) });
 }
@@ -19,6 +23,9 @@ const PatchSchema = z.object({ id: z.string().min(1), status: RoadmapStatusSchem
  * quarter tallies off one round trip.
  */
 export async function PATCH(req: Request) {
+  const authError = await apiSessionError('/api/roadmap', 'PATCH', req);
+  if (authError) return authError;
+
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'id and a roadmap status are required' }, { status: 400 });

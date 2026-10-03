@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -9,6 +10,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 const Query = z.object({ metric: z.string().min(1), business: z.string().min(1), from: z.string().datetime(), to: z.string().datetime(), bucket: z.enum(['day', 'week']) }).refine(q => Date.parse(q.from) <= Date.parse(q.to), 'from must not be after to');
 export async function GET(request: Request) {
+  const authError = await apiSessionError('/api/metrics/points', 'GET', request);
+  if (authError) return authError;
+
   const parsed = Query.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const q = parsed.data;

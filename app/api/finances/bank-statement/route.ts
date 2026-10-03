@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { parseBankStatementSummary } from '@/lib/bank-statements';
 import { pdfToText } from '@/lib/pdf-text';
@@ -12,6 +13,9 @@ export const runtime = 'nodejs';
     (`text/plain`), which is the only path that works on a host without
     poppler installed. */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/finances/bank-statement', 'POST', req);
+  if (authError) return authError;
+
   const ctype = req.headers.get('content-type') ?? '';
   let text: string;
 

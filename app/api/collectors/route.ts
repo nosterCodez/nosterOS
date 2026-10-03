@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { COLLECTORS } from '@/lib/collectors';
@@ -6,6 +7,9 @@ import { collectorHealth } from '@/lib/collectors/run';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 export async function GET() {
+  const authError = await apiSessionError('/api/collectors', 'GET');
+  if (authError) return authError;
+
   const db = getDb();
   const now = new Date();
   return NextResponse.json(await Promise.all(COLLECTORS.map(async collector => {

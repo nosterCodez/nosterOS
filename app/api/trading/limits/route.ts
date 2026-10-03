@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { TradingLimitsSchema } from '@/lib/schemas';
@@ -23,6 +24,9 @@ function editable(l: typeof DEFAULT_LIMITS): EditableLimits {
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/trading/limits', 'GET');
+  if (authError) return authError;
+
   const stored = getDb().trading.limits();
   const { limits, clamped } = clampLimits(stored ?? editable(DEFAULT_LIMITS));
   return NextResponse.json({
@@ -35,6 +39,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/trading/limits', 'POST', req);
+  if (authError) return authError;
+
   let body: unknown;
   try {
     body = await req.json();

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { DeliverableDecisionSchema } from '@/lib/schemas';
@@ -23,6 +24,9 @@ export const dynamic = 'force-dynamic';
  */
 const BATCH_MAX = 500;
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/board/deliverables/decision', 'POST', request);
+  if (authError) return authError;
+
   let body: unknown;
   try {
     body = await request.json();

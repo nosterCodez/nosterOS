@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '@/lib/data';
@@ -35,6 +36,9 @@ function schedulable(db: ReturnType<typeof getDb>): SchedulableCron[] {
 }
 
 export async function GET() {
+  const authError = await apiSessionError('/api/cron/tick', 'GET');
+  if (authError) return authError;
+
   const db = getDb();
   const crons = schedulable(db);
   const now = new Date();
@@ -49,6 +53,9 @@ export async function GET() {
 }
 
 export async function POST() {
+  const authError = await apiSessionError('/api/cron/tick', 'POST');
+  if (authError) return authError;
+
   const db = getDb();
   const now = new Date();
   const due = dueCrons(schedulable(db), now);

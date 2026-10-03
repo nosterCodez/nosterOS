@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { adStore } from '@/lib/foreplay/store';
@@ -17,6 +18,9 @@ export const runtime = 'nodejs';
 const AskSchema = z.object({ question: z.string().min(3).max(600) });
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/adscout/ask', 'POST', request);
+  if (authError) return authError;
+
   const parsed = AskSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: 'a question (3-600 chars) is required' }, { status: 400 });

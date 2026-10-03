@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { liveMetrics } from '@/lib/live-metrics';
 
@@ -15,6 +16,9 @@ export const dynamic = 'force-dynamic';
  * than being the path of least resistance.
  */
 export async function GET() {
+  const authError = await apiSessionError('/api/metrics', 'GET');
+  if (authError) return authError;
+
   const metrics = await liveMetrics();
   return NextResponse.json({
     metrics,

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import { compileBlueprint } from '@/lib/blueprint/compile';
@@ -30,6 +31,9 @@ function plainText(s: string): string {
  * 503 when the gateway is not configured on this host.
  */
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/blueprint/ask', 'POST', req);
+  if (authError) return authError;
+
   let body: { question?: unknown; selected?: unknown };
   try {
     body = (await req.json()) as typeof body;

@@ -14,8 +14,8 @@
  */
 import { GATE_COOKIE } from '@/lib/access-gate';
 
-export function internalRequestHeaders(token: string | undefined): Record<string, string> {
-  return token ? { Cookie: `${GATE_COOKIE}=${token}` } : {};
+export function internalRequestHeaders(secret: string | undefined, token = process.env.FOUNDER_OS_ACCESS_TOKEN): Record<string, string> {
+  return { ...(secret ? { 'x-nosteros-internal': secret } : {}), ...(token ? { Cookie: `${GATE_COOKIE}=${token}` } : {}) };
 }
 
 export async function register() {
@@ -27,7 +27,7 @@ export async function register() {
   setTimeout(() => {
     const started = Date.now();
     fetch(`http://127.0.0.1:${port}/api/analytics/refresh`, {
-      method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+      method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
     })
       .then((r) => {
         if (!r.ok) {
@@ -66,7 +66,7 @@ function startFailoverTick(port: string) {
   const tick = async () => {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/api/agents/failover`, {
-        method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+        method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
       });
       if (!res.ok) {
         console.warn(`[failover] tick failed: HTTP ${res.status}`);
@@ -112,7 +112,7 @@ function startCronTick(port: string) {
   const tick = async () => {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/api/cron/tick`, {
-        method: 'POST', headers: internalRequestHeaders(process.env.FOUNDER_OS_ACCESS_TOKEN),
+        method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
       });
       if (!res.ok) {
         console.warn(`[cron] tick failed: HTTP ${res.status}`);

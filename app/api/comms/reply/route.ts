@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendSlackMessage } from '@/lib/connectors/slack';
@@ -25,6 +26,9 @@ const ReplySchema = z.discriminatedUnion('source', [
 ]);
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/comms/reply', 'POST', request);
+  if (authError) return authError;
+
   const parsed = ReplySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

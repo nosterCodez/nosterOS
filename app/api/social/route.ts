@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
 import {
@@ -14,6 +15,9 @@ import { buildEmailList } from '@/lib/email-list';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const authError = await apiSessionError('/api/social', 'GET');
+  if (authError) return authError;
+
   const db = getDb();
   // Every read captures today's follower counts from the Zernio config, so
   // growth history accrues for real just by using the dashboard.

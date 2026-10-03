@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    setupFiles: ['tests/session-fixture.ts'],
     // Hermetic creds: .env.local is a live credential store read fresh at call
     // time (lib/creds.ts), so tests must never see the operator's real file. Tests
     // that exercise the store point this at their own tmp path.

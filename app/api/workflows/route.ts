@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/data';
@@ -10,6 +11,9 @@ export const dynamic = 'force-dynamic';
  *  server-side; exposed here too so a client that only has fetch (the
  *  builder, after a save) can confirm what actually landed. */
 export async function GET() {
+  const authError = await apiSessionError('/api/workflows', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ workflows: getDb().workflows.all() });
 }
 
@@ -17,6 +21,9 @@ export async function GET() {
  *  existing row: always inserts a fresh id: so a double-submit at worst
  *  creates two workflows, never corrupts one. */
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/workflows', 'POST', request);
+  if (authError) return authError;
+
   const parsed = WorkflowInputSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 

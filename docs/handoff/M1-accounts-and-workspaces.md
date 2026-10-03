@@ -94,15 +94,16 @@ same single database, so keep the outer password gate on until M2 ships.
   keeps running (log line).
 
 ## Report (Codex fills this in)
-- Status:
-- Commits:
-- Better Auth version and compatibility check:
-- Typecheck / tests / build:
-- Manual flow results:
-- API routes not calling the session helper (should be none):
-- New env vars:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+- Status: Implemented and verified using isolated local test data; not deployed. Google and platform SMTP remain unconfigured. Persistent local secrets await Noe's approval; no secrets were saved to .env.local.
+- Commits: `edee6e3` commits the approved agreement/handoff/test decision. Implementation and this report are committed together next.
+- Better Auth version and compatibility check: 1.7.7, exact version. npm declares Next ^16 and React/React DOM ^19; the official SQLite adapter supports better-sqlite3. Real in-memory SQLite sign-in/invitation tests pass.
+- Typecheck / tests / build: Typecheck passes; production build passes without warnings; production audit 0. Full Windows suite: 3,509 passed, 4 failed, 7 failed files (all remaining failures match the documented Windows baseline). Subsequently added API audit passes; targeted final auth/security run 11/11. Boundary/proxy/instrumentation tests also pass.
+- Manual flow results: Loopback-only dev server with temporary DATA_DIR: console magic link -> account -> workspace owner; second workspace created and switch back verified; sign-out; separate viewer login -> invitation accepted -> dashboard without onboarding; viewer member-management page denies access. Used sequential browser sessions rather than an incognito window; independent user cookies are also covered in integration tests. Anonymous / redirects to /sign-in; /api/agents returns 401. Actual internal POST /api/cron/tick returns 200 with ran:[], due:0 after disabling jobs in the disposable DB only. Timer requests are covered by fake-timer tests; background timers were disabled during browser testing to avoid external side effects.
+- API routes not calling the session helper (should be none): All 85 pre-existing route files are guarded; an AST audit enforces handler coverage. The sole intentional exception is /api/auth/[...all], where Better Auth validates its own public auth endpoints. Root layout validates the session; client-forged path headers are overwritten by proxy.
+- New env vars: NOSTEROS_BASE_URL, BETTER_AUTH_SECRET, NOSTEROS_INTERNAL_SECRET, GOOGLE_LOGIN_CLIENT_ID, GOOGLE_LOGIN_CLIENT_SECRET, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM. Existing optional FOUNDER_OS_ACCESS_TOKEN remains an additional gate, including internal requests.
+- What changed beyond the spec, and why: Added .npmrc legacy-peer-deps=true because npm attempted to resolve unused optional TanStack framework peers against Vitest's Vite 5; used framework compatibility is verified by typecheck/build/tests. Added origin checks on authenticated API mutations, viewer write restrictions and admin-only credential routes. Existing business-logic unit tests use an authorized-caller mock; dedicated security tests unmock it. Extended page/loading coverage and existing pressable control styling. Auth initializes/migrates control.db lazily; first initialization can log Better Auth's pre-migration missing-table notice, then migration completes before requests run.
+- Security self-review: Forged cookies fail real validation; proxy path spoofing is replaced; internal secrets use constant-time digest comparison and only POST on three exact paths; outer cookie still required when configured; viewer invite is 403; cross-origin mutations fail; invitation email ownership and nonmember switching enforced by Better Auth; sign-out invalidates session; magic tokens stored hashed and single-use; system-mail rejects arbitrary payloads and never prints production links without SMTP; login scopes are only openid/email/profile; all existing API handlers guarded. Do not expose publicly: data remains shared until M2, credentials until M3.
+- Questions for Noe: Approval requested to create private local auth/internal/beta secrets; no answer yet. Google login needs a separate OAuth client; SMTP is needed before non-development system emails. No real emails were sent.
 
 ## Claude decision (confirmed by Noe in chat)
 

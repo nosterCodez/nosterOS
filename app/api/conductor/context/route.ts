@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
 import { quickActionsFor, screenContextFor, screenTitleFor } from '@/lib/screen-context';
@@ -23,6 +24,9 @@ async function conductorModel(): Promise<string | null> {
 
 /** What the Conductor panel tells the agent about the screen it's docked on. */
 export async function GET(req: Request) {
+  const authError = await apiSessionError('/api/conductor/context', 'GET', req);
+  if (authError) return authError;
+
   const path = new URL(req.url).searchParams.get('path') ?? '/';
   const fallback = new Promise<{ title: string; context: string; quickActions: ReturnType<typeof quickActionsFor> }>(
     (resolve) =>

@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { connectorStatusById } from '@/lib/connectors';
@@ -20,6 +21,9 @@ const TestKeySchema = z.object({
  * spent saying it.
  */
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/admin/keys/test', 'POST', request);
+  if (authError) return authError;
+
   const parsed = TestKeySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

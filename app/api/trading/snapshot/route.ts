@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getDb } from '@/lib/data';
@@ -14,6 +15,9 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const authError = await apiSessionError('/api/trading/snapshot', 'POST', req);
+  if (authError) return authError;
+
   let body: unknown;
   try {
     body = await req.json();

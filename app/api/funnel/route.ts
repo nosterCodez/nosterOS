@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { funnelSummary, splitFunnelJourneys } from '@/lib/funnel';
 import { composeFunnelJourneys, funnelSourceLabel } from '@/lib/funnel-compose';
@@ -6,6 +7,9 @@ import { FunnelVentureSchema, type FunnelVenture } from '@/lib/schemas';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  const authError = await apiSessionError('/api/funnel', 'GET', req);
+  if (authError) return authError;
+
   const raw = new URL(req.url).searchParams.get('venture');
   let venture: FunnelVenture | undefined;
   if (raw !== null) {

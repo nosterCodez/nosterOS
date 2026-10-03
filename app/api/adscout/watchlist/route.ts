@@ -1,3 +1,4 @@
+import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createForeplayClient } from '@/lib/foreplay/client';
@@ -10,6 +11,9 @@ export const runtime = 'nodejs';
  *  brand id already known from a mine result; remove by id. */
 
 export async function GET() {
+  const authError = await apiSessionError('/api/adscout/watchlist', 'GET');
+  if (authError) return authError;
+
   return NextResponse.json({ ok: true, watchlist: readWatchEntries() });
 }
 
@@ -19,6 +23,9 @@ const AddSchema = z.union([
 ]);
 
 export async function POST(request: Request) {
+  const authError = await apiSessionError('/api/adscout/watchlist', 'POST', request);
+  if (authError) return authError;
+
   const parsed = AddSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: 'pass a domain, or a brandId + name' }, { status: 400 });
@@ -48,6 +55,9 @@ export async function POST(request: Request) {
 const RemoveSchema = z.object({ brandId: z.string().min(1) });
 
 export async function DELETE(request: Request) {
+  const authError = await apiSessionError('/api/adscout/watchlist', 'DELETE', request);
+  if (authError) return authError;
+
   const parsed = RemoveSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'brandId required' }, { status: 400 });
   return NextResponse.json({ ok: true, watchlist: removeWatchEntry(parsed.data.brandId) });
