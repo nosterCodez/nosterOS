@@ -12,15 +12,15 @@ wins.
 | The nosterCodes team (Noe, Jesus, staff) | The nosterCodes workspace, with per-person roles. |
 | nosterMarketing clients | Their own workspace, like any founder. When nosterMarketing does their marketing, the client approves an **agency link** so our team can see their progress. The client can revoke it any time. |
 
-## Core decision: one database per workspace
+## Core decision: one directory per workspace
 
 - `DATA_DIR/control.db` is the control plane: users, sessions, workspaces,
   memberships, invitations, agency links, audit log.
-- `DATA_DIR/workspaces/<workspaceId>.db` holds everything else for one
-  workspace: the full existing FounderOS schema, `metric_points`,
-  `collector_runs`, `insights`, connections. One customer's data is in a
-  different file from every other customer's, so a missed filter can't leak
-  data across accounts.
+- `DATA_DIR/workspaces/<workspaceId>/nosteros.db` holds the existing
+  FounderOS schema, metric points and collector runs. That directory also
+  contains separate bank.db, ledger.db, paykit.db, and workspace file stores
+  such as ad-intel. One customer's data is in different files from every
+  other customer's, so a missed filter cannot leak rows across accounts.
 - This keeps the existing synchronous better-sqlite3 code. The limits: one
   app server with the volume (fine into the hundreds of workspaces), and
   cross-workspace queries need explicit fan-out. If we outgrow it, the files
@@ -49,13 +49,12 @@ wins.
 
 ## Workspace context: fail closed
 
-- Every entry point (route handler, page, server action, background job)
-  resolves `{ user, workspace, role }` from the session and runs its work
-  inside `withWorkspace(ctx, fn)`.
-- `getDb()` returns the current workspace's database from that context. If
-  there's no context it **throws**, and never falls back to a default
-  workspace. The ~300 existing `getDb()` call sites keep their shape;
-  the safety comes from the throw.
+- Every entry point resolves an explicit `WorkspaceCtx` containing
+  `{ user, workspace, role, db }`. Pages and routes use `requireWorkspace`;
+  libraries receive `ctx` or `ctx.db` as parameters.
+- M2 removes zero-argument `getDb()`. No AsyncLocalStorage or default
+  workspace: React Server Components may render outside a parent's async
+  scope, so context must be passed explicitly. Missing context fails closed.
 - Module-level caches (email cache, connector caches, brain provider,
   anything in a top-level `Map` or `let`) get keyed by workspace id. Spec
   M2 includes an audit listing every one.

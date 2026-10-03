@@ -74,6 +74,7 @@ export type PaykitHistory = PaykitHistoryPort & {
 export function openPaykitHistory(
   account: string = 'paykit-lc',
   file: string = defaultPath(),
+  seed = true,
 ): PaykitHistory {
   const db = new Database(file);
   db.pragma('journal_mode = WAL');
@@ -129,7 +130,7 @@ export function openPaykitHistory(
   const seeded = db
     .prepare('SELECT 1 FROM paykit_customer_snapshots WHERE account = ? AND captured_on = ? LIMIT 1')
     .get(account, SEED_2026_08_20.capturedOn);
-  if (!seeded && account === 'paykit-lc') writeDay(SEED_2026_08_20);
+  if (seed && !seeded && account === 'paykit-lc') writeDay(SEED_2026_08_20);
 
   return {
     record(snapshot) {

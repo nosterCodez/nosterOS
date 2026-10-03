@@ -121,13 +121,14 @@ it says "one file per workspace" to "one directory per workspace".
   would try, and the test that blocks each attempt).
 
 ## Report
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- Seed classification:
-- Caches converted:
-- Call sites changed:
-- Migration results (dry run and real, on a copy):
-- Self-review:
-- Decisions you made beyond this spec, and why:
-- Questions for Noe:
+- Status: IN PROGRESS, foundation checkpoint only. This is not an isolated multi-tenant app yet. Existing pages/APIs still use the shared getDb(), and existing connector caches/file stores remain shared. Do not deploy publicly or invite customers.
+- Commits: `02eafa4` records the spec and updated handoff. Foundation changes and this report are the next commit; M1 implementation is `bcd0fd3`.
+- Typecheck / tests / build: Foundation typecheck passes. Full Windows suite: 3,519 passed / 4 failed; 321 passing files / 7 failing files, all remaining failures match the documented Windows baseline. Production build passes. Nine new foundation tests cover path validation, separate databases, empty demo tables, no fabricated payment history, LRU eviction and workspace authorization.
+- Seed classification: Structural defaults currently implemented: departments, agents, agent_crons, tools, workflows, skills, personas; seed_meta stores their version. Demo-only seeded data: people, lead_magnets, sop_tasks, agent_tasks, agent_runs, roadmap_items, metrics, domains, phases, social_accounts, social_snapshots, social_dms, social_dm_snapshots, social_dm_messages, email_list_snapshots, social_posts, funnel_contacts, funnel_touches, proposals, trading_snapshots, trading_positions, trading_activity. Other runtime/history tables are not populated by seedStructure. The legacy seedDatabase still exists for old callers/tests; complete its split/removal during caller conversion. Workspace PayKit initialization explicitly suppresses the invented historical customer snapshot unless DEMO_GATE=1.
+- Caches converted: None of the existing data caches yet. New app/bank/ledger/paykit handle pools use fully resolved workspace paths (paykit also uses account) as keys and cap at 50 with close-on-eviction. Before request-context wiring, account for handles held across awaits so concurrent requests cannot evict an in-use handle.
+- Call sites changed: 0 legacy getDb call sites converted. Added requireWorkspace(minRole, headers, page-or-api) returning explicit user/workspace/role/db and rejecting missing or mismatched membership. Audit found 75 app/lib files mentioning getDb, including seed comments. No AsyncLocalStorage introduced.
+- Migration results (dry run and real, on a copy): Not implemented or run. Original data files untouched. Owner email/account must be confirmed before running a real-data copy migration.
+- Self-review: workspaceDir rejects all but Better Auth 1.7.7's default 32-character ASCII alphanumeric IDs before joining paths. Tests reject empty, traversal, absolute and wrong-length IDs. Separate workspace app/bank records remain separate; payment stores start empty. Session tests prove unauthenticated/missing-active/insufficient-role/mismatched-workspace requests never open a database. Full cache/route/fan-out security review remains pending until those conversions exist.
+- Decisions you made beyond this spec, and why: Preserve existing shared callers during this foundation checkpoint rather than partially route real data into unmigrated workspace folders. Keep legacy PayKit behavior for existing callers/tests through an explicit seed parameter; new workspace stores disable it. Updated architecture to the directory-per-workspace and explicit-context decisions in this spec. Retained Next's auto-generated AGENTS instructions.
+- Questions for Noe: Which email owns the nosterCodes workspace? It must be a real M1 account, not a test identity. Separate pending approval: generate private local auth/internal/beta secrets in .env.local. Until answered, browser verification used only temporary DATA_DIR and nonproduction fixture values, with SMTP/background jobs disabled and loopback binding.
+- Next implementation: finish seed classification/split; convert all pages/routes and library callers to explicit ctx/db; workspace-scope all four stores and AdPilot/ad-intel; audit and partition connector/brain caches; fan out background work; implement idempotent verified-copy migration and complete the two-workspace end-to-end tests. Re-run full checks, self-review and fill final Report before calling M2 complete.

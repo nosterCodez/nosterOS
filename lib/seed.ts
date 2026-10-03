@@ -1934,6 +1934,24 @@ export const seededCrons: AgentCron[] = [
  */
 export const SEED_VERSION = '2026-09-30-alex-first-name';
 
+/** Structural defaults only: no people, money, activity, clients or history. */
+export function seedStructure(db: FounderDb): void {
+  for (const d of departments) db.departments.insert(d);
+  for (const a of agents) db.agents.insert(a);
+  for (const c of seededCrons) db.agentCrons.insert(c);
+  for (const t of tools) db.tools.insert(t);
+  for (const w of workflows) db.workflows.insert(w);
+  for (const s of skills) db.skills.insert({ ...s, markdown: skillDoc(s) });
+  for (const p of PERSONAS) db.personas.insert(p);
+  db.meta.set('structure_seed_version', SEED_VERSION);
+}
+
+/** Demo population is explicit; normal workspace initialization never calls it. */
+export function seedDemo(db: FounderDb): void {
+  if (process.env.DEMO_GATE !== '1') throw new Error('Demo seeding requires DEMO_GATE=1');
+  seedDatabase(db);
+}
+
 export function seedDatabase(db: FounderDb): void {
   // INSERT OR REPLACE in every repo makes re-seeding idempotent by id.
   for (const c of seededCrons) db.agentCrons.insert(c);

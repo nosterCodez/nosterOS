@@ -2,6 +2,17 @@ import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
 import { equalSecret, internalAllowed } from '@/lib/auth-boundary';
 import { GATE_COOKIE } from '@/lib/access-gate';
+import { redirect } from 'next/navigation';
+import { openWorkspaceDb } from '@/lib/workspace-storage';
+
+export type WorkspaceRole = 'viewer' | 'member' | 'admin' | 'owner';
+const roleLevel: Record<WorkspaceRole, number> = { viewer: 0, member: 1, admin: 2, owner: 3 };
+export type WorkspaceCtx = {
+  user: { id: string; email: string; name: string };
+  workspace: { id: string; name: string; kind: 'founder' | 'agency' | 'client' };
+  role: WorkspaceRole;
+  db: ReturnType<typeof openWorkspaceDb>;
+};
 
 export class SessionError extends Error {
   constructor(message: string, public status = 401) { super(message); }
@@ -16,6 +27,28 @@ export async function requireSession(input?: Headers, optional = false) {
   const session = await auth.api.getSession({ headers: h });
   if (!session && !optional) throw new SessionError('Sign in required');
   return session;
+}
+
+/** M2 entry point. Not yet wired into the legacy shared-data call sites. */
+export async function requireWorkspace(minRole: WorkspaceRole = 'viewer', input?: Headers, mode: 'page' | 'api' = 'page'): Promise<WorkspaceCtx> {
+  const h = input ?? new Headers(await headers());
+  const session = await requireSession(h, true);
+  if (!session) {
+    if (mode === 'page') redirect('/sign-in');
+    throw new SessionError('Sign in required');
+  }
+  if (!session.session.activeOrganizationId) {
+    if (mode === 'page') redirect('/onboarding');
+    throw new SessionError('Choose a workspace', 403);
+  }
+  const auth = await getAuth();
+  const member = await auth.api.getActiveMember({ headers: h });
+  const workspace = await auth.api.getFullOrganization({ headers: h });
+  const role = member?.role as WorkspaceRole;
+  if (!workspace || workspace.id !== session.session.activeOrganizationId || !(role in roleLevel) || roleLevel[role] < roleLevel[minRole]) throw new SessionError('Workspace access denied', 403);
+  const metadata = typeof workspace.metadata === 'string' ? JSON.parse(workspace.metadata) : workspace.metadata;
+  if (!metadata || !['founder', 'agency', 'client'].includes(metadata.kind)) throw new SessionError('Invalid workspace configuration', 403);
+  return { user: session.user, workspace: { id: workspace.id, name: workspace.name, kind: metadata.kind }, role, db: openWorkspaceDb(workspace.id) };
 }
 export async function apiSessionError(path: string, method: string, request?: Request): Promise<Response | null> {
   try {
