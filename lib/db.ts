@@ -1,5 +1,8 @@
 import { UsageSnapshotSchema, type SeatUsage } from '@/lib/usage';
 import Database from 'better-sqlite3';
+import { randomUUID } from 'node:crypto';
+import { bucketStart, type Bucket } from '@/lib/metrics/buckets';
+import { MetricPointSchema, CollectorRunSchema, type MetricPoint, type CollectorRun } from '@/lib/schemas';
 import { isValidCron } from '@/lib/cron';
 import {
   AgentCronSchema,
@@ -90,6 +93,26 @@ import {
 } from '@/lib/schemas';
 
 const DDL = `
+CREATE TABLE IF NOT EXISTS metric_points (
+  metric_id TEXT NOT NULL,
+  business_id TEXT NOT NULL,
+  captured_at TEXT NOT NULL,
+  value REAL NOT NULL,
+  PRIMARY KEY (metric_id, business_id, captured_at)
+);
+CREATE INDEX IF NOT EXISTS idx_metric_points_lookup
+  ON metric_points (metric_id, business_id, captured_at DESC);
+CREATE TABLE IF NOT EXISTS collector_runs (
+  id TEXT PRIMARY KEY,
+  collector_id TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  finished_at TEXT,
+  ok INTEGER NOT NULL,
+  points_written INTEGER NOT NULL,
+  error TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_collector_runs_lookup
+  ON collector_runs (collector_id, started_at DESC);
 CREATE TABLE IF NOT EXISTS seed_meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -1567,6 +1590,51 @@ export function openDb(path: string) {
   /** Per-metric history for the analytics sparklines. Written by the
    *  /api/analytics/refresh sweep (launchd cron every 15 min); one row per
    *  capture, read back as per-day last-known value. */
+  const metricPoints = {
+    upsert(points: MetricPoint[]): void {
+      const validated = points.map(point => MetricPointSchema.parse(point));
+      const insert = db.prepare('INSERT OR REPLACE INTO metric_points (metric_id, business_id, captured_at, value) VALUES (?, ?, ?, ?)');
+      db.transaction(() => {
+        for (const point of validated) insert.run(point.metricId, point.businessId, point.capturedAt, point.value);
+      })();
+    },
+    latest(metricId: string, businessId: string): { value: number; capturedAt: string } | null {
+      const row = db.prepare('SELECT metric_id AS metricId, business_id AS businessId, captured_at AS capturedAt, value FROM metric_points WHERE metric_id = ? AND business_id = ? ORDER BY captured_at DESC LIMIT 1').get(metricId, businessId);
+      if (!row) return null;
+      const point = MetricPointSchema.parse(row);
+      return { value: point.value, capturedAt: point.capturedAt };
+    },
+    series(metricId: string, businessId: string, fromIso: string, toIso: string, bucket: Bucket): { bucket: string; value: number }[] {
+      const rows = db.prepare('SELECT metric_id AS metricId, business_id AS businessId, captured_at AS capturedAt, value FROM metric_points WHERE metric_id = ? AND business_id = ? AND captured_at >= ? AND captured_at <= ? ORDER BY captured_at').all(metricId, businessId, new Date(fromIso).toISOString(), new Date(toIso).toISOString());
+      const values = new Map<string, number>();
+      for (const row of rows) {
+        const point = MetricPointSchema.parse(row);
+        values.set(bucketStart(point.capturedAt, bucket), point.value);
+      }
+      return [...values].map(([bucket, value]) => ({ bucket, value }));
+    },
+  };
+
+  const readCollectorRun = (collectorId: string, successOnly: boolean): CollectorRun | null => {
+    const row = db.prepare(`SELECT id, collector_id AS collectorId, started_at AS startedAt, finished_at AS finishedAt, ok, points_written AS pointsWritten, error FROM collector_runs WHERE collector_id = ? ${successOnly ? 'AND ok = 1' : ''} ORDER BY started_at DESC, rowid DESC LIMIT 1`).get(collectorId) as Record<string, unknown> | undefined;
+    return row ? CollectorRunSchema.parse({ ...row, ok: row.ok === 1 }) : null;
+  };
+  const collectorRuns = {
+    start(collectorId: string, now: Date = new Date()): string {
+      const run = CollectorRunSchema.parse({ id: randomUUID(), collectorId, startedAt: now.toISOString(), finishedAt: null, ok: false, pointsWritten: 0, error: null });
+      db.prepare('INSERT INTO collector_runs (id, collector_id, started_at, finished_at, ok, points_written, error) VALUES (?, ?, ?, NULL, 0, 0, NULL)').run(run.id, collectorId, run.startedAt);
+      return run.id;
+    },
+    finish(id: string, result: { ok: boolean; pointsWritten: number; error: string | null }): void {
+      const row = db.prepare('SELECT collector_id AS collectorId, started_at AS startedAt FROM collector_runs WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+      if (!row) throw new Error('Unknown collector run');
+      const run = CollectorRunSchema.parse({ ...row, id, ...result, finishedAt: new Date().toISOString() });
+      db.prepare('UPDATE collector_runs SET finished_at = ?, ok = ?, points_written = ?, error = ? WHERE id = ?').run(run.finishedAt, run.ok ? 1 : 0, run.pointsWritten, run.error, id);
+    },
+    last: (collectorId: string) => readCollectorRun(collectorId, false),
+    lastOk: (collectorId: string) => readCollectorRun(collectorId, true),
+  };
+
   const metricSnapshots = {
     record(metricId: string, value: number, capturedAt: string): void {
       MetricSnapshotSchema.parse({ metricId, capturedAt, value });
@@ -2065,6 +2133,8 @@ export function openDb(path: string) {
     trading,
     usageSnapshots,
     metricSnapshots,
+    metricPoints,
+    collectorRuns,
     socialPosts,
     funnel,
     people,

@@ -1,9 +1,11 @@
-import { beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { METRICS } from '@/lib/metrics/registry';
 import { mkdtempSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 beforeAll(() => {
+  METRICS.push({ id: 'smoke.count', label: 'Smoke fixture', unit: 'count', source: 'smoke', businesses: ['nostermarketing'], rollup: 'sum', goodDirection: 'up' });
   process.env.FOUNDER_OS_DB = path.join(mkdtempSync(path.join(tmpdir(), 'founder-os-apismoke-')), 'test.db');
   process.env.FUNNEL_PROVIDER = 'seed'; // keep /api/funnel off the live Attio API in tests
   process.env.MEMORY_API_TOKEN = 'smoke-memory-token';
@@ -34,6 +36,8 @@ type RouteEntry = {
 // a real 200 (not a 400/404 for a missing arg). Live-connector routes
 // (connections, social/sync) must still answer 200 with honest state.
 const ROUTES: RouteEntry[] = [
+  { route: 'collectors', load: () => import('@/app/api/collectors/route'), url: 'http://localhost/api/collectors' },
+  { route: 'metrics/points', load: () => import('@/app/api/metrics/points/route'), url: 'http://localhost/api/metrics/points?metric=smoke.count&business=nostermarketing&from=2026-10-01T00:00:00Z&to=2026-10-02T00:00:00Z&bucket=day' },
   { route: 'agents', load: () => import('@/app/api/agents/route'), url: 'http://localhost/api/agents' },
   { route: 'comms/digest', load: () => import('@/app/api/comms/digest/route'), url: 'http://localhost/api/comms/digest' },
   { route: 'comms/digest/read', load: () => import('@/app/api/comms/digest/read/route'), url: 'http://localhost/api/comms/digest/read' },
@@ -89,6 +93,8 @@ const ROUTES: RouteEntry[] = [
   { route: 'ventures', load: () => import('@/app/api/ventures/route'), url: 'http://localhost/api/ventures' },
   { route: 'webhooks/manychat', load: () => import('@/app/api/webhooks/manychat/route'), url: 'http://localhost/api/webhooks/manychat', headers: { 'x-manychat-secret': 'smoke-manychat-token' } },
 ];
+
+afterAll(() => { METRICS.splice(METRICS.findIndex(metric => metric.id === 'smoke.count'), 1); });
 
 function discoverGetRoutes(dir: string, base = ''): string[] {
   const out: string[] = [];

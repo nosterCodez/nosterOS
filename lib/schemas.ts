@@ -1,4 +1,23 @@
 import { z } from 'zod';
+import { BUSINESSES, type BusinessId } from '@/lib/businesses';
+
+export const MetricPointSchema = z.object({
+  metricId: z.string().min(1),
+  businessId: z.custom<BusinessId>(value => BUSINESSES.some(b => b.id === value), 'Unknown business'),
+  capturedAt: z.string().datetime().transform(value => new Date(value).toISOString()),
+  value: z.number().finite(),
+});
+export type MetricPoint = z.infer<typeof MetricPointSchema>;
+export const CollectorRunSchema = z.object({
+  id: z.string().min(1),
+  collectorId: z.string().min(1),
+  startedAt: z.string().datetime(),
+  finishedAt: z.string().datetime().nullable(),
+  ok: z.boolean(),
+  pointsWritten: z.number().int().nonnegative(),
+  error: z.string().nullable(),
+});
+export type CollectorRun = z.infer<typeof CollectorRunSchema>;
 
 export const AgentStatusSchema = z.enum(['active', 'idle', 'training', 'planned']);
 export const AgentTierSchema = z.enum(['lead', 'specialist', 'worker']);

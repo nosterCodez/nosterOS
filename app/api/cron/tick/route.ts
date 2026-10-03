@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '@/lib/data';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
+import { COLLECTORS } from '@/lib/collectors';
+import { dueCollectors, runCollector } from '@/lib/collectors/run';
 import { dueCrons, lastScheduledOccurrence, type SchedulableCron } from '@/lib/cron-scheduler';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +52,8 @@ export async function POST() {
   const db = getDb();
   const now = new Date();
   const due = dueCrons(schedulable(db), now);
-  if (due.length === 0) return NextResponse.json({ ran: [], due: 0 });
+  const collectors = dueCollectors(COLLECTORS, db, now);
+  if (due.length === 0 && collectors.length === 0) return NextResponse.json({ ran: [], due: 0 });
 
   const runtimeApi = createRuntime(db, realAgents);
   const ran: { cronId: string; agentId: string; ok: boolean; summary: string }[] = [];
@@ -80,5 +83,11 @@ export async function POST() {
     ran.push({ cronId: cron.id, agentId: cron.agentId, ok, summary });
   }
 
-  return NextResponse.json({ ran, due: due.length });
+  for (const collector of collectors) {
+    // Another overlapping tick may have started it while agent crons ran.
+    if (!dueCollectors([collector], db, new Date()).length) continue;
+    const result = await runCollector(collector, db, new Date());
+    ran.push({ cronId: `collector:${collector.id}`, agentId: collector.id, ok: result.ok, summary: result.error ?? `${result.pointsWritten} points written` });
+  }
+  return NextResponse.json({ ran, due: due.length + collectors.length });
 }
