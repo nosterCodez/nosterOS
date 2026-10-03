@@ -1,5 +1,14 @@
 # nosterOS: how the agents work in this repo
 
+## Update, Oct 3 2026
+
+Noe approved Astra taking over as architect and builder. Follow
+`docs/handoff/HANDOFF-TO-ASTRA.md`; it supersedes the engineering decision
+stop rules below. Record engineering decisions and test changes in each
+spec. Escalate money, real messages, credentials, legal text, publishing,
+paid services, and data deletion to Noe. Self-review security changes.
+This update records the explicit approval given in chat.
+
 nosterOS is Noe's command center for nosterMarketing, forked from
 FounderOS-DEMO (MIT). Repo conventions, stack, and architecture rules are in
 `CLAUDE.md`; read it before changing code. This file covers who does what.
@@ -53,13 +62,3 @@ regressions, and don't fix them unless a spec asks:
 EPERM), `api` and `seed` (5s timeout), `interaction-layer`, `paths`,
 `skills-plugins`, `superset-dispatch` (path separators / Windows env).
 If a test outside this list fails, it's a real failure.
-
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
