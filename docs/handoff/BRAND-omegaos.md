@@ -1,6 +1,6 @@
 # OmegaOS product rebrand
 
-Status: implemented; deployment verification pending
+Status: implemented; primary deployment verified
 Review by Claude: no
 
 ## Decision
@@ -31,4 +31,7 @@ Historical handoff reports remain factual. No real email, purchase or DNS change
 - Seven failing files are the documented Windows baseline (three cleanup failures included).
 - Updated three old branding assertions and added palette/artwork/sender regression coverage.
 - No real emails sent, secrets changed, accounts migrated, or third-party purchases made.
-- Desktop/mobile and live deployment verification pending; M2 acceptance remains separate/open.
+- Live 71efab9 verified: title, red accent, logo, company attribution and existing session/workspace.
+- Local private access page checked at 390px, no horizontal overflow; full mobile dashboard not verified.
+- Follow-up replaces the assistant launcher logo and constrains the access form on narrow screens.
+- Follow-up typecheck/build and 48 focused tests passed. M2 acceptance remains separate/open.

@@ -46,12 +46,14 @@ export function challengePage(): string {
 <style>
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
          background:#0a0a0a; color:#f5f5f5; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .card { text-align:center; padding:40px; }
+  * { box-sizing:border-box; }
+  .card { text-align:center; padding:24px; width:100%; max-width:480px; }
+  form { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
   .mark { font-size:13px; font-weight:700; letter-spacing:.3em; text-transform:uppercase; }
   .mark b { color:#EF4444; }
   p { font-size:12px; color:#8a8a8a; margin:14px 0 22px; }
   input { background:#141414; border:1px solid #2a2a2a; color:#f5f5f5; padding:10px 12px;
-          font:inherit; font-size:13px; width:240px; outline:none; }
+          font:inherit; font-size:13px; width:240px; max-width:100%; outline:none; }
   input:focus { border-color:#EF4444; }
   button { background:#EF4444; border:0; color:#fff; padding:10px 18px; font:inherit;
            font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
@@ -62,7 +64,7 @@ export function challengePage(): string {
     <div class="mark"><b>Omega</b>OS</div>
     <p>This OS is private. Enter your access token.</p>
     <form method="GET" action="/">
-      <input name="token" type="password" placeholder="access token" autofocus>
+      <input name="token" type="password" aria-label="Access token" placeholder="access token" autofocus>
       <button type="submit">Unlock</button>
     </form>
   </div>
