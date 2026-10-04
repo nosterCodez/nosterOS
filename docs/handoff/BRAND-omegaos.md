@@ -1,6 +1,6 @@
 # OmegaOS product rebrand
 
-Status: implemented; primary deployment verified
+Status: deployed and verified
 Review by Claude: no
 
 ## Decision
@@ -36,3 +36,5 @@ Historical handoff reports remain factual. No real email, purchase or DNS change
 - Mobile shell follow-up collapses the sidebar on small screens and wraps header/workspace controls.
 - Follow-up replaces the assistant launcher logo and constrains the access form on narrow screens.
 - Follow-up typecheck/build and 48 focused tests passed. M2 acceptance remains separate/open.
+- Final code fb60579 deployed healthy; live 390px dashboard measured 380px content width, no overflow.
+- Verified desktop/sign-in artwork and preserved nosterCodes session; restored desktop sidebar afterward.
