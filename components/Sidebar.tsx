@@ -82,7 +82,14 @@ export function Sidebar() {
   useEffect(() => {
     const savedW = Number(localStorage.getItem('founderos.sidebar.w'));
     if (Number.isFinite(savedW) && savedW >= MIN_W && savedW <= MAX_W) setWidth(savedW);
-    setCollapsed(localStorage.getItem('founderos.sidebar.collapsed') === '1');
+    setCollapsed(window.matchMedia('(max-width: 767px)').matches || localStorage.getItem('founderos.sidebar.collapsed') === '1');
+  }, []);
+
+  useEffect(() => {
+    const screen = window.matchMedia('(max-width: 767px)');
+    const compact = () => { if (screen.matches) setCollapsed(true); };
+    screen.addEventListener('change', compact);
+    return () => screen.removeEventListener('change', compact);
   }, []);
 
   // Where this instance actually is (localhost in dev, the deployed host

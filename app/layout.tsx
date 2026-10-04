@@ -60,7 +60,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             and the whole content column glides left instead of being covered */}
         <div className="os-shell flex min-h-screen min-w-0 flex-col" style={{ marginLeft: 'var(--sidebar-w, 232px)', marginRight: 'var(--conductor-w, 0px)' }}>
           <Topbar />
-          <main className="min-w-0 flex-1 px-8 pb-16 pt-7 wide:px-10 ultra:px-12">
+          <main className="min-w-0 flex-1 px-3 pb-16 pt-7 md:px-8 wide:px-10 ultra:px-12">
             {/* Width tiers: 1280 on laptops · 1760 on large monitors ·
                 full-bleed on 32"/ultrawide. See tailwind screens wide/ultra. */}
             <div className="mx-auto max-w-[1280px] wide:max-w-[1760px] ultra:max-w-none">

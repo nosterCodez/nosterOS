@@ -32,6 +32,7 @@ Historical handoff reports remain factual. No real email, purchase or DNS change
 - Updated three old branding assertions and added palette/artwork/sender regression coverage.
 - No real emails sent, secrets changed, accounts migrated, or third-party purchases made.
 - Live 71efab9 verified: title, red accent, logo, company attribution and existing session/workspace.
-- Local private access page checked at 390px, no horizontal overflow; full mobile dashboard not verified.
+- Local access page passed at 390px; live dashboard exposed existing expanded-sidebar overflow.
+- Mobile shell follow-up collapses the sidebar on small screens and wraps header/workspace controls.
 - Follow-up replaces the assistant launcher logo and constrains the access form on narrow screens.
 - Follow-up typecheck/build and 48 focused tests passed. M2 acceptance remains separate/open.
