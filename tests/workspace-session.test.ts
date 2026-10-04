@@ -1,10 +1,24 @@
 import { afterEach, expect, test, vi } from 'vitest';
 vi.unmock('@/lib/session');
-const mocks = vi.hoisted(() => ({ session: vi.fn(), member: vi.fn(), organization: vi.fn(), open: vi.fn() }));
+const mocks = vi.hoisted(() => ({ session: vi.fn(), member: vi.fn(), organization: vi.fn(), open: vi.fn(), lease: vi.fn() }));
 vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: { getSession: mocks.session, getActiveMember: mocks.member, getFullOrganization: mocks.organization } }) }));
-vi.mock('@/lib/workspace-storage', () => ({ openWorkspaceDb: mocks.open }));
-import { requireWorkspace } from '@/lib/session';
+vi.mock('@/lib/workspace-storage', () => ({ openWorkspaceDb: mocks.open, withWorkspaceDb: mocks.lease }));
+import { requireWorkspace, withWorkspaceLease } from '@/lib/session';
 const h = new Headers({ cookie: 'better-auth.session_token=test' });
+test('authorized context refreshes synchronous handles and leases asynchronous work by verified ID', async () => {
+  const id = 'A'.repeat(32);
+  mocks.session.mockResolvedValue({ user: { id: 'owner' }, session: { activeOrganizationId: id } });
+  mocks.member.mockResolvedValue({ role: 'owner' });
+  mocks.organization.mockResolvedValue({ id, name: 'A', metadata: { kind: 'agency' } });
+  const context = await requireWorkspace('viewer', h, 'api');
+  expect(mocks.open).not.toHaveBeenCalled();
+  mocks.open.mockReturnValueOnce('first').mockReturnValueOnce('second');
+  expect(context.db).toBe('first');
+  expect(context.db).toBe('second');
+  mocks.lease.mockImplementation(async (_id, work) => work('leased'));
+  expect(await withWorkspaceLease(context, async db => db)).toBe('leased');
+  expect(mocks.lease).toHaveBeenCalledWith(id, expect.any(Function));
+});
 afterEach(() => vi.resetAllMocks());
 test('no session cannot open any workspace database', async () => {
   mocks.session.mockResolvedValue(null);

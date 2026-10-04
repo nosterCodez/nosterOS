@@ -1,6 +1,6 @@
 # M2d: Bind the owner's existing workspace
 
-Status: in progress
+Status: complete
 Review by Claude: no
 
 ## Goal
@@ -37,4 +37,7 @@ Offline guard/rollback/idempotency tests, typecheck, full suite and build pass
 - Security review: exact ID/name, verified configured sole owner, no invitations,
   metadata validation, conflicting bindings, transaction rollback and repeat-run
   no-op checked. No public route, secret output, file changes or new dependency.
-- Production adoption pending explicit access confirmation and deployment.
+- Noe approved the operator privilege grant in chat. Deployed 7b408d5 and ran
+  the explicit adoption on Railway; result was adopted for the existing workspace.
+- Refreshed the signed-in app: nosterCodes reaches the live operator dashboard.
+  Existing workspace identity and files preserved; no main merge or M3 performed.

@@ -1,7 +1,7 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { ArrowUpRight, BarChart3, Brain, Clapperboard, ExternalLink, Megaphone, Play } from 'lucide-react';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { contentAgents } from '@/lib/content';
 import { contentVolume } from '@/lib/content-volume';
 import { zernioRecentPosts, zernioPostDaysKnown } from '@/lib/connectors/zernio';
@@ -90,7 +90,7 @@ export default async function ContentPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   const crew = contentAgents(db.agents.all());
   const leadMagnets = db.leadMagnets.all();
   const lead = crew[0] ?? null;
@@ -320,4 +320,5 @@ export default async function ContentPage() {
       </SlabCard>
     </Slab>
   );
+  });
 }

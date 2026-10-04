@@ -1,7 +1,7 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { Users } from 'lucide-react';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { paperclipAgents, type PaperclipAgent } from '@/lib/connectors/paperclip';
 import { LIVE_DOT, overlayLiveOrg } from '@/lib/org-live';
 import { buildHierarchy, flattenNodes, type AgentNode } from '@/lib/hierarchy';
@@ -80,7 +80,7 @@ export default async function OrgChartPage(props: { searchParams?: Promise<{ ven
   if (!workspace) return <OperatorUnavailable />;
 
   const searchParams = await props.searchParams;
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   const departments = db.departments.all();
   const agents = db.agents.all();
   // The REAL company: live agents from the Paperclip board (private network). Name
@@ -333,4 +333,5 @@ export default async function OrgChartPage(props: { searchParams?: Promise<{ ven
       </Rise>
     </div>
   );
+  });
 }

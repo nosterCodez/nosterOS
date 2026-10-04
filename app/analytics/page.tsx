@@ -6,7 +6,7 @@ import { XLogo } from '@/components/XLogo';
 /** Any icon that takes a className: the lucide set and the hand-rolled X mark
     both satisfy it, and the map does not care which it is holding. */
 type PlatformIcon = React.ComponentType<{ className?: string }>;
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { buildSocialDashboard, syncFromZernioConfig, audienceGrowthPct, PLATFORM_LABELS } from '@/lib/social';
 import { agentRunVolume, runsWithin } from '@/lib/analytics';
 import { analyticsVolume } from '@/lib/analytics-volume';
@@ -77,7 +77,7 @@ export default async function AnalyticsPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   syncFromZernioConfig(db);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -299,4 +299,5 @@ export default async function AnalyticsPage() {
       </SlabCard>
     </Slab>
   );
+  });
 }

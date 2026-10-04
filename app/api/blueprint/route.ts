@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,6 @@ export async function GET() {
   if (workspace instanceof Response) return workspace;
 
 
-  const graph = await compileBlueprint(workspace.db);
+  const graph = await withWorkspaceLease(workspace, db => compileBlueprint(db));
   return NextResponse.json({ ok: true, graph });
 }

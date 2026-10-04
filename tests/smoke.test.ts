@@ -5,6 +5,7 @@ import path from 'node:path';
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/lib/session', () => ({
+  withWorkspaceLease: async (context: { db: unknown }, work: (db: unknown) => unknown) => work(context.db),
   requireSession: async () => ({ user: { id: 'smoke' }, session: { activeOrganizationId: 'smoke-workspace' } }),
   requireWorkspace: async () => ({
     user: { id: 'smoke' }, workspace: { id: 'S'.repeat(32), name: 'Smoke', kind: 'agency' }, role: 'owner',

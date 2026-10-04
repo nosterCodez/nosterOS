@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -44,7 +44,8 @@ export async function POST(request: Request) {
   }
 
   const started = Date.now();
-  const status = await connectorStatusById(workspace.db, slot.connectorId);
+  const connectorId = slot.connectorId;
+  const status = await withWorkspaceLease(workspace, db => connectorStatusById(db, connectorId));
   const ms = Date.now() - started;
   if (!status) {
     return NextResponse.json({ error: `unknown connector: ${slot.connectorId}` }, { status: 400 });

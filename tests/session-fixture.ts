@@ -19,5 +19,5 @@ vi.mock('@/lib/session', () => {
     get db() { return getDb(); },
   });
   };
-  return { apiSessionError: vi.fn(async () => null), apiWorkspace: vi.fn(workspace), requireWorkspace: vi.fn(workspace), apiOperatorWorkspace: vi.fn(workspace), operatorWorkspaceForPage: vi.fn(workspace), requireOperatorWorkspace: vi.fn(workspace) };
+  return { withWorkspaceLease: async (context: { db: unknown }, work: (db: unknown) => unknown) => work(context.db), apiSessionError: vi.fn(async () => null), apiWorkspace: vi.fn(workspace), requireWorkspace: vi.fn(workspace), apiOperatorWorkspace: vi.fn(workspace), operatorWorkspaceForPage: vi.fn(workspace), requireOperatorWorkspace: vi.fn(workspace) };
 });

@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { tradingPayload } from '@/lib/trading-payload';
@@ -19,5 +19,5 @@ export async function GET() {
   if (workspace instanceof Response) return workspace;
 
 
-  return NextResponse.json(await tradingPayload(workspace.db));
+  return NextResponse.json(await withWorkspaceLease(workspace, db => tradingPayload(db)));
 }

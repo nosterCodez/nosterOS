@@ -3,7 +3,7 @@ import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'cronId required' }, { status: 400 });
 
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   const cron = db.agentCrons.all().find((c) => c.id === parsed.data.cronId);
   if (!cron) return NextResponse.json({ error: `unknown scheduled task: ${parsed.data.cronId}` }, { status: 404 });
 
@@ -58,4 +58,5 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok, summary }, { status: ok ? 200 : 502 });
+  });
 }

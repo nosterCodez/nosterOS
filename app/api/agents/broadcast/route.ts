@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 
@@ -38,7 +38,6 @@ export async function POST(req: Request) {
   if (!message) {
     return NextResponse.json({ error: 'message is required' }, { status: 400 });
   }
-  const runtime = createRuntime(workspace.db, realAgents);
-  const broadcast = await runtime.broadcast(message);
+  const broadcast = await withWorkspaceLease(workspace, db => createRuntime(db, realAgents).broadcast(message));
   return NextResponse.json({ broadcast });
 }

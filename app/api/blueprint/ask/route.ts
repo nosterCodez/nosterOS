@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { buildHierarchy, describeScope, indexHierarchy } from '@/lib/blueprint/hierarchy';
 import { chat, llmStatus } from '@/lib/connectors/llm';
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'AI Gateway not configured on this host' }, { status: 503 });
   }
 
-  const graph = await compileBlueprint(workspace.db, { llm });
+  const graph = await withWorkspaceLease(workspace, db => compileBlueprint(db, { llm }));
   const h = buildHierarchy(graph);
   const idx = indexHierarchy(h);
   const ctx = describeScope(h, idx, selected);

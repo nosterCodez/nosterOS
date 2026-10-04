@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { refreshExpiredOAuth } from '@/lib/oauth/store';
@@ -22,6 +22,6 @@ export async function GET() {
   // returns nothing and the status check proceeds as normal.
   await refreshExpiredOAuth().catch(() => []);
 
-  const connections = await allConnectorStatuses(workspace.db);
+  const connections = await withWorkspaceLease(workspace, db => allConnectorStatuses(db));
   return NextResponse.json({ connections });
 }

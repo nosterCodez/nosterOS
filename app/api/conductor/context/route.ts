@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
       ),
   );
   const [resolved, model] = await Promise.all([
-    Promise.race([screenContextFor(workspace.db, path), fallback]),
+    Promise.race([withWorkspaceLease(workspace, db => screenContextFor(db, path)), fallback]),
     Promise.race([conductorModel(), new Promise<null>((r) => setTimeout(() => r(null), CONTEXT_BUDGET_MS))]),
   ]);
   return NextResponse.json({ ...resolved, model });

@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { funnelSummary, splitFunnelJourneys } from '@/lib/funnel';
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   // One shared composer with the page: Attio ∪ GHL live journeys, Trakyo
   // touches + Stripe settled payments folded on, venture-filtered; seeded
   // funnel when nothing is live. Quiet >90d splits into `archived`.
-  const composed = await composeFunnelJourneys(workspace.db, now, venture);
+  const composed = await withWorkspaceLease(workspace, db => composeFunnelJourneys(db, now, venture));
   const { active, archived } = splitFunnelJourneys(composed.journeys, now);
   return NextResponse.json({
     summary: funnelSummary(active),

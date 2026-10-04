@@ -1,6 +1,6 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { stripeSnapshot } from '@/lib/connectors/payments';
@@ -139,7 +139,7 @@ export default async function HomePage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   const [connections, overview, feed, stripe] = await Promise.all([
     allConnectorStatuses(workspace.db),
     createGBrainProvider().overview(),
@@ -375,4 +375,5 @@ export default async function HomePage() {
       </div>
     </div>
   );
+  });
 }

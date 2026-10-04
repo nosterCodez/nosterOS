@@ -1,11 +1,8 @@
-import path from 'node:path';
-import { databaseOverride } from '../lib/legacy-env';
-import fs from 'node:fs';
+import { maintenanceTarget } from '../lib/workspace-maintenance';
 import { openDb } from '../lib/db';
 import { seedStructure, seedDemo } from '../lib/seed';
 
-const dbPath = databaseOverride() ?? path.join(process.cwd(), 'data', 'founder-os.db');
-fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+const { dbPath } = maintenanceTarget(process.argv.slice(2));
 const db = openDb(dbPath);
 seedStructure(db);
 if (process.env.DEMO_GATE === '1') seedDemo(db);

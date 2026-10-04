@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 
@@ -17,9 +17,8 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
 
 
   const params = await props.params;
-  const runtime = createRuntime(workspace.db, realAgents);
   try {
-    const run = await runtime.run(params.id);
+    const run = await withWorkspaceLease(workspace, db => createRuntime(db, realAgents).run(params.id));
     return NextResponse.json({ run });
   } catch (err) {
     return NextResponse.json(

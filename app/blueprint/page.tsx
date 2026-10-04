@@ -1,5 +1,5 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { BlueprintCanvasLazy } from '@/components/blueprint/BlueprintCanvasLazy';
 
@@ -26,7 +26,7 @@ export default async function BlueprintPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const graph = await compileBlueprint(workspace.db);
+  const graph = await withWorkspaceLease(workspace, db => compileBlueprint(db));
   const count = (kind: string) => graph.nodes.filter((n) => n.kind === kind).length;
   const subline = `${graph.nodes.length} components · ${count('agent')} agents · ${count('daemon')} daemons · ${count('host')} machines · compiled ${relativeTime(graph.compiledAt)}`;
   return <BlueprintCanvasLazy graph={graph} subline={subline} />;

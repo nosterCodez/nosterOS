@@ -3,7 +3,7 @@ import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBrainProvider } from '@/lib/brain';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { performInterject } from '@/lib/interject';
 import { createMemoryProvider, type MemoryBrain } from '@/lib/memory-provider';
 import { createPaperclipIssue } from '@/lib/connectors/paperclip';
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     },
     async captureNote(input) {
       const brain: MemoryBrain = getBrainProvider();
-      const outcome = await createMemoryProvider({ db: workspace.db, brain }).remember(input);
+      const outcome = await withWorkspaceLease(workspace, db => createMemoryProvider({ db, brain }).remember(input));
       return outcome.ok ? { ok: true, slug: outcome.slug } : { ok: false, error: outcome.error };
     },
   });

@@ -3,7 +3,7 @@ import { CalendarDays, Hash, Mail, MessageSquare, Mic, type LucideIcon } from 'l
 import { CommsTabs } from '@/components/CommsTabs';
 import { CommsDigestPanel } from '@/components/CommsDigestPanel';
 import { Rise } from '@/components/motion';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import type { DigestRunResult } from '@/lib/comms-digest-run';
 import { gatherCommsLanes } from '@/lib/comms-lanes';
 import { gatherRecordings } from '@/lib/recordings';
@@ -32,12 +32,12 @@ export default async function CommsPage() {
 
   const [{ lanes, emailState, whatsappState }, { cards: slackCards, status: slackState }, channels, calendar, weekEvents, recordings] =
     await Promise.all([
-      gatherCommsLanes(workspace.db),
+      withWorkspaceLease(workspace, db => gatherCommsLanes(db)),
       gatherSlackClientBoard(),
       listChannels(),
       calendarStatus(),
       upcomingEvents(undefined, { days: 7, limit: 200 }),
-      gatherRecordings(workspace.db, 30),
+      withWorkspaceLease(workspace, db => gatherRecordings(db, 30)),
     ]);
 
   const calLegend = caldavAccounts().map((a) => ({ name: a.name, color: a.color }));

@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { ingestPlaudNow } from '@/lib/plaud-ingest';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,6 @@ export async function POST() {
   if (workspace instanceof Response) return workspace;
 
 
-  const result = await ingestPlaudNow(workspace.db);
+  const result = await withWorkspaceLease(workspace, db => ingestPlaudNow(db));
   return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
 }

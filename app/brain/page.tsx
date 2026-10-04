@@ -3,7 +3,7 @@ import { paperclipAgents } from '@/lib/connectors/paperclip';
 import type { RosterClient } from '@/lib/schemas';
 import { buildKnowledgeGraph } from '@/lib/knowledge-graph';
 import { memoryConstellation, wikiFor } from '@/lib/brain-constellation';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import type { FounderDb } from '@/lib/db';
 import { PageHeader } from '@/components/PageHeader';
 import { BrainDump } from '@/components/BrainDump';
@@ -56,7 +56,7 @@ export default async function BrainPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const db = workspace.db;
+  return withWorkspaceLease(workspace, async db => {
   // latest run per agent (oldest first so the LAST write per id is the newest)
   const runsByAgent = Object.fromEntries(
     db.agentRuns
@@ -132,4 +132,5 @@ export default async function BrainPage() {
       </Rise>
     </div>
   );
+  });
 }

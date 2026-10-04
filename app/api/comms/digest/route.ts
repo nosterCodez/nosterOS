@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { runAndStoreCommsDigest } from '@/lib/comms-digest-run';
 import type { DigestRunResult } from '@/lib/comms-digest-run';
 
@@ -42,7 +42,7 @@ export async function POST() {
 
 
   try {
-    const result = await runAndStoreCommsDigest(workspace.db);
+    const result = await withWorkspaceLease(workspace, db => runAndStoreCommsDigest(db));
     return NextResponse.json({ ...result, generatedAt: result.digest.generatedAt });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 502 });

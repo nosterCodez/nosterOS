@@ -13,12 +13,11 @@ export async function GET() {
   if (workspace instanceof Response) return workspace;
 
 
-  const db = workspace.db;
   const now = new Date();
   return NextResponse.json(await Promise.all(COLLECTORS.map(async collector => {
     let status;
     try { status = await collector.status(); }
     catch (error) { status = { id: collector.id, name: collector.name, state: 'error', detail: error instanceof Error ? error.message : String(error) }; }
-    return { id: collector.id, name: collector.name, everyMinutes: collector.everyMinutes, status, ...collectorHealth(collector, db, now) };
+    return { id: collector.id, name: collector.name, everyMinutes: collector.everyMinutes, status, ...collectorHealth(collector, workspace.db, now) };
   })));
 }

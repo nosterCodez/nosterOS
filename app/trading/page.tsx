@@ -1,5 +1,5 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
-import { operatorWorkspaceForPage } from '@/lib/session';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { tradingPayload } from '@/lib/trading-payload';
 import { TradingBoard } from '@/components/trading/TradingBoard';
 
@@ -14,6 +14,6 @@ export default async function TradingPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
 
-  const initial = await tradingPayload(workspace.db);
+  const initial = await withWorkspaceLease(workspace, db => tradingPayload(db));
   return <TradingBoard initial={initial} />;
 }

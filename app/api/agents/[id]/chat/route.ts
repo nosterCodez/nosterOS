@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { realAgents } from '@/lib/agents/real';
 import { chatWithAgent } from '@/lib/agents/chat';
 import { routeConductorMessage } from '@/lib/agents/conductor';
@@ -58,9 +58,9 @@ export async function POST(req: Request, props: { params: Promise<{ id: string }
   }
 
   try {
-    const result = isConductor
-      ? await routeConductorMessage(workspace.db, realAgents, message, { screenContext })
-      : await chatWithAgent(workspace.db, realAgents, params.id, message, { screenContext });
+    const result = await withWorkspaceLease(workspace, db => isConductor
+      ? routeConductorMessage(db, realAgents, message, { screenContext })
+      : chatWithAgent(db, realAgents, params.id, message, { screenContext }));
     return NextResponse.json(result);
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });

@@ -5,7 +5,7 @@ import { GATE_COOKIE } from '@/lib/access-gate';
 import { LEGACY_GATE_COOKIE } from '@/lib/auth-constants';
 import { accessToken } from '@/lib/legacy-env';
 import { redirect } from 'next/navigation';
-import { openWorkspaceDb } from '@/lib/workspace-storage';
+import { openWorkspaceDb, withWorkspaceDb } from '@/lib/workspace-storage';
 import { operatorWorkspaceId } from '@/lib/operator-workspace';
 
 export type WorkspaceRole = 'viewer' | 'member' | 'admin' | 'owner';
@@ -51,7 +51,11 @@ export async function requireWorkspace(minRole: WorkspaceRole = 'viewer', input?
   if (!workspace || workspace.id !== session.session.activeOrganizationId || !(role in roleLevel) || roleLevel[role] < roleLevel[minRole]) throw new SessionError('Workspace access denied', 403);
   const metadata = typeof workspace.metadata === 'string' ? JSON.parse(workspace.metadata) : workspace.metadata;
   if (!metadata || !['founder', 'agency', 'client'].includes(metadata.kind)) throw new SessionError('Invalid workspace configuration', 403);
-  return { user: session.user, workspace: { id: workspace.id, name: workspace.name, kind: metadata.kind }, role, db: openWorkspaceDb(workspace.id) };
+  return { user: session.user, workspace: { id: workspace.id, name: workspace.name, kind: metadata.kind }, role, get db() { return openWorkspaceDb(workspace.id); } };
+}
+/** Keep a workspace handle alive through asynchronous work, including late writes. */
+export function withWorkspaceLease<R>(context: WorkspaceCtx, work: (db: WorkspaceCtx['db']) => R | Promise<R>) {
+  return withWorkspaceDb(context.workspace.id, work);
 }
 /** API boundary preserves authorization status rather than leaking a redirect or 500. */
 export async function apiWorkspace(input?: Headers): Promise<WorkspaceCtx | Response> {

@@ -1,7 +1,7 @@
 import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import type { FounderDb } from '@/lib/db';
 import { syncFromZernioLive } from '@/lib/social-live';
 import { zernioLiveAccounts } from '@/lib/connectors/zernio';
@@ -30,7 +30,7 @@ export async function POST() {
 
   const workspace = await apiWorkspace();
   if (workspace instanceof Response) return workspace;
-  return runSync(workspace.db);
+  return withWorkspaceLease(workspace, runSync);
 }
 
 export async function GET() {
@@ -41,5 +41,5 @@ export async function GET() {
 
   const workspace = await apiWorkspace();
   if (workspace instanceof Response) return workspace;
-  return runSync(workspace.db);
+  return withWorkspaceLease(workspace, runSync);
 }

@@ -1,5 +1,5 @@
 import { apiOperatorWorkspace } from '@/lib/session';
-import { apiWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { liveMetrics } from '@/lib/live-metrics';
@@ -26,7 +26,7 @@ export async function GET() {
   if (workspace instanceof Response) return workspace;
 
 
-  const metrics = await liveMetrics(workspace.db);
+  const metrics = await withWorkspaceLease(workspace, db => liveMetrics(db));
   return NextResponse.json({
     metrics,
     live: metrics

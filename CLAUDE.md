@@ -16,7 +16,7 @@ npm install
 npm run dev        # dev server → http://localhost:4100
 npm test           # vitest suite (must stay green)
 npm run typecheck  # tsc --noEmit
-npm run seed       # re-seed data/founder-os.db (idempotent)
+npm run seed -- --workspace <id> # existing workspace only; structure, not demo data
 npm run build && npm start
 ```
 
