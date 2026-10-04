@@ -42,7 +42,7 @@ export async function workspaceJob<T>(route: string, work: (context: WorkspaceDa
   const h = new Headers(await headers());
   if (internalAllowed(route, h.get('x-nosteros-internal'))) {
     const operatorId = operatorWorkspaceId();
-    if (!operatorId) return Response.json({ error: 'Operator workspace unavailable' }, { status: 403 });
+    if (!operatorId) return Response.json({ ok: true, skipped: 'operator-unavailable', workspaces: [] });
     const workspaces = (await listWorkspaces()).filter(workspace => workspace.id === operatorId);
     const results = await forEachWorkspace(workspaces, work);
     return Response.json({ ok: results.every(result => result.ok), workspaces: results });

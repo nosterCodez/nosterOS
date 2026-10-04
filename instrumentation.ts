@@ -16,32 +16,58 @@ import { GATE_COOKIE } from '@/lib/auth-constants';
 import { accessToken } from '@/lib/legacy-env';
 
 export function internalRequestHeaders(secret: string | undefined, token = accessToken()): Record<string, string> {
-  return { ...(secret ? { 'x-nosteros-internal': secret } : {}), ...(token ? { Cookie: `${GATE_COOKIE}=${token}` } : {}) };
+  const normalizedSecret = secret?.trim();
+  return { ...(normalizedSecret ? { 'x-nosteros-internal': normalizedSecret } : {}), ...(token ? { Cookie: `${GATE_COOKIE}=${token}` } : {}) };
 }
+
+/** No redirects with credentials, and no repeated unauthenticated timer calls. */
+export function createTickRequest(port: string) {
+  const rejected = new Set<string>();
+  let missingSecretWarned = false;
+  return async (route: string): Promise<Response | null> => {
+    if (!['/api/analytics/refresh', '/api/agents/failover', '/api/cron/tick'].includes(route)) throw new Error('Unsupported internal tick route');
+    if (!/^\d+$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw new Error('Invalid internal port');
+    if (!process.env.NOSTEROS_INTERNAL_SECRET?.trim()) {
+      if (!missingSecretWarned) { console.warn('[ticks] NOSTEROS_INTERNAL_SECRET is missing; internal jobs are disabled until configured.'); missingSecretWarned = true; }
+      return null;
+    }
+    if (rejected.has(route)) return null;
+    const response = await fetch(`http://127.0.0.1:${port}${route}`, {
+      method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
+      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(20_000),
+    });
+    // An environment update restarts the service and clears this circuit breaker.
+    if (response.status === 401 || response.status === 403) rejected.add(route);
+    return response;
+  };
+}
+type TickRequest = ReturnType<typeof createTickRequest>;
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
   if (process.env.FOUNDER_OS_SKIP_WARMUP === '1') return;
 
   const port = process.env.PORT ?? '4100';
+  const requestTick = createTickRequest(port);
   // Fire and forget, after a beat so the server is actually listening.
   setTimeout(() => {
     const started = Date.now();
-    fetch(`http://127.0.0.1:${port}/api/analytics/refresh`, {
-      method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
-    })
-      .then((r) => {
+    requestTick('/api/analytics/refresh')
+      .then(async (r) => {
+        if (!r) return;
         if (!r.ok) {
           console.warn(`[warmup] priming failed: HTTP ${r.status}`);
           return;
         }
+        const body = await r.json();
+        if (body.skipped) return;
         console.log(`[warmup] comms primed via refresh (${r.status}) in ${((Date.now() - started) / 1000).toFixed(1)}s`);
       })
       .catch((err) => console.warn('[warmup] priming failed:', err instanceof Error ? err.message : err));
   }, 4000).unref?.();
 
-  startFailoverTick(port);
-  startCronTick(port);
+  startFailoverTick(requestTick);
+  startCronTick(requestTick);
 }
 
 /**
@@ -59,16 +85,15 @@ export async function register() {
  * for the same reason: instrumentation.ts is traced for the edge runtime
  * too, so it must not import the connectors.
  */
-function startFailoverTick(port: string) {
+function startFailoverTick(requestTick: TickRequest) {
   if (process.env.FOUNDER_OS_DISABLE_FAILOVER === '1') return;
   const everyMs = Number(process.env.FOUNDER_OS_FAILOVER_INTERVAL_MS ?? 5 * 60_000);
   if (!Number.isFinite(everyMs) || everyMs < 30_000) return;
 
   const tick = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/agents/failover`, {
-        method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
-      });
+      const res = await requestTick('/api/agents/failover');
+      if (!res) return;
       if (!res.ok) {
         console.warn(`[failover] tick failed: HTTP ${res.status}`);
         return;
@@ -105,16 +130,15 @@ function startFailoverTick(port: string) {
  * instrumentation.ts is traced for the edge runtime too and must not import
  * better-sqlite3 or the connectors.
  */
-function startCronTick(port: string) {
+function startCronTick(requestTick: TickRequest) {
   if (process.env.FOUNDER_OS_DISABLE_CRON === '1') return;
   const everyMs = Number(process.env.FOUNDER_OS_CRON_INTERVAL_MS ?? 60_000);
   if (!Number.isFinite(everyMs) || everyMs < 15_000) return;
 
   const tick = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}/api/cron/tick`, {
-        method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
-      });
+      const res = await requestTick('/api/cron/tick');
+      if (!res) return;
       if (!res.ok) {
         console.warn(`[cron] tick failed: HTTP ${res.status}`);
         return;

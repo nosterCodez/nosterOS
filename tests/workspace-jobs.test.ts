@@ -71,7 +71,7 @@ test('internal connector jobs run only for the bound operator, never other works
     expect((await workspaceJob('/api/other', work)).status).toBe(401);
     expect(work).toHaveBeenCalledTimes(1);
     vi.mocked(operatorWorkspaceId).mockReturnValueOnce(null);
-    expect((await workspaceJob('/api/cron/tick', work)).status).toBe(403);
+    expect(await (await workspaceJob('/api/cron/tick', work)).json()).toEqual({ ok: true, skipped: 'operator-unavailable', workspaces: [] });
     expect(work).toHaveBeenCalledTimes(1);
   } finally { log.mockRestore(); }
 });
