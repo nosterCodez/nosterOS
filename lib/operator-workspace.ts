@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { controlDbPath } from '@/lib/paths';
 
-/** Only the offline migration writes this binding; organization APIs cannot. */
+/** Only migration or administrative bootstrap writes this binding; organization APIs cannot. */
 export function operatorWorkspaceId(): string | null {
   const owner = process.env.NOSTEROS_OWNER_EMAIL?.trim().toLowerCase();
   if (!owner) return null;

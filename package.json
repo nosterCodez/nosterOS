@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "bootstrap-operator": "tsx scripts/bootstrap-operator.ts",
     "brain:docs": "tsx scripts/generate-brain-docs.ts"
   },
   "dependencies": {

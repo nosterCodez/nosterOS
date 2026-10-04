@@ -34,12 +34,22 @@ Set up by Claude on Oct 3, 2026, with Noe's approval. Nothing is deployed yet.
 3. **Noe, GoDaddy DNS for noepenaa.com** (add only these two; change nothing else):
    - CNAME `os` → `wv6vdkb7.up.railway.app`
    - TXT `_railway-verify.os` → `railway-verify=5dc0a622adeabfb6c1735e09ca3ff08b83c496bcf58f03d4fd6e380cb5c4d64d`
-4. **After M2 is merged and reported:** connect the GitHub repo
-   `nosterCodez/nosterOS` (branch `main`) as the service source. That
-   triggers the first build. Never `railway up` from the local folder.
+4. **Online-first decision, Oct 3:** after reviewing `4bd0c95` and the
+   bootstrap follow-up, Claude connects `nosterCodez/nosterOS`, branch
+   `m2-isolation`, for the private team beta. Keep the beta wall on,
+   signup limited to `@nostermarketing.com`, and no business connector
+   credentials configured. Never `railway up` from the local folder.
 5. First deploy checks: anonymous `/` shows the beta challenge; sign in as
-   noster@nostermarketing.com; `/data/control.db` and
-   `/data/workspaces/<id>/` created; cron tick log lines carry workspace ids.
+   noster@nostermarketing.com, completing the emailed sign-in link.
+   Then run `npm run bootstrap-operator` **inside the deployed container**
+   with its mounted `/data` volume and production environment, not a local
+   command merely borrowing Railway variables. The command uses the existing
+   `tsx` dependency; it must be installed in that container.
+   Refresh the app and select nosterCodes. Workspace data is initialized on
+   first access using structure-only seeding. Verify a second workspace has
+   no nosterCodes data and connector surfaces return 403/empty states.
+   Merge to main only after online checks and remaining M2 review pass.
+   Existing PC data and its deferred migration are not part of this deploy.
 6. Optional later: healthcheck path that returns 200 behind the beta gate.
 
 ## Review note for Astra (from Claude)

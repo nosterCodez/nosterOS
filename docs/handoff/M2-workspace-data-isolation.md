@@ -1,6 +1,7 @@
 # M2: One data directory per workspace
 
 Status: in progress on m2-isolation; not merged, not customer-safe
+Current completion path: private online beta and two-workspace verification; local legacy migration deferred (see Oct 3 online-first decision below).
 Self-review required: yes (data isolation is the core security property)
 
 ## Goal
@@ -8,6 +9,16 @@ Every workspace reads and writes only its own data. After M2, code cannot
 touch workspace data without saying which workspace it's for, and a new
 workspace starts empty instead of with FounderOS demo content. Read
 `docs/architecture/multi-tenant.md` first.
+
+## Decision: Oct 3 online-first beta (Noe and Claude)
+- Supersedes the local-first sign-in and real-data migration prerequisite below. Noe's first sign-in will be online from his laptop.
+- Noe handles Railway Hobby, spending limits, production secrets, DNS and SMTP. After reviewing `4bd0c95`, Claude connects Railway to `m2-isolation` for a private team beta, not `main` yet.
+- Keep the beta wall enabled, signup restricted to `@nostermarketing.com`, `DEMO_GATE` disabled, and no business connector credentials on Railway. SMTP for authentication is distinct from inbox connector credentials.
+- Fresh installations run `npm run bootstrap-operator` inside the deployed service after the configured `NOSTEROS_OWNER_EMAIL` user completes verified sign-in. The command uses the service's `DATA_DIR` and environment, never credentials pasted into chat.
+- Bootstrap atomically creates the nosterCodes agency, owner membership and operator binding; repeat runs preserve a valid binding. It does not create users, adopt unbound workspaces, import legacy data, seed demo rows, select a session workspace, or send messages. Refresh and select nosterCodes after running it.
+- Missing/unverified owner, conflicting binding/name/slug, demo mode or legacy artifacts fail closed. SQLite immediate transaction serializes concurrent commands and rolls back partial creation.
+- The local migration remains available for later on a verified copy. Noe's existing PC data stays untouched; fresh-start bootstrap is not a migration replacement or a later data-merge tool.
+- Merge to main only after the online two-workspace isolation check and remaining M2 code review pass. No deployment or Railway changes are performed by this bootstrap implementation task.
 
 Important: until M3, connectors still read credentials from global
 environment variables, so every workspace would see the owner's Stripe,
@@ -250,3 +261,16 @@ browser check are done. Railway project now exists but has no source; see
 - Verification: typecheck and production build pass. Final full Windows suite: 3,616 passed, 4 failed assertions; 329 passing files and 7 failing files, all failures within documented baseline. Focused security suite passed 78 checks before two additional safety tests were added; both additional tests pass in the final full run. Diff whitespace check passes.
 - Local preview remains running at http://localhost:4100; private-cookie sign-in probe returns 200. Read-only check still finds no configured local control.db, so Noe's first local sign-in is required before real-data rehearsal.
 - M2 is NOT complete: real-data-copy migration, signed-in two-workspace browser verification, remaining long-lived request lease/CLI target review are pending. Do not merge, invite customer workspaces or connect Railway yet. Noe should sign in as noster@nostermarketing.com, then resume those checks before M3.
+
+## Report checkpoint: Oct 3, 22:14 CDT - fresh online bootstrap
+- Recorded Noe/Claude's online-first decision above; it supersedes the previous local-sign-in/migration blocker and previous instruction to wait for merge before private Railway connection.
+- Added `npm run bootstrap-operator`, an explicit administrative command run inside the deployed service after the configured owner completes verified sign-in. No public bootstrap endpoint or automatic startup side effect was added.
+- Bootstrap atomically creates nosterCodes (agency), its owner membership and the operator binding in control.db. An immediate SQLite transaction serializes writers; failure rolls back all three records.
+- A valid repeated run returns already-complete without database changes. Missing/unverified owner, changed ownership, conflicting unbound name/slug, demo mode and legacy artifacts fail closed. It never creates an account or adopts a workspace silently.
+- Workspace files are created by the existing structure-only workspace initializer on first access, not by bootstrap. Users refresh/select nosterCodes afterward; no session is switched by the command.
+- Six new tests use temporary databases with the actual Better Auth schema; cover successful binding recognized by the gate, idempotency, verified owner requirement, legacy preservation, conflicts and rollback.
+- Validation: typecheck and production build pass. Full Windows run: 3,621 passed / 5 failed assertions, 329 passing / 8 failing files, all failures in the documented Windows baseline (including seed timeout). Focused bootstrap plus seed rerun: 19/19 pass. Diff whitespace check passes.
+- Updated Railway deployment instructions and architecture for the branch-first private beta. The command uses the existing tsx dependency, which must be present in the deployed container.
+- Did not run bootstrap on this PC's real data or Railway; did not provision, connect or deploy anything, change secrets/DNS/SMTP, or send messages. Local migration code and original data remain untouched.
+- Existing local dev server remains running; private-cookie sign-in probe returned HTTP 200. No local first-sign-in is now required for this deployment path.
+- Next: Claude reviews/connects m2-isolation after Noe's Railway setup; Noe signs in online, an administrator runs bootstrap, then complete online two-workspace checks and remaining M2 review before merging to main. No merge performed here.
