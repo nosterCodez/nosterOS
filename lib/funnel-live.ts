@@ -10,7 +10,7 @@
  * drives node size AND how tightly a lead orbits its hub. Swap it for a real
  * ICP model once one is defined.
  */
-import { resolveAttioKey } from '@/lib/creds';
+import { resolveAttioKey } from '@/lib/operator-creds';
 import { FUNNEL_STAGES } from '@/lib/funnel';
 import {
   FunnelJourneySchema,

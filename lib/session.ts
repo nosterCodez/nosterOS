@@ -77,7 +77,7 @@ export async function apiWorkspace(input?: Headers): Promise<WorkspaceCtx | Resp
 
 export async function requireOperatorWorkspace(input?: Headers, mode: 'page' | 'api' = 'page'): Promise<WorkspaceCtx> {
   const context = await requireWorkspace('viewer', input, mode);
-  if (context.workspace.kind !== 'agency' || context.workspace.id !== operatorWorkspaceId()) throw new SessionError('Available after your connections are set up', 403);
+  if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1' || context.workspace.kind !== 'agency' || context.workspace.id !== operatorWorkspaceId()) throw new SessionError('Available after your connections are set up', 403);
   return context;
 }
 export async function apiOperatorWorkspace(input?: Headers): Promise<WorkspaceCtx | Response> {

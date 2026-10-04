@@ -14,6 +14,7 @@ const A = 'A'.repeat(32), B = 'B'.repeat(32), owner = 'owner@example.com';
 const headers = new Headers({ cookie: 'better-auth.session_token=test' });
 let root: string, db: Database.Database;
 function setup() {
+  vi.stubEnv('NOSTEROS_OPERATOR_FEATURES', '1');
   root = mkdtempSync(path.join(tmpdir(), 'operator-gate-')); vi.stubEnv('DATA_DIR', root); vi.stubEnv('NOSTEROS_OWNER_EMAIL', owner);
   db = new Database(path.join(root, 'control.db'));
   db.exec(`CREATE TABLE organization(id TEXT,metadata TEXT); CREATE TABLE user(id TEXT,email TEXT);
@@ -49,5 +50,11 @@ test('unauthenticated requests cannot use the operator binding', async () => {
   setup(); db.prepare('INSERT INTO nosteros_operator VALUES (1,?,?)').run(A, 'owner');
   mocks.session.mockResolvedValue(null);
   expect((await apiOperatorWorkspace(headers) as Response).status).toBe(401);
+  expect(mocks.open).not.toHaveBeenCalled();
+});
+test('operator binding alone cannot enable host features', async () => {
+  setup(); db.prepare('INSERT INTO nosteros_operator VALUES (1,?,?)').run(A, 'owner');
+  vi.stubEnv('NOSTEROS_OPERATOR_FEATURES', '');
+  expect((await apiOperatorWorkspace(headers) as Response).status).toBe(403);
   expect(mocks.open).not.toHaveBeenCalled();
 });

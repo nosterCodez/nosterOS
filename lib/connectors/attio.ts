@@ -1,5 +1,5 @@
 import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status';
-import { resolveAttioKey } from '@/lib/creds';
+import { resolveAttioKey } from '@/lib/operator-creds';
 import { RosterClientSchema, type RosterClient } from '@/lib/schemas';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 

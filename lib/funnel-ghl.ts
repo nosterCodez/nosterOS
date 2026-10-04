@@ -10,7 +10,7 @@
  * first stage → first_touch, then engaged (<0.4), nurtured (<0.75), opted_in;
  * a `won` opportunity is the conversion regardless of stage.
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import { FUNNEL_STAGES } from '@/lib/funnel';
 import { FunnelJourneySchema, type FunnelJourney, type FunnelStage, type FunnelTouch } from '@/lib/schemas';
 

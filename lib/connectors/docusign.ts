@@ -20,7 +20,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * error. Never a fake "connected". fetch is injectable so the JWT exchange
  * and parsing are testable offline.
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 type Fetch = typeof fetch;

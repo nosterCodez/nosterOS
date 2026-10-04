@@ -5,7 +5,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * arrives via the Meta Ads MCP; until a token shows up this is a status-only
  * connector, same pattern as trakyo.ts. Never reports a fake "connected".
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 const KEY = 'META_ADS_ACCESS_TOKEN';

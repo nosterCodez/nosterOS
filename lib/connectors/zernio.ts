@@ -2,7 +2,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { CRED_FILES, resolveCred } from '@/lib/creds';
+import { CRED_FILES, resolveCred } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 /** Optional local account map. Generic and env-overridable: nothing here may

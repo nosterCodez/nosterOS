@@ -9,7 +9,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * scopes; a valid key without the endpoint's scope answers 403, which surfaces
  * as an honest `error` rather than a fake "connected".
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 const KEY = 'TRAKYO_API_KEY';

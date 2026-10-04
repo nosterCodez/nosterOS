@@ -4,7 +4,7 @@
  * against Trakyo API v1: `trakyoTouches` pulls `GET /v1/leads` and maps each
  * lead's `first_touch` onto the journey of the same name.
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import { TRAKYO_API } from '@/lib/connectors/trakyo';
 import { matchAcquisition } from '@/lib/funnel-radial';
 import type { FunnelAcquisition, FunnelJourney } from '@/lib/schemas';

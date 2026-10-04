@@ -30,6 +30,7 @@ type RouteEntry = {
   url: string; // includes any required query params
   params?: Record<string, string>; // for dynamic [param] routes
   headers?: Record<string, string>;
+  expectedStatus?: number;
 };
 
 // Every app/api/**/route.ts that exports GET, with valid params so each returns
@@ -73,7 +74,8 @@ const ROUTES: RouteEntry[] = [
   { route: 'funnel', load: () => import('@/app/api/funnel/route'), url: 'http://localhost/api/funnel' },
   { route: 'funnel/lead-message', load: () => import('@/app/api/funnel/lead-message/route'), url: 'http://localhost/api/funnel/lead-message?name=Smoke%20Test%20Lead' },
   { route: 'lead-magnets', load: () => import('@/app/api/lead-magnets/route'), url: 'http://localhost/api/lead-magnets' },
-  { route: 'admin/keys', load: () => import('@/app/api/admin/keys/route'), url: 'http://localhost/api/admin/keys' },
+  { route: 'admin/keys', load: () => import('@/app/api/admin/keys/route'), url: 'http://localhost/api/admin/keys', expectedStatus: 409 },
+  { route: 'admin/connections', load: () => import('@/app/api/admin/connections/route'), url: 'http://localhost/api/admin/connections' },
   { route: 'life/map', load: () => import('@/app/api/life/map/route'), url: 'http://localhost/api/life/map' },
   { route: 'metrics', load: () => import('@/app/api/metrics/route'), url: 'http://localhost/api/metrics' },
   // No ?q= on purpose: the ambient brief must not touch the gbrain CLI at all.
@@ -110,11 +112,11 @@ function discoverGetRoutes(dir: string, base = ''): string[] {
 }
 
 describe('platform smoke — every GET API route answers 200 with JSON', () => {
-  test.each(ROUTES)('GET /api/$route', async ({ load, url, params, headers }) => {
+  test.each(ROUTES)('GET /api/$route', async ({ load, url, params, headers, expectedStatus = 200 }) => {
     const mod = await load();
     expect(mod.GET, 'route should export GET').toBeTypeOf('function');
     const res = (await mod.GET!(new Request(url, { headers }), { params })) as Response;
-    expect(res.status, `GET ${url} should be 200 (honest state, not 500/400)`).toBe(200);
+    expect(res.status, `GET ${url} should match its documented status`).toBe(expectedStatus);
     const body = await res.json();
     expect(body && typeof body === 'object').toBe(true);
   }, 20_000);

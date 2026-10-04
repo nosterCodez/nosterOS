@@ -9,7 +9,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * AI_GATEWAY_API_KEY ⇒ not_configured, never a fake "connected".
  */
 import { z } from 'zod';
-import { CRED_FILES, resolveCred } from '@/lib/creds';
+import { CRED_FILES, resolveCred } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 export type LlmRole = 'system' | 'user' | 'assistant' | 'tool';
