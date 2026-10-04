@@ -1,6 +1,6 @@
 # M2c: Reliable sign-in email on Railway
 
-Status: in progress
+Status: done
 Review by Claude: no
 
 ## Goal
@@ -27,7 +27,7 @@ Typecheck, full tests (document Windows baseline), build, deployment and approve
 test email verified. Inbox receipt and first sign-in remain separate checks.
 
 ## Report
-- Code complete; production delivery verification pending deployment.
+- Fix committed as 0864908 and pushed to m2-isolation; main remains unmerged.
 - Typecheck and production build passed on October 4, 2026.
 - New regression tests failed before implementation; all 10 focused tests pass after it.
 - Full suite: 3,634 passed, 5 failed; 8 failing files including cleanup hooks.
@@ -40,4 +40,11 @@ test email verified. Inbox receipt and first sign-in remain separate checks.
 - Configure RESEND_API_KEY and SYSTEM_MAIL_FROM in Railway; HTTPS takes precedence
   over legacy SMTP. Existing SMTP credentials are untouched, not copied or logged.
 - Resend dashboard shows nostermarketing.com Verified. No plan upgrades/purchases.
-- Deployment, provider delivery and inbox confirmation still to be checked.
+- Railway deployment 80c59f99-e793-4e4e-a3db-a821e3952b38 succeeded; one healthy replica.
+- Both private mail variables applied in production. Live form completed with
+  the new success message and re-enabled its submit button.
+- Approved live test email to the owner shows Delivered in Resend, message ID
+  01a10905-d324-7ef4-aea0-527d0363e8bc, October 4 around 22:25 UTC.
+- No sign-in token was printed, stored in this report, or consumed by the agent.
+- Noe still needs to open the delivered link; provider delivery is not proof of
+  inbox placement or completed sign-in. Online M2 two-workspace check remains pending.
