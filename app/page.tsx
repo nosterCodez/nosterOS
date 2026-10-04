@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { stripeSnapshot } from '@/lib/connectors/payments';
@@ -135,7 +136,8 @@ function StatTile({
 type DoneItem = { key: string; time: number; head: string; headClass: string; body: string; when: string };
 
 export default async function HomePage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const db = workspace.db;
   const [connections, overview, feed, stripe] = await Promise.all([

@@ -1,4 +1,5 @@
 import { apiWorkspace } from '@/lib/session';
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -21,6 +22,8 @@ const AskSchema = z.object({ question: z.string().min(3).max(600) });
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/ask', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const context = await apiWorkspace();
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;

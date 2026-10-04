@@ -1,6 +1,7 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { Users } from 'lucide-react';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { paperclipAgents, type PaperclipAgent } from '@/lib/connectors/paperclip';
 import { LIVE_DOT, overlayLiveOrg } from '@/lib/org-live';
 import { buildHierarchy, flattenNodes, type AgentNode } from '@/lib/hierarchy';
@@ -75,7 +76,8 @@ function LiveChip({ agent }: { agent: PaperclipAgent }) {
 }
 
 export default async function OrgChartPage(props: { searchParams?: Promise<{ venture?: string }> }) {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const searchParams = await props.searchParams;
   const db = workspace.db;

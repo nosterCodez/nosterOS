@@ -1,8 +1,9 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
 import type { RosterClient } from '@/lib/schemas';
 import { buildKnowledgeGraph } from '@/lib/knowledge-graph';
 import { memoryConstellation, wikiFor } from '@/lib/brain-constellation';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import type { FounderDb } from '@/lib/db';
 import { PageHeader } from '@/components/PageHeader';
 import { BrainDump } from '@/components/BrainDump';
@@ -52,7 +53,8 @@ const BOARD_LEAD_NAMES: Record<string, string> = {
 };
 
 export default async function BrainPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const db = workspace.db;
   // latest run per agent (oldest first so the LAST write per id is the newest)

@@ -1,7 +1,8 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { PLATFORM_LABELS, platformDetail, syncFromZernioConfig } from '@/lib/social';
 import { platformVolume } from '@/lib/social-volume';
 import type { SocialPlatform } from '@/lib/schemas';
@@ -21,7 +22,8 @@ const WINDOW_DAYS = 30;
  * snapshots and growth windows.
  */
 export default async function SocialPlatformPage(props: { params: Promise<{ platform: string }> }) {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const params = await props.params;
   const db = workspace.db;

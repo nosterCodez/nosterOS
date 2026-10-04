@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { createPaperclipIssue, paperclipIssues } from '@/lib/connectors/paperclip';
@@ -8,6 +9,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/board/tasks', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   return NextResponse.json({ issues: await paperclipIssues(30) });
 }
@@ -16,6 +19,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/board/tasks', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: { title?: string; description?: string };
   try {

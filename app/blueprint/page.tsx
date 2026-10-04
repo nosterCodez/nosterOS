@@ -1,4 +1,5 @@
-import { requireWorkspace } from '@/lib/session';
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { BlueprintCanvasLazy } from '@/components/blueprint/BlueprintCanvasLazy';
 
@@ -22,7 +23,8 @@ function relativeTime(iso: string): string {
  * map itself genuinely change when the system does.
  */
 export default async function BlueprintPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const graph = await compileBlueprint(workspace.db);
   const count = (kind: string) => graph.nodes.filter((n) => n.kind === kind).length;

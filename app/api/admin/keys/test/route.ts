@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
@@ -24,6 +25,8 @@ const TestKeySchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/admin/keys/test', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(request.headers);
   if (workspace instanceof Response) return workspace;
 

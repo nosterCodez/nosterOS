@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
@@ -14,6 +15,8 @@ export const runtime = 'nodejs';
 export async function GET() {
   const authError = await apiSessionError('/api/adscout/watchlist', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const context = await apiWorkspace();
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
@@ -29,6 +32,8 @@ const AddSchema = z.union([
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const context = await apiWorkspace();
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
@@ -64,6 +69,8 @@ const RemoveSchema = z.object({ brandId: z.string().min(1) });
 export async function DELETE(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'DELETE', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const context = await apiWorkspace();
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;

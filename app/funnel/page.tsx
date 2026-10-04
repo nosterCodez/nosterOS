@@ -1,4 +1,5 @@
-import { requireWorkspace } from '@/lib/session';
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import Link from 'next/link';
 import { FunnelLayoutToggle } from '@/components/FunnelLayoutToggle';
 import {
@@ -297,7 +298,8 @@ export default async function FunnelPage(
     searchParams?: Promise<{ venture?: string; view?: string; stage?: string; layout?: string; lead?: string }>;
   }
 ) {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const searchParams = await props.searchParams;
   const parsed = FunnelVentureSchema.safeParse(searchParams?.venture);

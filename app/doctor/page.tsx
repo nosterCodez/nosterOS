@@ -1,8 +1,9 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { foldersToClusters } from '@/lib/brain-viz';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { BrainCore } from '@/components/BrainCore';
 import { PillarRadar } from '@/components/PillarRadar';
 import { pillarRadarAxes } from '@/lib/pillar-radar';
@@ -96,7 +97,8 @@ function FlowStep({ title, detail, dashed = false }: { title: string; detail: st
 // Every number in the hero and second row comes from lib/doctor-volume, fed
 // with the same doctor, store, radar and run rows the panels below render.
 export default async function DoctorPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const overview = await createGBrainProvider().overview();
   const { store, doctor } = overview;

@@ -1,3 +1,4 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { Instagram, Linkedin, Music2, Youtube } from 'lucide-react';
 import { XLogo } from '@/components/XLogo';
@@ -5,7 +6,7 @@ import { XLogo } from '@/components/XLogo';
 /** Any icon that takes a className: the lucide set and the hand-rolled X mark
     both satisfy it, and the map does not care which it is holding. */
 type PlatformIcon = React.ComponentType<{ className?: string }>;
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { buildSocialDashboard, syncFromZernioConfig, audienceGrowthPct, PLATFORM_LABELS } from '@/lib/social';
 import { agentRunVolume, runsWithin } from '@/lib/analytics';
 import { analyticsVolume } from '@/lib/analytics-volume';
@@ -73,7 +74,8 @@ function MetricTileCard({ tile, spark }: { tile: MetricTile; spark: number[] }) 
 }
 
 export default async function AnalyticsPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const db = workspace.db;
   syncFromZernioConfig(db);

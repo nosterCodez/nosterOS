@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipCockpitThread, postCockpitMessage } from '@/lib/connectors/paperclip';
@@ -12,6 +13,8 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const authError = await apiSessionError('/api/conductor/chat', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   return NextResponse.json({ messages: await paperclipCockpitThread(50) });
 }
@@ -19,6 +22,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/conductor/chat', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: { message?: string };
   try {

@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { zernioUploadTarget } from '@/lib/connectors/zernio';
@@ -12,6 +13,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/social/upload', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const form = await req.formData().catch(() => null);
   const file = form?.get('file');

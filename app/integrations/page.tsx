@@ -1,4 +1,5 @@
-import { requireWorkspace } from '@/lib/session';
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { readEnvLocal } from '@/lib/creds';
 import { oauthReadiness } from '@/lib/oauth/store';
@@ -22,7 +23,8 @@ const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
  * accordion and key editor are unchanged.
  */
 export default async function ConnectionsPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const statuses = await allConnectorStatuses(workspace.db);
   const env = readEnvLocal();

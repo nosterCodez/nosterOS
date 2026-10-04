@@ -1,8 +1,9 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import { CalendarDays, Hash, Mail, MessageSquare, Mic, type LucideIcon } from 'lucide-react';
 import { CommsTabs } from '@/components/CommsTabs';
 import { CommsDigestPanel } from '@/components/CommsDigestPanel';
 import { Rise } from '@/components/motion';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import type { DigestRunResult } from '@/lib/comms-digest-run';
 import { gatherCommsLanes } from '@/lib/comms-lanes';
 import { gatherRecordings } from '@/lib/recordings';
@@ -26,7 +27,8 @@ const SOURCE_ICON: Record<string, LucideIcon> = {
 };
 
 export default async function CommsPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const [{ lanes, emailState, whatsappState }, { cards: slackCards, status: slackState }, channels, calendar, weekEvents, recordings] =
     await Promise.all([

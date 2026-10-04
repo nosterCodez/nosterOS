@@ -4,6 +4,7 @@ import { equalSecret, internalAllowed, safeNext } from '@/lib/auth-boundary';
 import { GATE_COOKIE } from '@/lib/access-gate';
 import { redirect } from 'next/navigation';
 import { openWorkspaceDb } from '@/lib/workspace-storage';
+import { operatorWorkspaceId } from '@/lib/operator-workspace';
 
 export type WorkspaceRole = 'viewer' | 'member' | 'admin' | 'owner';
 const roleLevel: Record<WorkspaceRole, number> = { viewer: 0, member: 1, admin: 2, owner: 3 };
@@ -29,7 +30,7 @@ export async function requireSession(input?: Headers, optional = false) {
   return session;
 }
 
-/** M2 entry point. Not yet wired into the legacy shared-data call sites. */
+/** Resolve membership before opening workspace storage. */
 export async function requireWorkspace(minRole: WorkspaceRole = 'viewer', input?: Headers, mode: 'page' | 'api' = 'page'): Promise<WorkspaceCtx> {
   const h = input ?? new Headers(await headers());
   const session = await requireSession(h, true);
@@ -57,6 +58,23 @@ export async function apiWorkspace(input?: Headers): Promise<WorkspaceCtx | Resp
     if (error instanceof SessionError) return Response.json({ error: error.message }, { status: error.status });
     return Response.json({ error: 'Workspace unavailable' }, { status: 503 });
   }
+}
+
+export async function requireOperatorWorkspace(input?: Headers, mode: 'page' | 'api' = 'page'): Promise<WorkspaceCtx> {
+  const context = await requireWorkspace('viewer', input, mode);
+  if (context.workspace.kind !== 'agency' || context.workspace.id !== operatorWorkspaceId()) throw new SessionError('Available after your connections are set up', 403);
+  return context;
+}
+export async function apiOperatorWorkspace(input?: Headers): Promise<WorkspaceCtx | Response> {
+  try { return await requireOperatorWorkspace(input, 'api'); }
+  catch (error) {
+    if (error instanceof SessionError) return Response.json({ error: error.message }, { status: error.status });
+    return Response.json({ error: 'Workspace unavailable' }, { status: 503 });
+  }
+}
+export async function operatorWorkspaceForPage(): Promise<WorkspaceCtx | null> {
+  try { return await requireOperatorWorkspace(); }
+  catch (error) { if (error instanceof SessionError && error.status === 403) return null; throw error; }
 }
 export async function apiSessionError(path: string, method: string, request?: Request): Promise<Response | null> {
   try {

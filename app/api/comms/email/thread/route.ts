@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -18,6 +19,8 @@ const ThreadQuerySchema = z
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/comms/email/thread', 'GET', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const url = new URL(request.url);
   const parsed = ThreadQuerySchema.safeParse(Object.fromEntries(url.searchParams));

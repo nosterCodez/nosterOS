@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
@@ -40,6 +41,8 @@ function schedulable(db: FounderDb): SchedulableCron[] {
 export async function GET() {
   const authError = await apiSessionError('/api/cron/tick', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const workspace = await apiWorkspace();
   if (workspace instanceof Response) return workspace;

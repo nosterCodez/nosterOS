@@ -4,13 +4,15 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { closeWorkspaceStores, openWorkspaceDb } from '@/lib/workspace-storage';
-import { forEachWorkspace, workspaceJob } from '@/lib/workspace-jobs';
-import { apiWorkspace } from '@/lib/session';
+import { forEachWorkspace, workspaceJob, listWorkspaces } from '@/lib/workspace-jobs';
+import { apiOperatorWorkspace as apiWorkspace } from '@/lib/session';
+import { operatorWorkspaceId } from '@/lib/operator-workspace';
 
 vi.unmock('@/lib/workspace-jobs');
 const state = vi.hoisted(() => ({ headers: new Headers() }));
 vi.mock('next/headers', () => ({ headers: async () => state.headers }));
 vi.mock('@/lib/auth', () => ({ getAuth: async () => ({}) }));
+vi.mock('@/lib/operator-workspace', () => ({ operatorWorkspaceId: vi.fn(() => 'A'.repeat(32)) }));
 const A = 'A'.repeat(32), B = 'B'.repeat(32), C = 'C'.repeat(32);
 let root: string;
 function setup() {
@@ -51,7 +53,7 @@ test('member requests are scoped to the active workspace; failures cannot fan ou
   expect(work).toHaveBeenCalledTimes(1);
 });
 
-test('valid internal secret fans out only on approved internal endpoints', async () => {
+test('internal connector jobs run only for the bound operator, never other workspaces', async () => {
   setup();
   const control = new Database(path.join(root, 'control.db'));
   control.exec('CREATE TABLE organization (id TEXT, name TEXT, metadata TEXT)');
@@ -63,10 +65,27 @@ test('valid internal secret fans out only on approved internal endpoints', async
   try {
     const response = await workspaceJob('/api/cron/tick', work);
     const body = await response.json();
-    expect(body.workspaces.map((row: { workspaceId: string }) => row.workspaceId)).toEqual([A, B]);
+    expect(body.workspaces.map((row: { workspaceId: string }) => row.workspaceId)).toEqual([A]);
     expect(apiWorkspace).not.toHaveBeenCalled();
     vi.mocked(apiWorkspace).mockResolvedValueOnce(Response.json({}, { status: 401 }));
     expect((await workspaceJob('/api/other', work)).status).toBe(401);
-    expect(work).toHaveBeenCalledTimes(2);
+    expect(work).toHaveBeenCalledTimes(1);
+    vi.mocked(operatorWorkspaceId).mockReturnValueOnce(null);
+    expect((await workspaceJob('/api/cron/tick', work)).status).toBe(403);
+    expect(work).toHaveBeenCalledTimes(1);
   } finally { log.mockRestore(); }
+});
+
+test('malformed workspace metadata cannot stop valid job discovery', async () => {
+  setup();
+  const control = new Database(path.join(root, 'control.db'));
+  control.exec('CREATE TABLE organization (id TEXT, name TEXT, metadata TEXT)');
+  control.prepare('INSERT INTO organization VALUES (?, ?, ?)').run(A, 'A', '{"kind":"agency"}');
+  control.prepare('INSERT INTO organization VALUES (?, ?, ?)').run(B, 'B', 'invalid');
+  control.close();
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    expect((await listWorkspaces()).map(w => w.id)).toEqual([A]);
+    expect(warning).toHaveBeenCalledWith(`[workspace:${B}] invalid metadata; job skipped`);
+  } finally { warning.mockRestore(); }
 });

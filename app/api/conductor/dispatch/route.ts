@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { dispatchCodingTask } from '@/lib/connectors/superset';
@@ -14,6 +15,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/conductor/dispatch', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: { request?: string };
   try {

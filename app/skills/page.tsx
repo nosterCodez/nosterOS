@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { SkillsGrid, type SkillCard } from '@/components/SkillsGrid';
 import { readPluginSkills, readUserSkills } from '@/lib/skills-catalog';
 import { skillsVolume } from '@/lib/skills-volume';
@@ -18,7 +19,8 @@ const truncate = (t: string, n = 110) => (t.length > n ? `${t.slice(0, n).replac
  * download and takes the stagger at i={6}.
  */
 export default async function SkillsPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   // All three catalogs on one wall: the real Claude Code skills read live
   // from disk (user-scope ~/.claude/skills plus every installed plugin's

@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
@@ -27,6 +28,8 @@ async function conductorModel(): Promise<string | null> {
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/conductor/context', 'GET', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(req.headers);
   if (workspace instanceof Response) return workspace;
 

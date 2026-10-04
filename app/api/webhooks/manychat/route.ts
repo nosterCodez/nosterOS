@@ -1,4 +1,5 @@
 import { apiSessionError } from '@/lib/session';
+import { apiOperatorWorkspace } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { apiWorkspace } from '@/lib/session';
 import { parseManyChatWebhook } from '@/lib/connectors/manychat-webhook';
@@ -18,6 +19,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request): Promise<Response> {
   const authError = await apiSessionError('/api/webhooks/manychat', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(request.headers);
   if (workspace instanceof Response) return workspace;
 
@@ -41,6 +44,8 @@ export async function POST(request: Request): Promise<Response> {
 export async function GET(): Promise<Response> {
   const authError = await apiSessionError('/api/webhooks/manychat', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace();
   if (workspace instanceof Response) return workspace;
 

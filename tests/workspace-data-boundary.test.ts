@@ -22,7 +22,7 @@ test('app data reads cannot import a singleton, raw database, or test fixture', 
       }
     }
     if (/\.db\b|@\/lib\/workspace-storage/.test(source.text)) {
-      expect(source.text, file).toMatch(/(?:requireWorkspace|apiWorkspace|workspaceJob)\(/);
+      expect(source.text, file).toMatch(/(?:requireWorkspace|apiWorkspace|workspaceJob|apiOperatorWorkspace|operatorWorkspaceForPage)\(/);
     }
   }
   expect(violations).toEqual([]);

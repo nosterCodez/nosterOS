@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -16,6 +17,8 @@ const DumpSchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/brain/dump', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const parsed = DumpSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

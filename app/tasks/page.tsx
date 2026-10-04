@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { paperclipIssues } from '@/lib/connectors/paperclip';
 import { scheduledJobRows } from '@/lib/scheduled-jobs';
 import { tasksVolume } from '@/lib/tasks-volume';
@@ -21,7 +22,8 @@ const WINDOW_DAYS = 14;
  * from i={6}.
  */
 export default async function TasksPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const db = workspace.db;
   const tasks = db.agentTasks.all();

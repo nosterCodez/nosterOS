@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { apiWorkspace } from '@/lib/session';
@@ -33,6 +34,8 @@ function plainText(s: string): string {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/blueprint/ask', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(req.headers);
   if (workspace instanceof Response) return workspace;
 

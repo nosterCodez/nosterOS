@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -24,6 +25,8 @@ function jobView() {
 export async function GET() {
   const authError = await apiSessionError('/api/calls/archive', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   return NextResponse.json({ archive: archiveStatus(gbrainStorePath()), job: jobView() }, { headers: { 'Cache-Control': 'no-store' } });
 }
@@ -33,6 +36,8 @@ const Body = z.object({ sources: z.array(z.enum(['attio', 'fathom'])).min(1).opt
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/calls/archive', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

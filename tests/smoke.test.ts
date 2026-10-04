@@ -10,6 +10,10 @@ vi.mock('@/lib/session', () => ({
     user: { id: 'smoke' }, workspace: { id: 'S'.repeat(32), name: 'Smoke', kind: 'agency' }, role: 'owner',
     db: (await import('@/tests/fixture-db')).getDb(),
   }),
+  operatorWorkspaceForPage: async () => ({
+    user: { id: 'smoke' }, workspace: { id: 'S'.repeat(32), name: 'Smoke', kind: 'agency' }, role: 'owner',
+    db: (await import('@/tests/fixture-db')).getDb(),
+  }),
 }));
 vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: {
   getActiveMember: async () => ({ role: 'owner' }),

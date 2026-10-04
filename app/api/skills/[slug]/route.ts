@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { readSkillMarkdown } from '@/lib/skills-catalog';
@@ -11,6 +12,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request, props: { params: Promise<{ slug: string }> }) {
   const authError = await apiSessionError('/api/skills/[slug]', 'GET', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const params = await props.params;
   const markdown = readSkillMarkdown(params.slug);

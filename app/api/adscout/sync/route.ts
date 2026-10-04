@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
@@ -11,6 +12,8 @@ export const runtime = 'nodejs';
 export async function POST() {
   const authError = await apiSessionError('/api/adscout/sync', 'POST');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const context = await apiWorkspace();
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;

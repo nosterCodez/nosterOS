@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -21,6 +22,8 @@ const ReplySchema = z.object({
 export async function POST(request: Request): Promise<Response> {
   const authError = await apiSessionError('/api/social/dm/reply', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(request.headers);
   if (workspace instanceof Response) return workspace;
 

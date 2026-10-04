@@ -1,3 +1,5 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, Mail } from 'lucide-react';
 import { getNewsletters } from '@/lib/newsletters';
@@ -16,6 +18,8 @@ export const dynamic = 'force-dynamic';
  * live subscriber count and the past issues, seeded until a key resolves).
  */
 export default async function BeehiivDashboardPage() {
+  const operatorAccess = await operatorWorkspaceForPage();
+  if (!operatorAccess) return <OperatorUnavailable />;
   const [newsletters, subscribers] = await Promise.all([getNewsletters(), beehiivSubscribers()]);
   const live = subscribers != null; // a real key resolved a subscriber count
   const v = newsletterVolume({ newsletters, subscribers });

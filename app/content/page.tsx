@@ -1,6 +1,7 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
 import { ArrowUpRight, BarChart3, Brain, Clapperboard, ExternalLink, Megaphone, Play } from 'lucide-react';
-import { requireWorkspace } from '@/lib/session';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { contentAgents } from '@/lib/content';
 import { contentVolume } from '@/lib/content-volume';
 import { zernioRecentPosts, zernioPostDaysKnown } from '@/lib/connectors/zernio';
@@ -86,7 +87,8 @@ function BacklinkCard({
 }
 
 export default async function ContentPage() {
-  const workspace = await requireWorkspace();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
 
   const db = workspace.db;
   const crew = contentAgents(db.agents.all());

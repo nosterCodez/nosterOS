@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -34,6 +35,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/board/deliverables', 'GET', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(request.headers);
   if (workspace instanceof Response) return workspace;
 

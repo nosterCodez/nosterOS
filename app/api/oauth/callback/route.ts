@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { oauthProvider, tokenRequestBody } from '@/lib/oauth/providers';
@@ -11,6 +12,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/oauth/callback', 'GET', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const url = new URL(req.url);
   const back = (msg: string, ok = false) =>

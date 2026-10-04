@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { invokePaperclipHeartbeat } from '@/lib/connectors/paperclip';
@@ -8,6 +9,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/board/agents/[id]/run', 'POST', _req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const params = await props.params;
   try {
