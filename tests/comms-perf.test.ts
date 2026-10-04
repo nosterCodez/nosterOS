@@ -137,7 +137,7 @@ describe('a deeper cache answers a shallower request', () => {
 describe('the sweep warms brain too', () => {
   test('the refresh route calls warmBrainConstellation', () => {
     const route = read('app/api/analytics/refresh/route.ts');
-    expect(route).toMatch(/warmBrainConstellation\(\)/);
+    expect(route).toMatch(/warmBrainConstellation\(workspace\.id\)/);
     expect(route).toMatch(/from '@\/lib\/brain-constellation'/);
   });
 

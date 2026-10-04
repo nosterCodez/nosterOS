@@ -5,5 +5,5 @@ import { redirect } from 'next/navigation';
 
 export default async function Onboarding() {
   if (!await requireSession(undefined, true)) redirect('/sign-in?next=/onboarding');
-  return <><PageHeader eyebrow="nosterOS" title="Create a workspace" /><OnboardingForm /></>;
+  return <><PageHeader eyebrow="OmegaOS" title="Create a workspace" /><OnboardingForm /></>;
 }

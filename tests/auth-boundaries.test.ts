@@ -23,6 +23,7 @@ describe('M1 authentication boundaries', () => {
   test('production without SMTP fails without logging a login link', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('SMTP_HOST', '');
+    vi.stubEnv('RESEND_API_KEY', '');
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     await expect(sendSystemMail({ template: 'magic-link', email: 'test@example.com', url: 'http://localhost:4100/api/auth/magic-link/verify?token=test' })).rejects.toThrow('SMTP');
     expect(log).not.toHaveBeenCalled();

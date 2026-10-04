@@ -38,7 +38,7 @@ describe('/blueprint: present, reachable, honest', () => {
     expect(route).not.toContain('wizard');
   });
 
-  test('the app node is Founder OS, never Slab', () => {
+  test('the app node is OmegaOS, never Slab', () => {
     expect(read('lib/blueprint/hierarchy.ts')).toContain("APP_ID = 'k-founder'");
     expect(read('lib/blueprint/hierarchy.ts')).not.toMatch(/slab/i);
     expect(read('components/blueprint/AskBar.tsx')).not.toMatch(/slab/i);

@@ -6,7 +6,7 @@ export function WorkspaceSwitcher() {
   const { data: workspaces } = authClient.useListOrganizations();
   const { data: active } = authClient.useActiveOrganization();
   const [error, setError] = useState('');
-  return <div className="flex min-w-0 items-center gap-2 text-xs">
+  return <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
     <select aria-label="Active workspace" value={active?.id ?? ''} className="max-w-[180px] rounded-ctl border border-os-border bg-os-bg px-2 py-1" onChange={async e => {
       const result = await authClient.organization.setActive({ organizationId: e.target.value });
       if (result.error) setError(result.error.message ?? 'Cannot switch workspace'); else window.location.reload();

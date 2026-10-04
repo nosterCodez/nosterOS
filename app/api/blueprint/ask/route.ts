@@ -1,6 +1,7 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { compileBlueprint } from '@/lib/blueprint/compile';
 import { buildHierarchy, describeScope, indexHierarchy } from '@/lib/blueprint/hierarchy';
 import { chat, llmStatus } from '@/lib/connectors/llm';
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const SYSTEM = [
-  "You are Founder OS's Blueprint analyst. The operator is looking at a live map of the system and asked a question about the SELECTED scope.",
+  "You are OmegaOS's Blueprint analyst. The operator is looking at a live map of the system and asked a question about the SELECTED scope.",
   'Answer ONLY from the CONTEXT. It was compiled from the running system a moment ago. If the context does not say, say so plainly. Never invent numbers, files, keys or status.',
   'Be direct, specific and short: 90 words max unless asked for a list. Plain text only, no markdown, no headers, no bullet symbols. Name components by their names.',
 ].join('\n');
@@ -33,6 +34,11 @@ function plainText(s: string): string {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/blueprint/ask', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: { question?: unknown; selected?: unknown };
   try {
@@ -51,7 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: 'AI Gateway not configured on this host' }, { status: 503 });
   }
 
-  const graph = await compileBlueprint(getDb(), { llm });
+  const graph = await withWorkspaceLease(workspace, db => compileBlueprint(db, { llm }));
   const h = buildHierarchy(graph);
   const idx = indexHierarchy(h);
   const ctx = describeScope(h, idx, selected);

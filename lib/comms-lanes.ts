@@ -10,7 +10,7 @@ import type { ContactTag } from '@/lib/schemas';
 import type { ConnectorState, ConnectorStatus } from '@/lib/connectors/types';
 import { parseInboxConfigs, latestEmails, emailStatus } from '@/lib/connectors/email';
 import { recentChats, whatsappStatus } from '@/lib/connectors/whatsapp';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 
 export type LaneSource = 'email' | 'whatsapp';
 
@@ -117,7 +117,7 @@ export function buildCommsLanes(input: {
  * the source connector statuses too so the page's status row can reuse them
  * instead of re-hitting IMAP/local SQLite a second time.
  */
-export async function gatherCommsLanes(): Promise<{
+export async function gatherCommsLanes(db: FounderDb): Promise<{
   lanes: CommsLane[];
   emailState: ConnectorStatus;
   whatsappState: ConnectorStatus;
@@ -129,7 +129,7 @@ export async function gatherCommsLanes(): Promise<{
     recentChats(40),
     whatsappStatus(),
   ]);
-  const tags = getDb().contactTags.all();
+  const tags = db.contactTags.all();
   const inboxes = inboxCfgs.map((c) => ({ id: c.id, name: c.name }));
   return {
     lanes: buildCommsLanes({ inboxes, emails, emailState, whatsapp, whatsappState, tags }),

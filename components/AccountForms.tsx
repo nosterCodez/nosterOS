@@ -12,9 +12,9 @@ export function SignInForm({ next, google }: { next: string; google: boolean }) 
     e.preventDefault(); setBusy(true); setMessage('');
     const email = String(new FormData(e.currentTarget).get('email'));
     try {
-      const result = await authClient.signIn.magicLink({ email, callbackURL: next });
-      setMessage(result.error ? result.error.message ?? 'Sign-in failed.' : 'Check your email for a sign-in link. Local development links appear in the server console.');
-    } catch { setMessage('Unable to request a link. Please try again.'); }
+      const result = await authClient.signIn.magicLink({ email, callbackURL: next }, { timeout: 20_000, retry: 0 });
+      setMessage(result.error ? 'We could not send a sign-in link. Please wait a moment and try again.' : 'Check your email for a sign-in link. If it is not there, check your spam folder.');
+    } catch { setMessage('The request could not finish. Check your inbox before trying again.'); }
     finally { setBusy(false); }
   }}>
     <label className="block space-y-2"><span>Email address</span><input className={accountField} name="email" type="email" autoComplete="email" required /></label>

@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { phaseProgress } from '@/lib/roadmap';
 import { PageHeader } from '@/components/PageHeader';
 import { RoadmapBoard } from '@/components/RoadmapBoard';
@@ -6,8 +6,10 @@ import { Rise } from '@/components/motion';
 
 export const dynamic = 'force-dynamic';
 
-export default function RoadmapPage() {
-  const db = getDb();
+export default async function RoadmapPage() {
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
   const items = db.roadmap.all();
   const phases = phaseProgress(db.phases.all(), items);
   const departments = Object.fromEntries(db.departments.all().map((d) => [d.id, d.name]));

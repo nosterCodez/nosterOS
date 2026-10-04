@@ -35,12 +35,15 @@ test('new workspaces contain structural records but no demonstration records', (
     }
   } finally { raw.close(); }
 });
-test('LRU closes least recently used handles on eviction', () => {
+test('LRU delays closing the least recently used handle until its grace period expires', () => {
+  vi.useFakeTimers();
   const closed: string[] = [];
   const pool = new HandlePool((key: string) => ({ key, close: () => { closed.push(key); } }), 2);
   pool.get('a'); pool.get('b'); pool.get('a'); pool.get('c');
-  expect(closed).toEqual(['b']); expect(pool.size).toBe(2);
+  expect(closed).toEqual([]); expect(pool.size).toBe(2);
+  vi.advanceTimersByTime(60_000); expect(closed).toEqual(['b']);
   pool.closeAll(); expect(closed).toEqual(['b', 'a', 'c']);
+  vi.useRealTimers();
 });
 test('workspace payment history does not install invented historical customers', () => {
   setup();

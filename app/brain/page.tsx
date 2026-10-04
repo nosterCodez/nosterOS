@@ -1,8 +1,10 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
 import type { RosterClient } from '@/lib/schemas';
 import { buildKnowledgeGraph } from '@/lib/knowledge-graph';
 import { memoryConstellation, wikiFor } from '@/lib/brain-constellation';
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
+import type { FounderDb } from '@/lib/db';
 import { PageHeader } from '@/components/PageHeader';
 import { BrainDump } from '@/components/BrainDump';
 import { BrainGraphView } from '@/components/BrainGraphView';
@@ -13,11 +15,12 @@ export const dynamic = 'force-dynamic';
 
 // The client roster comes from the seeded funnel journeys (a CRM connector can
 // take over at the repo layer); cached per process so a hot page stays cheap.
-let rosterCache: { at: number; value: RosterClient[] } | null = null;
+const rosterCache = new Map<string, { at: number; value: RosterClient[] }>();
 const ROSTER_TTL_MS = 60_000;
 
-async function clientRoster(db: ReturnType<typeof getDb>): Promise<RosterClient[]> {
-  if (rosterCache && Date.now() - rosterCache.at < ROSTER_TTL_MS) return rosterCache.value;
+async function clientRoster(db: FounderDb, workspaceId: string): Promise<RosterClient[]> {
+  const cached = rosterCache.get(workspaceId);
+  if (cached && Date.now() - cached.at < ROSTER_TTL_MS) return cached.value;
   const value: RosterClient[] = db.funnel.journeys().map((j) => ({
     id: j.id,
     name: j.name,
@@ -26,7 +29,8 @@ async function clientRoster(db: ReturnType<typeof getDb>): Promise<RosterClient[
     amountUsd: j.amountUsd,
     source: 'funnel' as const,
   }));
-  rosterCache = { at: Date.now(), value };
+  if (rosterCache.size >= 50) rosterCache.delete(rosterCache.keys().next().value!);
+  rosterCache.set(workspaceId, { at: Date.now(), value });
   return value;
 }
 
@@ -49,7 +53,10 @@ const BOARD_LEAD_NAMES: Record<string, string> = {
 };
 
 export default async function BrainPage() {
-  const db = getDb();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  return withWorkspaceLease(workspace, async db => {
   // latest run per agent (oldest first so the LAST write per id is the newest)
   const runsByAgent = Object.fromEntries(
     db.agentRuns
@@ -60,7 +67,7 @@ export default async function BrainPage() {
 
   // Kicked off before the board read is awaited so the two never stack
   // (the same "sequential awaits" trap already fixed once in comms-feed.ts).
-  const clientsPromise = clientRoster(db);
+  const clientsPromise = clientRoster(db, workspace.workspace.id);
 
   // live board leads → the head cards' board seat + Run button
   const liveAgents = await paperclipAgents();
@@ -108,8 +115,9 @@ export default async function BrainPage() {
           departments={db.departments.all()}
           people={db.people.all()}
           tasks={db.sopTasks.all()}
-          memory={memoryConstellation()}
+          memory={memoryConstellation(workspace.workspace.id)}
           wiki={wikiFor(
+            workspace.workspace.id,
             db.agents.all().map((a) => a.id),
             db.tools.all().map((t) => t.id.replace(/^tool-/, '')),
           )}
@@ -124,4 +132,5 @@ export default async function BrainPage() {
       </Rise>
     </div>
   );
+  });
 }

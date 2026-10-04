@@ -122,6 +122,27 @@ that use OAuth or pasted keys only.
 
 ## Build order
 
+### M2 connector transition
+
+Until M3 provides workspace credentials, env-backed connectors and host-file
+features are restricted by `requireOperatorWorkspace` (API/page adapters).
+The offline migration or fresh-install administrative bootstrap records a singleton `nosteros_operator` binding in
+control.db. Authorization checks that binding, agency metadata, and current
+owner membership against `NOSTEROS_OWNER_EMAIL`; a matching name alone is
+insufficient. Missing configuration fails closed. Other workspaces receive
+403 or a connections-not-ready empty state. Public authentication stays public.
+Internal connector jobs use only the bound operator, not every workspace;
+generic workspace iteration remains available for future scoped collectors.
+Global connector caches may remain only behind this gate. M3 must scope
+credentials and caches before removing any gate.
+
+Fresh installs use `npm run bootstrap-operator` after verified owner sign-in.
+It creates the agency, ownership and binding atomically without legacy data
+or demo seeding; conflicting existing state requires inspection, not adoption.
+Local legacy migration remains separate. The Oct 3 online-first decision
+allows a private team beta from `m2-isolation` before merge, with no business
+connector credentials. The online two-workspace check is the merge gate.
+
 The multi-tenant track runs after 003/003b and before any real data
 connector, because every connector depends on per-workspace credentials.
 

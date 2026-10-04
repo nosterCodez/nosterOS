@@ -226,7 +226,7 @@ export async function compileBlueprint(db: FounderDb, opts: CompileOptions = {})
 
   // Fetched early so the agent loop below can wire honest tool->connector
   // edges without a second pass.
-  const connectors = opts.connectors ?? (await allConnectorStatuses());
+  const connectors = opts.connectors ?? (await allConnectorStatuses(db));
   const connectorNodeIds = new Set(connectors.map((c) => `connector-${c.id}`));
 
   // L0 + L1: the spine.

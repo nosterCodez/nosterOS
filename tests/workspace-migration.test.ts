@@ -41,6 +41,17 @@ test('unknown owner cannot create an account or move any data', async () => {
   await expect(migrateToWorkspaces({ root, ownerEmail: 'missing@example.com' })).rejects.toThrow('must already exist');
   expect(snapshot(root)).toEqual(before);
 });
+
+test('a conflicting operator binding fails before changing original data', async () => {
+  const root = await fixture();
+  const control = new Database(path.join(root, 'control.db'));
+  control.exec('CREATE TABLE nosteros_operator (id INTEGER PRIMARY KEY, organizationId TEXT, ownerUserId TEXT)');
+  control.prepare('INSERT INTO nosteros_operator VALUES (1,?,?)').run('X'.repeat(32), 'U'.repeat(32));
+  control.close();
+  const before = snapshot(root);
+  await expect(migrateToWorkspaces({ root, ownerEmail: email })).rejects.toThrow('Operator binding conflict');
+  expect(snapshot(root)).toEqual(before);
+});
 test('verified migration preserves rows and files, owns the agency, and reruns as a no-op', async () => {
   const root = await fixture();
   const result = await migrateToWorkspaces({ root, ownerEmail: email });
@@ -56,6 +67,7 @@ test('verified migration preserves rows and files, owns the agency, and reruns a
   const control = new Database(path.join(root, 'control.db'));
   try {
     expect(control.prepare('SELECT role FROM member WHERE organizationId=?').get(result.workspaceId)).toEqual({ role: 'owner' });
+    expect(control.prepare('SELECT organizationId,ownerUserId FROM nosteros_operator WHERE id=1').get()).toEqual({ organizationId: result.workspaceId, ownerUserId: 'U'.repeat(32) });
     expect(control.prepare('SELECT name, metadata FROM organization WHERE id=?').get(result.workspaceId)).toEqual({ name: 'nosterCodes', metadata: '{"kind":"agency"}' });
   } finally { control.close(); }
   const before = snapshot(root);

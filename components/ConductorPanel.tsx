@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, X } from 'lucide-react';
 import { ConductorComposer } from '@/components/ConductorComposer';
-import { SparkIcon } from '@/components/SparkIcon';
+import { OsMark } from '@/components/OsMark';
 import { ConductorEmblem } from '@/components/ConductorEmblem';
 import { Synthesizing } from '@/components/Synthesizing';
 import type { QuickAction } from '@/lib/screen-context';
@@ -286,7 +286,7 @@ export function ConductorPanel() {
           className="pressable group fixed bottom-5 right-5 z-40 flex items-center rounded-full border border-os-border-strong bg-os-surface/90 p-2.5 opacity-60 backdrop-blur hover:opacity-100"
           style={{ transitionTimingFunction: 'var(--ease)', boxShadow: 'none' }}
         >
-          <SparkIcon size={17} shade="var(--text)" />
+          <OsMark size={20} />
           <span
             className="max-w-0 overflow-hidden whitespace-nowrap font-mono text-[10.5px] tracking-wide text-os-muted transition-[max-width,margin-left] duration-300 group-hover:ml-2 group-hover:max-w-[130px]"
             style={{ transitionTimingFunction: 'var(--ease)' }}

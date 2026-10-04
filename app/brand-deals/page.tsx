@@ -1,3 +1,5 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { fetchBrandDeals } from '@/lib/connectors/brand-deals';
 import { DealBoard } from '@/components/brand-deals/DealBoard';
 
@@ -10,6 +12,8 @@ export const dynamic = 'force-dynamic';
  * the shared header is skipped deliberately.
  */
 export default async function BrandDealsPage() {
+  const operatorAccess = await operatorWorkspaceForPage();
+  if (!operatorAccess) return <OperatorUnavailable />;
   const initial = await fetchBrandDeals();
   return <DealBoard initial={initial} />;
 }

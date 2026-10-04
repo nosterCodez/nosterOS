@@ -1,3 +1,4 @@
+import { apiWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -13,8 +14,11 @@ export const runtime = 'nodejs';
 export async function GET() {
   const authError = await apiSessionError('/api/adscout/saved', 'GET');
   if (authError) return authError;
+  const context = await apiWorkspace();
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
-  return NextResponse.json({ ok: true, saved: readSavedAds() });
+  return NextResponse.json({ ok: true, saved: readSavedAds(workspaceId) });
 }
 
 const WallAdShape = z.object({
@@ -38,10 +42,13 @@ const WallAdShape = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/saved', 'POST', request);
   if (authError) return authError;
+  const context = await apiWorkspace(request.headers);
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const parsed = WallAdShape.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'a full ad snapshot is required' }, { status: 400 });
-  return NextResponse.json({ ok: true, saved: saveAd(parsed.data as WallAd) });
+  return NextResponse.json({ ok: true, saved: saveAd(workspaceId, parsed.data as WallAd) });
 }
 
 const RemoveSchema = z.object({ adId: z.string().min(1) });
@@ -49,8 +56,11 @@ const RemoveSchema = z.object({ adId: z.string().min(1) });
 export async function DELETE(request: Request) {
   const authError = await apiSessionError('/api/adscout/saved', 'DELETE', request);
   if (authError) return authError;
+  const context = await apiWorkspace(request.headers);
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const parsed = RemoveSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, error: 'adId required' }, { status: 400 });
-  return NextResponse.json({ ok: true, saved: unsaveAd(parsed.data.adId) });
+  return NextResponse.json({ ok: true, saved: unsaveAd(workspaceId, parsed.data.adId) });
 }

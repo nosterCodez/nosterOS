@@ -82,7 +82,14 @@ export function Sidebar() {
   useEffect(() => {
     const savedW = Number(localStorage.getItem('founderos.sidebar.w'));
     if (Number.isFinite(savedW) && savedW >= MIN_W && savedW <= MAX_W) setWidth(savedW);
-    setCollapsed(localStorage.getItem('founderos.sidebar.collapsed') === '1');
+    setCollapsed(window.matchMedia('(max-width: 767px)').matches || localStorage.getItem('founderos.sidebar.collapsed') === '1');
+  }, []);
+
+  useEffect(() => {
+    const screen = window.matchMedia('(max-width: 767px)');
+    const compact = () => { if (screen.matches) setCollapsed(true); };
+    screen.addEventListener('change', compact);
+    return () => screen.removeEventListener('change', compact);
   }, []);
 
   // Where this instance actually is (localhost in dev, the deployed host
@@ -174,9 +181,9 @@ export function Sidebar() {
           <div className="flex items-center gap-[11px]">
             <OsMark size={34} className="shrink-0" />
             <div>
-              <div className="text-[13px] font-bold tracking-[0.14em]">FOUNDER OS</div>
-              <div className="mt-[3px] whitespace-nowrap font-mono text-[9px] uppercase tracking-[0.16em] text-os-dim">
-                v3 · Operator Mode
+              <div className="text-[13px] font-bold tracking-[0.14em]">OmegaOS</div>
+              <div className="mt-[3px] font-mono text-[8px] text-os-dim">
+                powered by nosterCodes
               </div>
             </div>
           </div>

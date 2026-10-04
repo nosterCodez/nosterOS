@@ -34,7 +34,7 @@ describe('sidebar rail', () => {
   });
 
   test('this instance keeps its own wordmark and storage keys', () => {
-    expect(sidebar).toContain('FOUNDER OS');
+    expect(sidebar).toContain('OmegaOS');
     expect(sidebar).not.toContain(H('BEN', 'NETT OS'));
     expect(sidebar).toContain('founderos.sidebar.w');
     expect(sidebar).toContain('founderos.sidebar.collapsed');
@@ -55,7 +55,7 @@ describe('topbar', () => {
   });
 
   test('keeps this instance breadcrumb and palette event', () => {
-    expect(topbar).toContain('founder-os');
+    expect(topbar).toContain('OmegaOS');
     expect(topbar).toContain("'alex:palette'");
     expect(topbar.toLowerCase()).not.toContain(H('ben', 'nett'));
   });

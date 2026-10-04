@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8');
 
@@ -23,7 +23,7 @@ describe('ManyChat reads live, not planned', () => {
   test('the ManyChat agent is not marked planned', () => {
     db = openDb(':memory:');
     try {
-      seedDatabase(db);
+      seedDemoFixture(db);
       const agent = db.agents.all().find((a) => a.id === 'dmflow-mcp');
       expect(agent, 'the ManyChat MCP agent should exist').toBeDefined();
       expect(agent!.status).not.toBe('planned');
@@ -35,7 +35,7 @@ describe('ManyChat reads live, not planned', () => {
   test('the ManyChat tool reads connected, and stops claiming it needs a key', () => {
     db = openDb(':memory:');
     try {
-      seedDatabase(db);
+      seedDemoFixture(db);
       const tool = db.tools.all().find((t) => t.id === 'tool-dmflow');
       expect(tool, 'the ManyChat tool should exist').toBeDefined();
       expect(tool!.status).toBe('connected');

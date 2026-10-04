@@ -1,3 +1,4 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -15,6 +16,8 @@ const ActionSchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/comms/email/action', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   const parsed = ActionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

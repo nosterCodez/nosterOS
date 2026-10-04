@@ -1,5 +1,5 @@
 /**
- * UI themes. Mono (Monolith Signal — white on black, color = status only) is
+ * UI themes. Omega (signal red, charcoal and white, using the mono token ID) is
  * the default identity; the others are full re-skins the user can pick. The
  * active theme lives as `data-theme` on <html>, persisted to localStorage.
  * Tailwind os.* tokens read CSS vars, so flipping the attribute re-themes the
@@ -18,11 +18,11 @@ export const THEME_META: Record<Theme, { name: string; blurb: string; swatch: [s
   light: { name: 'Clay', blurb: 'warm paper with clay orange', swatch: ['#ece3d2', '#c96442', '#2b2722'] },
   midnight: { name: 'Midnight', blurb: 'deep navy, signal blue', swatch: ['#070d1f', '#5ec9f8', '#e8ecf9'] },
   ember: { name: 'Ember', blurb: 'coal dark, vault orange', swatch: ['#0c0806', '#e35c35', '#f2e9e2'] },
-  mono: { name: 'Monolith', blurb: 'white on black, color = status only', swatch: ['#0a0a0a', '#f2f2f2', '#2fd36f'] },
+  mono: { name: 'Omega', blurb: 'signal red, charcoal and white', swatch: ['#0a0a0a', '#ff565d', '#f2f2f2'] },
   'mono-light': { name: 'Daylight', blurb: 'G-Brain blue on cool white', swatch: ['#f2f6f9', '#1f84c6', '#16222c'] },
 };
 
-export const THEME_STORAGE_KEY = 'alex-theme';
+export const THEME_STORAGE_KEY = 'omegaos-theme';
 
 export function isTheme(value: unknown): value is Theme {
   return typeof value === 'string' && (THEMES as readonly string[]).includes(value);

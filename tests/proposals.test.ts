@@ -136,11 +136,11 @@ describe('groupDeliverables — proposal folders sit above the agent files', () 
  * which is every real install, including the host. That is not theoretical:
  * proposals shipped empty to the host for exactly this reason.
  */
-describe('the seed guard back-fills proposals', () => {
-  test('data.ts checks proposals, so an existing DB gets them', async () => {
+describe('workspace proposals remain user data', () => {
+  test('data.ts never back-fills demo proposals', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(new URL('../lib/data.ts', import.meta.url), 'utf8');
-    expect(src).toMatch(/instance\.proposals\.all\(\)\.length === 0/);
+    expect(src).not.toContain('proposals');
   });
 });
 
@@ -221,11 +221,9 @@ describe('syncSeededProposals', () => {
     expect(db.proposals.all().find((p) => p.id === 'os-added')?.client).toBe('Someone Else');
   });
 
-  test('data.ts runs it on every boot, outside the guard', async () => {
+  test('data.ts never syncs invented proposals on boot', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(new URL('../lib/data.ts', import.meta.url), 'utf8');
-    expect(src).toContain('syncSeededProposals(instance)');
-    // it must sit AFTER the guard block, not inside it
-    expect(src.indexOf('syncSeededProposals(instance)')).toBeGreaterThan(src.indexOf('seedDatabase(instance)'));
+    expect(src).not.toContain('syncSeededProposals');
   });
 });

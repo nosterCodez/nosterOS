@@ -1,5 +1,8 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
+import { workspaceJob } from '@/lib/workspace-jobs';
+import { apiWorkspace } from '@/lib/session';
 import { planFailover } from '@/lib/agent-failover';
 import {
   clearPaperclipAgentError,
@@ -48,6 +51,11 @@ async function currentPlan() {
 export async function GET() {
   const authError = await apiSessionError('/api/agents/failover', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
+
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
   const { agents, plan } = await currentPlan();
   return NextResponse.json({ ok: true, applied: false, inspected: agents.length, ...plan });
@@ -57,64 +65,67 @@ export async function POST() {
   const authError = await apiSessionError('/api/agents/failover', 'POST');
   if (authError) return authError;
 
-  const { agents, plan } = await currentPlan();
-  const status = new Map(agents.map((a) => [a.id, a.status]));
-  const applied: {
-    agentName: string;
-    from: string;
-    to: string;
-    moved: boolean;
-    errorCleared: boolean;
-    reWoken: boolean;
-  }[] = [];
+  return workspaceJob('/api/agents/failover', async ({ workspace }) => {
 
-  for (const action of plan.actions) {
-    const moved = await setPaperclipAgentModel(action.agentId, action.to).catch(() => false);
-    // Only a seat parked in `error` needs clearing; a healthy seat must not be
-    // touched, and its next scheduled run already picks up the new model.
-    const errorCleared =
-      moved && status.get(action.agentId) === 'error'
-        ? await clearPaperclipAgentError(action.agentId).catch(() => false)
-        : false;
-    const reWoken = errorCleared ? await invokePaperclipHeartbeat(action.agentId).catch(() => false) : false;
-    applied.push({ agentName: action.agentName, from: action.from, to: action.to, moved, errorCleared, reWoken });
-    console.log(
-      `[failover] ${action.agentName}: ${action.from} -> ${action.to} (${action.reason})` +
-        ` moved=${moved} cleared=${errorCleared} woken=${reWoken}`,
-    );
-  }
+    const { agents, plan } = await currentPlan();
+    const status = new Map(agents.map((a) => [a.id, a.status]));
+    const applied: {
+      agentName: string;
+      from: string;
+      to: string;
+      moved: boolean;
+      errorCleared: boolean;
+      reWoken: boolean;
+    }[] = [];
 
-  const resumed: { agentName: string; reason: string; errorCleared: boolean; reWoken: boolean }[] = [];
-  for (const r of plan.resumes) {
-    const errorCleared = await clearPaperclipAgentError(r.agentId).catch(() => false);
-    const reWoken = errorCleared ? await invokePaperclipHeartbeat(r.agentId).catch(() => false) : false;
-    resumed.push({ agentName: r.agentName, reason: r.reason, errorCleared, reWoken });
-    console.log(`[failover] ${r.agentName}: resumed (${r.reason}) cleared=${errorCleared} woken=${reWoken}`);
-  }
+    for (const action of plan.actions) {
+      const moved = await setPaperclipAgentModel(action.agentId, action.to).catch(() => false);
+      // Only a seat parked in `error` needs clearing; a healthy seat must not be
+      // touched, and its next scheduled run already picks up the new model.
+      const errorCleared =
+        moved && status.get(action.agentId) === 'error'
+          ? await clearPaperclipAgentError(action.agentId).catch(() => false)
+          : false;
+      const reWoken = errorCleared ? await invokePaperclipHeartbeat(action.agentId).catch(() => false) : false;
+      applied.push({ agentName: action.agentName, from: action.from, to: action.to, moved, errorCleared, reWoken });
+      console.log(
+        `[workspace:${workspace.id}] [failover] ${action.agentName}: ${action.from} -> ${action.to} (${action.reason})` +
+          ` moved=${moved} cleared=${errorCleared} woken=${reWoken}`,
+      );
+    }
 
-  const alerted: { agentName: string; kind: string; runFinishedAt: string; result: string }[] = [];
-  for (const a of plan.alerts) {
-    const result = await postFailoverAlert(a);
-    alerted.push({ agentName: a.agentName, kind: a.kind, runFinishedAt: a.runFinishedAt, result });
-    if (result !== 'already') console.log(`[failover] ${a.agentName}: ${a.kind} alert ${result} (${a.message})`);
-  }
+    const resumed: { agentName: string; reason: string; errorCleared: boolean; reWoken: boolean }[] = [];
+    for (const r of plan.resumes) {
+      const errorCleared = await clearPaperclipAgentError(r.agentId).catch(() => false);
+      const reWoken = errorCleared ? await invokePaperclipHeartbeat(r.agentId).catch(() => false) : false;
+      resumed.push({ agentName: r.agentName, reason: r.reason, errorCleared, reWoken });
+      console.log(`[workspace:${workspace.id}] [failover] ${r.agentName}: resumed (${r.reason}) cleared=${errorCleared} woken=${reWoken}`);
+    }
 
-  // The cockpit issue must stay in backlog with a human co-owner, or the
-  // board's handoff + recovery automations re-wake the Conductor after every
-  // run (the OS-246 loop). Any checkout undoes that shape, so the
-  // tick puts it back.
-  const cockpit = await repairCockpitIssue();
-  if (cockpit === 'patched' || cockpit === 'failed') console.log(`[failover] cockpit issue repair: ${cockpit}`);
+    const alerted: { agentName: string; kind: string; runFinishedAt: string; result: string }[] = [];
+    for (const a of plan.alerts) {
+      const result = await postFailoverAlert(a);
+      alerted.push({ agentName: a.agentName, kind: a.kind, runFinishedAt: a.runFinishedAt, result });
+      if (result !== 'already') console.log(`[workspace:${workspace.id}] [failover] ${a.agentName}: ${a.kind} alert ${result} (${a.message})`);
+    }
 
-  return NextResponse.json({
-    ok: true,
-    applied: true,
-    inspected: agents.length,
-    exhausted: plan.exhausted,
-    notes: plan.notes,
-    actions: applied,
-    resumes: resumed,
-    alerts: alerted,
-    cockpit,
+    // The cockpit issue must stay in backlog with a human co-owner, or the
+    // board's handoff + recovery automations re-wake the Conductor after every
+    // run (the OS-246 loop). Any checkout undoes that shape, so the
+    // tick puts it back.
+    const cockpit = await repairCockpitIssue();
+    if (cockpit === 'patched' || cockpit === 'failed') console.log(`[workspace:${workspace.id}] [failover] cockpit issue repair: ${cockpit}`);
+
+    return {
+      ok: true,
+      applied: true,
+      inspected: agents.length,
+      exhausted: plan.exhausted,
+      notes: plan.notes,
+      actions: applied,
+      resumes: resumed,
+      alerts: alerted,
+      cockpit,
+    };
   });
 }

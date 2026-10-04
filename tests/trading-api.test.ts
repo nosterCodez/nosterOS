@@ -3,18 +3,18 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 
 /**
  * The agent-ingest routes accept a pushed snapshot / trade and the read route
  * reflects them; the seed leaves /trading alive out of the box.
  */
 
-describe('seedDatabase seeds the trading account', () => {
+describe('seedDemoFixture seeds the trading account', () => {
   let db: FounderDb;
   beforeAll(() => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
   });
   afterAll(() => db.close());
 
@@ -208,7 +208,7 @@ describe('trading limits route', () => {
     expect((await (await get()).json()).limits.maxDeployedCapitalUsd).toBe(600);
   });
   test('the first real snapshot evicts the seeded rows and says so', async () => {
-    const { getDb } = await import('@/lib/data');
+    const { getDb } = await import('@/tests/fixture-db');
     const db = getDb();
     db.trading.recordSnapshot(
       { capturedAt: '2026-08-13T11:00:00.000Z', accountId: 'agentic', accountLabel: 'Agentic', accountValueUsd: 1000, buyingPowerUsd: 1000, cashUsd: 1000, dayPnlUsd: 0, totalPnlUsd: 0, source: 'seed' },

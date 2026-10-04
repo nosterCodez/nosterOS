@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -10,7 +10,7 @@ import {
   campaignMetrics,
   type Campaign,
 } from '@/lib/adpilot';
-import { readCampaigns } from '@/lib/adpilot-data';
+import { readCampaigns, adpilotDataPath } from '@/lib/adpilot-data';
 
 function campaign(over: Partial<Campaign> & { id: string }): Campaign {
   return CampaignSchema.parse({
@@ -34,6 +34,7 @@ function campaign(over: Partial<Campaign> & { id: string }): Campaign {
 
 afterEach(() => {
   delete process.env.ADPILOT_DATA_PATH;
+  vi.unstubAllEnvs();
 });
 
 describe('campaign metrics', () => {
@@ -88,12 +89,14 @@ describe('geo + audience aggregation', () => {
 describe('readCampaigns', () => {
   it('reads and validates the staged file, returns [] when absent (the live-repo state)', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'adpilot-'));
-    const file = path.join(dir, 'campaigns.json');
+    vi.stubEnv('DATA_DIR', dir);
+    const file = adpilotDataPath('A'.repeat(32));
+    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify({ campaigns: [campaign({ id: 'a' })] }));
     process.env.ADPILOT_DATA_PATH = file;
-    expect(readCampaigns()).toHaveLength(1);
+    expect(readCampaigns('A'.repeat(32))).toHaveLength(1);
     process.env.ADPILOT_DATA_PATH = path.join(dir, 'missing.json');
-    expect(readCampaigns()).toEqual([]);
+    expect(readCampaigns('B'.repeat(32))).toEqual([]);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 

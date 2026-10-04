@@ -63,9 +63,9 @@ describe('WebinarJam is gone all the way down', () => {
 
   test('nothing seeds a WebinarJam tool, and no agent points at the dead slug', async () => {
     const { openDb } = await import('@/lib/db');
-    const { seedDatabase } = await import('@/lib/seed');
+    const { seedDemoFixture } = await import('@/tests/demo-fixture');
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const tools = db.tools.all();
     const agents = db.agents.all();
     db.close();
@@ -101,9 +101,9 @@ describe('Notion is gone except for /brand-deals, which he kept', () => {
 
   test('the Notion Sync agent and its SOP are gone from the seed', async () => {
     const { openDb } = await import('@/lib/db');
-    const { seedDatabase } = await import('@/lib/seed');
+    const { seedDemoFixture } = await import('@/tests/demo-fixture');
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const agents = db.agents.all();
     const sops = db.sopTasks.all();
     db.close();
@@ -137,9 +137,9 @@ describe('Notion is gone except for /brand-deals, which he kept', () => {
 describe('the stack-monitor SOP matches the real stack check', () => {
   test('it names no retired port or service', async () => {
     const { openDb } = await import('@/lib/db');
-    const { seedDatabase } = await import('@/lib/seed');
+    const { seedDemoFixture } = await import('@/tests/demo-fixture');
     const db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const sop = db.sopTasks.all().find((t) => t.id === 'sop-stack-monitor')!;
     const tools = db.tools.all();
     db.close();

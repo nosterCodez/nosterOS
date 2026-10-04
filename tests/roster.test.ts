@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { DEPARTMENT_HEADS, headForDepartment } from '@/lib/personnel';
 
 /**
@@ -17,7 +17,7 @@ afterEach(() => db?.close());
 
 const seeded = (): FounderDb => {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   return db;
 };
 

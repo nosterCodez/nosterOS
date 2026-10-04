@@ -12,7 +12,7 @@ import { loomStatus, loomVideoMeta, isLoomUrl } from '@/lib/connectors/loom';
  */
 
 const oembedBody = {
-  title: 'Founder OS walkthrough',
+  title: 'OmegaOS walkthrough',
   author_name: 'Alex',
   thumbnail_url: 'https://cdn.loom.com/sessions/thumbnails/abc-00001.jpg',
   duration: 184.5,
@@ -65,7 +65,7 @@ describe('loomVideoMeta', () => {
   test('resolves a Loom link to title, author, thumbnail and duration', async () => {
     const m = await loomVideoMeta('https://www.loom.com/share/abc123', okFetch());
     expect(m).not.toBeNull();
-    expect(m!.title).toBe('Founder OS walkthrough');
+    expect(m!.title).toBe('OmegaOS walkthrough');
     expect(m!.author).toBe('Alex');
     expect(m!.durationSeconds).toBe(184.5);
     expect(m!.thumbnailUrl).toContain('cdn.loom.com');

@@ -96,7 +96,7 @@ describe('trakyoAcquisition — the wedge a Trakyo first touch justifies', () =>
 
   test('custom sources classify on the source name first, then the content label', () => {
     expect(trakyoAcquisition(event({ lead: 'x', label: 'June 16th Webinar', at: '2026-05-01', sourceName: 'Instagram' }))).toBe('instagram');
-    expect(trakyoAcquisition(event({ lead: 'x', label: 'FounderOS launch', at: '2026-05-01', sourceName: 'thefounderos-waitlist-launch' }))).toBe('form');
+    expect(trakyoAcquisition(event({ lead: 'x', label: 'OmegaOS launch', at: '2026-05-01', sourceName: 'thefounderos-waitlist-launch' }))).toBe('form');
   });
 
   test('referrer traffic falls to the platform keyword or honestly to word of mouth', () => {

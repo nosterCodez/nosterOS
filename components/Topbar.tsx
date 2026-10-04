@@ -30,13 +30,13 @@ export function Topbar() {
   const here = SEGMENT_LABELS[segment] ?? segment;
 
   return (
-    <div className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-3.5 border-b border-os-border bg-os-bg2/70 px-6 backdrop-blur">
+    <div className="sticky top-0 z-30 flex min-h-[52px] shrink-0 flex-wrap items-center gap-2 border-b border-os-border bg-os-bg2/70 px-3 py-2 backdrop-blur md:flex-nowrap md:gap-3.5 md:px-6">
       <div className="flex items-center gap-[7px] whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-os-dim">
-        <span>founder-os</span>
+        <span>OmegaOS</span>
         <span className="opacity-45">/</span>
         <span className="text-os-text">{here}</span>
       </div>
-      <div className="ml-auto flex items-center gap-2.5">
+      <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2.5">
         <WorkspaceSwitcher />
         <ThemeToggle />
         <button
@@ -58,7 +58,7 @@ export function Topbar() {
         >
           <Bot className="h-3.5 w-3.5" />
         </button>
-        {/* Founder OS emblem — brand mark in the top-right corner */}
+        {/* OmegaOS emblem — brand mark in the top-right corner */}
         <OsMark size={26} className="ml-1 shrink-0" />
       </div>
     </div>

@@ -73,7 +73,7 @@ describe('RoadmapItemSchema', () => {
   test('accepts a valid roadmap item with null department', () => {
     const item = {
       id: 'rm-1',
-      title: 'Ship FOUNDER OS v1',
+      title: 'Ship OmegaOS v1',
       quarter: '2026-Q2',
       status: 'now',
       departmentId: null,

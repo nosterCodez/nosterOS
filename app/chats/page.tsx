@@ -1,4 +1,5 @@
-import { getDb } from '@/lib/data';
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { realAgents } from '@/lib/agents/real';
 import { conversationSummaries } from '@/lib/chats';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
@@ -14,7 +15,10 @@ export const dynamic = 'force-dynamic';
  * thread beside it, and a direct line to any agent via New chat.
  */
 export default async function ChatsPage() {
-  const db = getDb();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  const db = workspace.db;
   const names = new Map(realAgents.map((a) => [a.id, a.name]));
   const summaries = conversationSummaries(db.agentMessages.recent(500), names);
   const roster = realAgents

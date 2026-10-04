@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { TradingAccountSnapshotSchema, TradingPositionSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +17,9 @@ const BodySchema = z.object({
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/trading/snapshot', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -28,7 +31,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.issues }, { status: 400 });
   }
-  const db = getDb();
+  const db = workspace.db;
   db.trading.recordSnapshot(parsed.data.snapshot, parsed.data.positions);
   // The first real push retires the demo: seeded rows would otherwise sit in
   // front of the live series and draw a fake cliff on the sleeve graph.

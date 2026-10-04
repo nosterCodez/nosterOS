@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { Slab, SlabTitle, SlabCard, BigStat, Chip, MeterStack, InsightCard, PILL } from '@/components/slab';
 import { StepLine, DotMatrix } from '@/components/slab-charts';
 import { WorkflowTree, type AgentPresence } from '@/components/WorkflowTree';
@@ -11,6 +11,7 @@ import { toolBrand } from '@/lib/workflow-tool-brands';
 import { agentAvatars } from '@/lib/agent-avatars';
 import type { AgentRun } from '@/lib/schemas';
 import { workflowsVolume } from '@/lib/workflows-volume';
+import { visibleWorkflows } from '@/lib/workspace-workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +29,11 @@ const WINDOW_DAYS = 14;
  * Every number in the hero and second row comes from lib/workflows-volume,
  * fed with the same rows the panels below render.
  */
-export default function WorkflowsPage() {
-  const db = getDb();
-  const workflows = db.workflows.all();
+export default async function WorkflowsPage() {
+  const workspace = await requireWorkspace();
+
+  const db = workspace.db;
+  const workflows = visibleWorkflows(db.workflows.all());
   const agents = db.agents.all();
 
   // The clock half: what the OS runs on a schedule, and whether it actually

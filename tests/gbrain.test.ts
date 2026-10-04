@@ -25,7 +25,7 @@ const healthyExec: ExecFn = async (_cmd, args) => {
       code: 0,
     };
   }
-  return { stdout: 'projects/founder-os -- FOUNDER OS build notes\n', stderr: '', code: 0 };
+  return { stdout: 'projects/founder-os -- OmegaOS build notes\n', stderr: '', code: 0 };
 };
 
 const downExec: ExecFn = async () => ({
@@ -39,7 +39,7 @@ function makeStore(): string {
   mkdirSync(path.join(dir, 'projects'));
   writeFileSync(
     path.join(dir, 'projects', 'founder-os.md'),
-    '# FOUNDER OS\nThe personal OS rebuild uses a revenue split model for Launchpad Cohort.\n',
+    '# OmegaOS\nThe personal OS rebuild uses a revenue split model for Launchpad Cohort.\n',
   );
   writeFileSync(path.join(dir, 'README.md'), '# Brain Store\nNothing relevant here.\n');
   return dir;
@@ -276,9 +276,9 @@ describe('parseQueryOutput — one record per [score] marker, not per line', () 
   });
 
   test('the scoreless legacy form still parses', () => {
-    const [r] = parseQueryOutput('projects/founder-os -- FOUNDER OS build notes\n');
+    const [r] = parseQueryOutput('projects/founder-os -- OmegaOS build notes\n');
     expect(r.title).toBe('projects/founder-os');
-    expect(r.snippet).toContain('FOUNDER OS build notes');
+    expect(r.snippet).toContain('OmegaOS build notes');
     expect(r.score).toBeUndefined();
   });
 

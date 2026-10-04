@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { stripeSnapshot } from '@/lib/connectors/payments';
@@ -135,9 +136,12 @@ function StatTile({
 type DoneItem = { key: string; time: number; head: string; headClass: string; body: string; when: string };
 
 export default async function HomePage() {
-  const db = getDb();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  return withWorkspaceLease(workspace, async db => {
   const [connections, overview, feed, stripe] = await Promise.all([
-    allConnectorStatuses(),
+    allConnectorStatuses(workspace.db),
     createGBrainProvider().overview(),
     gatherCommsFeed(),
     // Fail-soft: no key (or a Stripe outage) means no charges row, never a 500.
@@ -222,7 +226,7 @@ export default async function HomePage() {
     <div className="os-slab">
       <SlabTitle
         eyebrow="command center"
-        title={`${greeting()}, Alex`}
+        title={greeting()}
         meta={
           /* Honest state-of-the-world line  -  what needs you, straight from live data */
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
@@ -371,4 +375,5 @@ export default async function HomePage() {
       </div>
     </div>
   );
+  });
 }

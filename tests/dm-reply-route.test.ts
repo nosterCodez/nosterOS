@@ -23,7 +23,7 @@ describe('POST /api/social/dm/reply', () => {
 
   test('honest 502 and stores nothing when ManyChat is not connected', async () => {
     const { POST } = await import('@/app/api/social/dm/reply/route');
-    const { getDb } = await import('@/lib/data');
+    const { getDb } = await import('@/tests/fixture-db');
     const before = getDb().social.dmMessages('instagram').filter((m) => m.direction === 'out').length;
 
     const res = await POST(post({ subscriberId: 'ig-alex', text: 'on it' }));
@@ -39,7 +39,7 @@ describe('POST /api/social/dm/reply', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success' }) })));
 
     const { POST } = await import('@/app/api/social/dm/reply/route');
-    const { getDb } = await import('@/lib/data');
+    const { getDb } = await import('@/tests/fixture-db');
 
     const res = await POST(post({ subscriberId: 'ig-alex', text: 'here is pricing' }));
     expect(res.status).toBe(200);

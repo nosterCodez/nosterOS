@@ -1,6 +1,7 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 
@@ -9,11 +10,15 @@ export const dynamic = 'force-dynamic';
 export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/agents/[id]/run', 'POST', _req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(_req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace(_req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const params = await props.params;
-  const runtime = createRuntime(getDb(), realAgents);
   try {
-    const run = await runtime.run(params.id);
+    const run = await withWorkspaceLease(workspace, db => createRuntime(db, realAgents).run(params.id));
     return NextResponse.json({ run });
   } catch (err) {
     return NextResponse.json(

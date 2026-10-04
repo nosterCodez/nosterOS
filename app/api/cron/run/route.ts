@@ -1,8 +1,9 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 
@@ -22,11 +23,16 @@ const Body = z.object({ cronId: z.string().min(1) });
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/cron/run', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'cronId required' }, { status: 400 });
 
-  const db = getDb();
+  return withWorkspaceLease(workspace, async db => {
   const cron = db.agentCrons.all().find((c) => c.id === parsed.data.cronId);
   if (!cron) return NextResponse.json({ error: `unknown scheduled task: ${parsed.data.cronId}` }, { status: 404 });
 
@@ -52,4 +58,5 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok, summary }, { status: ok ? 200 : 502 });
+  });
 }

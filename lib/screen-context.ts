@@ -7,7 +7,7 @@
  * a plain title line.
  */
 import { NAV_AGENTS, NAV_INTELLIGENCE, NAV_LIBRARY, NAV_OPERATE, NAV_SYSTEM } from '@/lib/nav';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { funnelSummary, journeyMeta, splitFunnelJourneys, FUNNEL_STAGES } from '@/lib/funnel';
 import { attioFunnelJourneys } from '@/lib/funnel-live';
 import { ghlFunnelJourneys } from '@/lib/funnel-ghl';
@@ -45,11 +45,11 @@ export function describeFunnelContext(d: FunnelContextInput): string {
     .join('\n');
 }
 
-async function funnelContext(): Promise<string> {
+async function funnelContext(db: FounderDb): Promise<string> {
   const now = new Date();
   const [attioLive, ghlLive] = await Promise.all([attioFunnelJourneys(now), ghlFunnelJourneys(now)]);
   const live = [...(attioLive?.journeys ?? []), ...(ghlLive?.journeys ?? [])];
-  const all = live.length > 0 ? live : getDb().funnel.journeys();
+  const all = live.length > 0 ? live : db.funnel.journeys();
   const { active, archived } = splitFunnelJourneys(all, now);
   const summary = funnelSummary(active);
   const metas = active.map((j) => ({ j, meta: journeyMeta(j, now) }));
@@ -198,6 +198,7 @@ export function quickActionsFor(path: string): QuickAction[] {
 
 /** Route-aware context. Cheap everywhere except the funnel (the flagship). */
 export async function screenContextFor(
+  db: FounderDb,
   path: string,
 ): Promise<{ title: string; context: string; quickActions: QuickAction[] }> {
   const title = screenTitleFor(path);
@@ -205,9 +206,8 @@ export async function screenContextFor(
   const quickActions = quickActionsFor(path);
   try {
     if (clean.startsWith('/funnel')) {
-      return { title, context: await funnelContext(), quickActions };
+      return { title, context: await funnelContext(db), quickActions };
     }
-    const db = getDb();
     if (clean === '/' || clean.startsWith('/agents') || clean.startsWith('/org')) {
       const agents = db.agents.all();
       const active = agents.filter((a) => a.status === 'active').length;
@@ -228,8 +228,8 @@ export async function screenContextFor(
     if (clean.startsWith('/roadmap')) {
       return { title, context: `${title}: ${db.roadmap.all().length} roadmap items across quarters.`, quickActions };
     }
-    return { title, context: `${title} view of Founder OS.`, quickActions };
+    return { title, context: `${title} view of OmegaOS.`, quickActions };
   } catch {
-    return { title, context: `${title} view of Founder OS.`, quickActions };
+    return { title, context: `${title} view of OmegaOS.`, quickActions };
   }
 }

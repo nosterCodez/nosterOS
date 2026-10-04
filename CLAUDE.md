@@ -1,9 +1,9 @@
-# FOUNDER OS
+# OmegaOS
 
-> nosterOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
+> OmegaOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
 > spec handoff loop live in `AGENTS.md` and `docs/handoff/`. Read those first.
 
-Founder OS is a personal operating system for a one-person business: a web
+OmegaOS is a personal operating system for a one-person business: a web
 command center that runs a company as a set of AI-assisted departments. This
 file is the contributor guide for anyone (human or agent) working in the repo.
 
@@ -16,7 +16,7 @@ npm install
 npm run dev        # dev server → http://localhost:4100
 npm test           # vitest suite (must stay green)
 npm run typecheck  # tsc --noEmit
-npm run seed       # re-seed data/founder-os.db (idempotent)
+npm run seed -- --workspace <id> # existing workspace only; structure, not demo data
 npm run build && npm start
 ```
 
@@ -91,21 +91,23 @@ provider status.
 
 ## No upsell surfaces
 
-nosterOS is a fork of FounderOS-DEMO. The upstream demo's "join the cohort"
+OmegaOS is a fork of FounderOS-DEMO. The upstream demo's "join the cohort"
 pop-up and footer ad were removed. Don't re-add them when merging upstream;
 `tests/no-upsell.test.ts` enforces it.
 
 ## Conventions
 
 - TDD: failing test first, then implementation. Tests live in `tests/`,
-  one file per module; use the `FOUNDER_OS_DB=:memory:` pattern (see
+  one file per module; use the `NOSTEROS_DB=:memory:` pattern (see
   `tests/db.test.ts`).
 - Zod-validate anything that crosses the DB or API boundary.
 - Never commit secrets. Credentials belong in `.env.local`, which is
   gitignored.
 - `/org` markup is frozen; do not restructure it.
-- THEME: **Monolith Signal (`mono`) is the default** (`DEFAULT_THEME` in
-  `lib/theme.ts`; bare `:root` in `app/globals.css` carries the mono tokens).
+- THEME: **Omega (`mono`) is the default**: red `#ff565d`, charcoal and white.
+  This supersedes the historical Monolith palette documented below.
+  The default is set by `DEFAULT_THEME` in
+  `lib/theme.ts`; bare `:root` in `app/globals.css` carries the mono tokens.
   "Terminal" (`dark`), the phosphor-green command deck on near-black, stays as
   a pickable colorway. Tokens live in `tailwind.config.ts` (`os.*` colors) AND
   as raw CSS vars in `app/globals.css` (the brain viz SVG + `color-mix`
@@ -124,7 +126,7 @@ pop-up and footer ad were removed. Don't re-add them when merging upstream;
   #2fd36f`/`warn #ffb000`/`err #ff2d3f`). Shared primitives in
   `components/terminal.tsx` (`Dot`, `Badge`, `Label`, `SectionHead`, `Kbd`,
   `Spark`). `/org` inherits the tokens through Tailwind classes only.
-- Env vars: `FOUNDER_OS_DB`, `BRAIN_PROVIDER`, `GBRAIN_BIN`, `GBRAIN_STORE`,
+- Env vars: `NOSTEROS_DB`, `BRAIN_PROVIDER`, `GBRAIN_BIN`, `GBRAIN_STORE`,
   plus connector credentials in `.env.local`.
 - Heavy interaction-driven visualizations load via `next/dynamic`
   (`ssr: false`) behind dimension-matched skeletons (see

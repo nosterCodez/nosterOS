@@ -45,7 +45,7 @@ const gbrainBin = (): string => process.env.GBRAIN_BIN || '';
 export async function localStackStatus(): Promise<ConnectorStatus> {
   if (GATED) return gatedConnected('local-stack', 'Local Stack', 'local', 'services up');
 
-  // Design choice: this lists ONLY what Founder OS itself runs or shells out
+  // Design choice: this lists ONLY what OmegaOS itself runs or shells out
   // to. Anything reached through a hosted API instead of a local process was
   // dropped from this panel: reporting on it made the panel look broken
   // while conveying nothing about the OS's actual local dependencies.

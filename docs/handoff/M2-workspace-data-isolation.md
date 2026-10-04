@@ -1,6 +1,7 @@
 # M2: One data directory per workspace
 
-Status: ready (after M1)
+Status: in progress on m2-isolation; not merged, not customer-safe
+Current completion path: private online beta and two-workspace verification; local legacy migration deferred (see Oct 3 online-first decision below).
 Self-review required: yes (data isolation is the core security property)
 
 ## Goal
@@ -8,6 +9,16 @@ Every workspace reads and writes only its own data. After M2, code cannot
 touch workspace data without saying which workspace it's for, and a new
 workspace starts empty instead of with FounderOS demo content. Read
 `docs/architecture/multi-tenant.md` first.
+
+## Decision: Oct 3 online-first beta (Noe and Claude)
+- Supersedes the local-first sign-in and real-data migration prerequisite below. Noe's first sign-in will be online from his laptop.
+- Noe handles Railway Hobby, spending limits, production secrets, DNS and SMTP. After reviewing `4bd0c95`, Claude connects Railway to `m2-isolation` for a private team beta, not `main` yet.
+- Keep the beta wall enabled, signup restricted to `@nostermarketing.com`, `DEMO_GATE` disabled, and no business connector credentials on Railway. SMTP for authentication is distinct from inbox connector credentials.
+- Fresh installations run `npm run bootstrap-operator` inside the deployed service after the configured `NOSTEROS_OWNER_EMAIL` user completes verified sign-in. The command uses the service's `DATA_DIR` and environment, never credentials pasted into chat.
+- Bootstrap atomically creates the nosterCodes agency, owner membership and operator binding; repeat runs preserve a valid binding. It does not create users, adopt unbound workspaces, import legacy data, seed demo rows, select a session workspace, or send messages. Refresh and select nosterCodes after running it.
+- Missing/unverified owner, conflicting binding/name/slug, demo mode or legacy artifacts fail closed. SQLite immediate transaction serializes concurrent commands and rolls back partial creation.
+- The local migration remains available for later on a verified copy. Noe's existing PC data stays untouched; fresh-start bootstrap is not a migration replacement or a later data-merge tool.
+- Merge to main only after the online two-workspace isolation check and remaining M2 code review pass. No deployment or Railway changes are performed by this bootstrap implementation task.
 
 Important: until M3, connectors still read credentials from global
 environment variables, so every workspace would see the owner's Stripe,
@@ -190,3 +201,76 @@ the paid project, so don't wait on it.
 - Verification: typecheck passes; production build passes with zero warnings. Full Windows suite: 3,535 passed, 4 failed; 324 passing files, 7 failing files, all failures in the documented baseline. Final focused security/storage suite: 43/43 pass.
 - Local preview restarted from real local configuration at `http://localhost:4100`, bound to loopback, launcher PID 28632, background warmup/jobs disabled. Sign-in returns 200, unauthenticated root redirects, unauthenticated agents API returns 401.
 - Next: library signature/caller conversion on `m2-isolation`, insert-only structure seeding, workspace-scoped files/caches/background tasks, complete migration rehearsal and two-workspace browser verification; then M3. Paid deployment remains separate and unapproved.
+
+## Report checkpoint: Oct 3, 12:59 CDT - explicit data conversion
+- Status: PARTIAL, on `m2-isolation`. Do not merge or deploy this checkpoint. M3 has not started; Railway still awaits Noe. M1 follow-ups and both architect review sections were already preserved in `f76ec76` before this branch.
+- Converted 100 legacy `getDb()` call expressions across 73 app/lib files; zero remain. The production data accessor requires explicit context and has no singleton. Root layout resolves workspace context and passes its database to the palette. Existing unit tests use a test-only demo fixture, never an app fallback.
+- Structure seed now uses transactional insert-if-missing variants for departments, agents, agent_crons, tools, workflows, skills and personas. Edited defaults and custom rows survive version refreshes; missing defaults return. Duplicate tool defaults resolve last-declaration-wins before insertion. `seedDatabase` is retired; demo population requires `DEMO_GATE=1`.
+- Seed classification remains the foundation classification above; demo population no longer prunes or overwrites the seven structural tables. Existing tests that demanded deletion of customized structure or automatic demo proposals/lead magnets were updated to the approved preservation/empty-workspace contract.
+- Handle pools retain reference-counted leases and add the requested 60-second delayed close with revival. Active handles are capped at 50 and pending closes at 50; saturation fails instead of early-closing an in-use handle. Fake-timer tests cover revival and delayed close.
+- Financial page/uploads now use workspace bank, ledger and PayKit stores; async PayKit and upload operations use scoped leases. AdPilot campaigns, ad-intel snapshots, watchlists and saved ads now require validated workspace IDs and ignore legacy shared path overrides at runtime. Originals were not touched.
+- Caches converted: brain memory/wiki and page client roster keyed by workspace; ambient agent briefs keyed by database identity in a WeakMap. Brain constellation reads workspace brain-store/vault paths and only uses a fabricated fallback in demo mode. Migration of existing external brain/vault folders remains outstanding.
+- Internal cron, failover and analytics requests now fan out through workspace jobs with leases, per-workspace failure handling and ID-prefixed logs; member requests remain active-workspace-only. Three tests cover failed middle job, independent results, denied requests and internal route allowlisting. Connectors invoked by these jobs still need cache/credential isolation; do not enable them for customer workspaces.
+- Removed retired nosterLogistics from active business configuration. Read-only inspection found zero legacy metric_points rows keyed to it; no stored data was deleted.
+- Verification: typecheck and production build pass, build has no warnings. Final full Windows suite: 3,546 passed / 4 failed assertions, 327 passing / 7 failing files; all seven failures match the documented Windows baseline. New audit blocks app singleton/raw-store/test-fixture imports and retired seeder calls; it is NOT yet the complete route/connector isolation audit.
+- Self-review: new tests prove cache A cannot serve B, ad watchlists/saves do not cross workspaces, path traversal fails, customized structure survives reseeding, and member job requests cannot fan out. The broader connector cache/file access surface remains unreviewed and incomplete, so no full isolation claim is made.
+- Remaining: scope all listed connector caches, brain providers/retrieval/archive and other host-file readers; validate every page/API entry (including connector-only routes); finish background collection and long-lived request leases; harden malformed control metadata handling; expand full two-workspace API/data coverage. Seed/brain CLI scripts also still need explicit workspace targets.
+- Real migration/rehearsal and two-workspace signed-in browser verification have not run. Local owner control database is not initialized; Noe needs first local sign-in. Preview remains running at localhost:4100: beta-authenticated sign-in 200, unauthenticated app redirect 307, agents API 401. Secrets were not printed or committed.
+
+## Claude review of the 12:59 checkpoint (Oct 3, 3:00 PM CDT)
+Pulled `m2-isolation` (`c3b7584`) into a Linux clone: typecheck clean,
+334 files / 3,550 tests pass. Good checkpoint. The lease design (in-use
+handles can't be evicted, saturation fails closed) is better than my
+60-second suggestion; accepted.
+
+One decision to close the biggest remaining hole cheaply:
+- **Operator-only gate for connector routes until M3.** 31 API routes don't
+  touch workspace data but read global env credentials (comms/email, brain,
+  conductor, calls archive, oauth, admin/keys, connections/connect, social
+  history/upload, adscout/mine, analytics refresh, life map, ventures,
+  brand-deals, board tasks/agent run, skills, workflows/draft,
+  funnel/lead-message). Add `requireOperatorWorkspace()` in `lib/session.ts`:
+  passes only when the active workspace is the nosterCodes workspace (the one
+  the migration created, recorded in control.db, kind `agency`, owner
+  `NOSTEROS_OWNER_EMAIL`); otherwise 403 for APIs and an "Available after
+  your connections are set up" empty state for pages. Use it on every route
+  and page whose data comes from env-configured connectors or host files.
+  The audit test should fail if a route reaches a connector without either
+  `requireWorkspace` + workspace-scoped data or `requireOperatorWorkspace`.
+  M3 replaces this gate route by route as connectors read per-workspace
+  credentials. This lets M2 merge without waiting for every connector cache
+  to be partitioned; caches only reachable through operator-gated routes
+  can stay as they are until M3.
+- `/api/auth/[...all]` stays public as before.
+
+Merge `m2-isolation` once that gate, the remaining audit, the real-data
+migration rehearsal (after Noe's first local sign-in) and the two-workspace
+browser check are done. Railway project now exists but has no source; see
+`docs/handoff/DEPLOY-railway.md`. Don't connect it; Claude will after merge.
+
+## Report checkpoint: Oct 3, 19:08 CDT - operator gate and connector audit
+- Restored architect spec committed as `7c6eacb`; the accepted invitation-expiry fix remains in `0c4542b`. This checkpoint stays on `m2-isolation`, unmerged.
+- Added `requireOperatorWorkspace` and API/page adapters. Access requires the migration-recorded control.db binding, agency kind, and current owner membership matching configured owner email. Missing/corrupt binding denies access; copying the nosterCodes name is insufficient.
+- Migration records the operator binding after verified copies and preserved-original renames; conflicting bindings fail preflight. Tests verify binding creation, unchanged originals on conflict, and idempotent reruns. No real data was migrated or deleted.
+- Gated env/host connector routes and pages, including mixed workspace/connector routes, ManyChat webhook configuration, and Adscout's host CLI. Auth remains public. Denied pages show the requested connections-not-ready empty state; `/org` content markup is unchanged.
+- Added transitive import audit and runtime denial tests for 62 API entry files plus connector pages. Audit follows value imports, exports and literal dynamic imports, with explicit reviewed boundaries for workspace stores, public assets, PDF parsing and authentication. Client components are checked through their server endpoints, not treated as server filesystem readers.
+- Runtime tests exercise every discovered API method with operator denial and assert no fetch; page tests assert the empty state. Separate real-boundary tests cover missing binding, name spoofing, changed owner, wrong owner role, corrupt metadata and unauthenticated requests.
+- Internal cron/failover/refresh jobs now run only for the bound operator until M3. Other workspaces cannot consume operator credentials. Malformed organization metadata is skipped with workspace-prefixed warnings instead of aborting discovery.
+- Connector caches remain global only behind operator access per architect decision; previous workspace-keyed stores/caches remain unchanged. No new dependency, live connector call, external message, credential change or Railway connection was made.
+- Updated test fixtures for authorized operator callers and lazy fixture database reads; existing data-boundary audit recognizes the stricter page adapter. No Windows baseline assertions were weakened.
+- Verification: typecheck and production build pass. Final full Windows suite: 3,616 passed, 4 failed assertions; 329 passing files and 7 failing files, all failures within documented baseline. Focused security suite passed 78 checks before two additional safety tests were added; both additional tests pass in the final full run. Diff whitespace check passes.
+- Local preview remains running at http://localhost:4100; private-cookie sign-in probe returns 200. Read-only check still finds no configured local control.db, so Noe's first local sign-in is required before real-data rehearsal.
+- M2 is NOT complete: real-data-copy migration, signed-in two-workspace browser verification, remaining long-lived request lease/CLI target review are pending. Do not merge, invite customer workspaces or connect Railway yet. Noe should sign in as noster@nostermarketing.com, then resume those checks before M3.
+
+## Report checkpoint: Oct 3, 22:14 CDT - fresh online bootstrap
+- Recorded Noe/Claude's online-first decision above; it supersedes the previous local-sign-in/migration blocker and previous instruction to wait for merge before private Railway connection.
+- Added `npm run bootstrap-operator`, an explicit administrative command run inside the deployed service after the configured owner completes verified sign-in. No public bootstrap endpoint or automatic startup side effect was added.
+- Bootstrap atomically creates nosterCodes (agency), its owner membership and the operator binding in control.db. An immediate SQLite transaction serializes writers; failure rolls back all three records.
+- A valid repeated run returns already-complete without database changes. Missing/unverified owner, changed ownership, conflicting unbound name/slug, demo mode and legacy artifacts fail closed. It never creates an account or adopts a workspace silently.
+- Workspace files are created by the existing structure-only workspace initializer on first access, not by bootstrap. Users refresh/select nosterCodes afterward; no session is switched by the command.
+- Six new tests use temporary databases with the actual Better Auth schema; cover successful binding recognized by the gate, idempotency, verified owner requirement, legacy preservation, conflicts and rollback.
+- Validation: typecheck and production build pass. Full Windows run: 3,621 passed / 5 failed assertions, 329 passing / 8 failing files, all failures in the documented Windows baseline (including seed timeout). Focused bootstrap plus seed rerun: 19/19 pass. Diff whitespace check passes.
+- Updated Railway deployment instructions and architecture for the branch-first private beta. The command uses the existing tsx dependency, which must be present in the deployed container.
+- Did not run bootstrap on this PC's real data or Railway; did not provision, connect or deploy anything, change secrets/DNS/SMTP, or send messages. Local migration code and original data remain untouched.
+- Existing local dev server remains running; private-cookie sign-in probe returned HTTP 200. No local first-sign-in is now required for this deployment path.
+- Next: Claude reviews/connects m2-isolation after Noe's Railway setup; Noe signs in online, an administrator runs bootstrap, then complete online two-workspace checks and remaining M2 review before merging to main. No merge performed here.

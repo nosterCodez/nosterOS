@@ -1,3 +1,5 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
 import { readEnvLocal } from '@/lib/creds';
 import { oauthReadiness } from '@/lib/oauth/store';
@@ -21,7 +23,10 @@ const GRID = 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
  * accordion and key editor are unchanged.
  */
 export default async function ConnectionsPage() {
-  const statuses = await allConnectorStatuses();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  const statuses = await withWorkspaceLease(workspace, db => allConnectorStatuses(db));
   const env = readEnvLocal();
   const catalog = connectionCatalog(statuses, env);
   // Null for every tile whose provider has no usable authorization-code flow.

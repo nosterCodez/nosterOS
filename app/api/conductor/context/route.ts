@@ -1,3 +1,5 @@
+import { apiOperatorWorkspace } from '@/lib/session';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { paperclipAgents } from '@/lib/connectors/paperclip';
@@ -26,6 +28,11 @@ async function conductorModel(): Promise<string | null> {
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/conductor/context', 'GET', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const path = new URL(req.url).searchParams.get('path') ?? '/';
   const fallback = new Promise<{ title: string; context: string; quickActions: ReturnType<typeof quickActionsFor> }>(
@@ -34,14 +41,14 @@ export async function GET(req: Request) {
         () =>
           resolve({
             title: screenTitleFor(path),
-            context: `${screenTitleFor(path)} view of Founder OS.`,
+            context: `${screenTitleFor(path)} view of OmegaOS.`,
             quickActions: quickActionsFor(path),
           }),
         CONTEXT_BUDGET_MS,
       ),
   );
   const [resolved, model] = await Promise.all([
-    Promise.race([screenContextFor(path), fallback]),
+    Promise.race([withWorkspaceLease(workspace, db => screenContextFor(db, path)), fallback]),
     Promise.race([conductorModel(), new Promise<null>((r) => setTimeout(() => r(null), CONTEXT_BUDGET_MS))]),
   ]);
   return NextResponse.json({ ...resolved, model });

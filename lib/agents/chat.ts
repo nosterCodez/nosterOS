@@ -19,7 +19,7 @@ const SCREEN_CONTEXT_CAP = 4000;
 
 export function systemPromptFor(agent: RuntimeAgent, screenContext?: string, ambient?: string): string {
   const lines = [
-    `You are ${agent.name}, an operator agent inside Founder OS.`,
+    `You are ${agent.name}, an operator agent inside OmegaOS.`,
     agent.description,
     'Answer concisely and use your tools to read live data when it helps.',
     'You are READ-ONLY: never claim to have sent, created, scheduled, or published anything — you can only look things up and report.',

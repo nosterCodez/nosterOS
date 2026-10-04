@@ -1,6 +1,6 @@
 import type { RuntimeAgent, AgentRunResult } from '@/lib/agents/runtime';
 import { chat } from '@/lib/connectors/llm';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { triageDeals, triageSummary, type DealAction } from '@/lib/agents/brand-deal-triage';
 import { readAgentSkill, openSkillQuestions } from '@/lib/agents/skill-file';
 
@@ -35,12 +35,12 @@ export function brandDealPrompt(actions: DealAction[], dealCount: number, today:
   ].join('\n');
 }
 
-async function run(): Promise<AgentRunResult> {
+async function run(db: FounderDb): Promise<AgentRunResult> {
   const skill = readAgentSkill(BRAND_DEAL_AGENT_FOLDER);
   // Deals come from the OS's own store. The operator is moving off Notion,
   // so nothing here reaches for it, and an empty store is an honest empty run
   // rather than a broken connector.
-  const deals = getDb().brandDeals.all().filter((d) => !d.seeded);
+  const deals = db.brandDeals.all().filter((d) => !d.seeded);
 
   if (!deals.length) {
     return {

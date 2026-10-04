@@ -23,7 +23,7 @@ beforeAll(() => {
 });
 
 async function decisionsFor(prefix: string) {
-  const { getDb } = await import('@/lib/data');
+  const { getDb } = await import('@/tests/fixture-db');
   return getDb().deliverableDecisions.all().filter((d) => d.id.startsWith(prefix));
 }
 

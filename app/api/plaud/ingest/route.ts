@@ -1,6 +1,7 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
 import { ingestPlaudNow } from '@/lib/plaud-ingest';
 
 export const dynamic = 'force-dynamic';
@@ -14,15 +15,25 @@ export const runtime = 'nodejs';
 export async function GET() {
   const authError = await apiSessionError('/api/plaud/ingest', 'GET');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  const rows = getDb().plaudIngests.all();
+
+  const rows = workspace.db.plaudIngests.all();
   return NextResponse.json({ ingested: rows.length, rows }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 export async function POST() {
   const authError = await apiSessionError('/api/plaud/ingest', 'POST');
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace();
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  const result = await ingestPlaudNow(getDb());
+
+  const result = await withWorkspaceLease(workspace, db => ingestPlaudNow(db));
   return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -17,7 +17,7 @@ import { trakyoStatus } from '@/lib/connectors/trakyo';
 import { fathomStatus } from '@/lib/connectors/fathom';
 import { plaudStatus } from '@/lib/connectors/plaud';
 import { robinhoodStatus } from '@/lib/connectors/robinhood';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { docusignStatus } from '@/lib/connectors/docusign';
 import { loomStatus } from '@/lib/connectors/loom';
 import { metaAdsStatus } from '@/lib/connectors/meta-ads';
@@ -46,7 +46,7 @@ async function brainConnectorStatus(): Promise<ConnectorStatus> {
 // board. Both were permanently red here because neither key ever existed.
 // lib/connectors/notion.ts stays alive for the Notion Sync agent and the
 // /brand-deals board; it just no longer counts as a system on this list.
-const CHECKS: [string, ConnectorStatus['kind'], () => Promise<ConnectorStatus>][] = [
+const checks = (db: FounderDb): [string, ConnectorStatus['kind'], () => Promise<ConnectorStatus>][] => [
   ['gbrain', 'brain', brainConnectorStatus],
   ['llm', 'orchestration', llmStatus],
   ['paperclip', 'orchestration', paperclipStatus],
@@ -82,7 +82,7 @@ const CHECKS: [string, ConnectorStatus['kind'], () => Promise<ConnectorStatus>][
   ['calendar', 'calendar', calendarStatus],
   ['slack', 'slack', () => slackStatus(runtimeEnv())],
   ['payments', 'payments', () => paymentsStatus(runtimeEnv())],
-  ['robinhood', 'payments', () => Promise.resolve(robinhoodStatus(getDb().trading.latestSnapshot()))],
+  ['robinhood', 'payments', () => Promise.resolve(robinhoodStatus(db.trading.latestSnapshot()))],
 ];
 
 /**
@@ -93,8 +93,8 @@ const CHECKS: [string, ConnectorStatus['kind'], () => Promise<ConnectorStatus>][
  * come back as a status here too, because a key row wants to hear "this is why
  * it failed", not a 500.
  */
-export async function connectorStatusById(id: string): Promise<ConnectorStatus | null> {
-  const found = CHECKS.find(([checkId]) => checkId === id);
+export async function connectorStatusById(db: FounderDb, id: string): Promise<ConnectorStatus | null> {
+  const found = checks(db).find(([checkId]) => checkId === id);
   if (!found) return null;
   const [checkId, kind, check] = found;
   return check().catch(
@@ -108,9 +108,9 @@ export async function connectorStatusById(id: string): Promise<ConnectorStatus |
   );
 }
 
-export async function allConnectorStatuses(): Promise<ConnectorStatus[]> {
+export async function allConnectorStatuses(db: FounderDb): Promise<ConnectorStatus[]> {
   return Promise.all(
-    CHECKS.map(([id, kind, check]) =>
+    checks(db).map(([id, kind, check]) =>
       check().catch(
         (err): ConnectorStatus => ({
           id,

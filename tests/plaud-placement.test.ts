@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { buildKnowledgeGraph, toolSlugOf } from '@/lib/knowledge-graph';
 import { playbookFor } from '@/lib/sop-playbooks';
 import { buildToolWiki } from '@/lib/agent-wiki';
@@ -20,7 +20,7 @@ afterEach(() => db?.close());
 
 function seeded(): FounderDb {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   return db;
 }
 

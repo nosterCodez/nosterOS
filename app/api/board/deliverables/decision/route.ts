@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { DeliverableDecisionSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,9 @@ const BATCH_MAX = 500;
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/board/deliverables/decision', 'POST', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   const raw = body as Record<string, unknown>;
-  const db = getDb();
+  const db = workspace.db;
 
   if (Array.isArray(raw?.items)) {
     if (raw.decision !== null && raw.decision !== 'dismissed') {

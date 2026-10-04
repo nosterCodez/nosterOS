@@ -3,7 +3,7 @@ const mocks = vi.hoisted(() => ({ scan: vi.fn(), codex: vi.fn(), ollama: vi.fn()
 vi.mock('@/lib/connectors/claude-usage', () => ({ scanClaudeProjects: mocks.scan, defaultProjectsDir: () => '/private/transcripts', seatId: () => 'private-machine' }));
 vi.mock('@/lib/connectors/codex-usage', () => ({ codexSeat: mocks.codex }));
 vi.mock('@/lib/connectors/ollama-usage', () => ({ ollamaLane: mocks.ollama }));
-vi.mock('@/lib/data', () => ({ getDb: mocks.db }));
+vi.mock('@/tests/fixture-db', () => ({ getDb: mocks.db }));
 import { GET } from '@/app/api/usage/route';
 describe('public demo usage privacy', () => {
   beforeEach(() => vi.clearAllMocks());

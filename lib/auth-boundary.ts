@@ -6,7 +6,7 @@ export function equalSecret(value: string | null | undefined, expected: string |
   return timingSafeEqual(createHash('sha256').update(value).digest(), createHash('sha256').update(expected).digest());
 }
 export function internalAllowed(path: string, value: string | null, secret = process.env.NOSTEROS_INTERNAL_SECRET): boolean {
-  return INTERNAL_PATHS.has(path) && equalSecret(value, secret);
+  return INTERNAL_PATHS.has(path) && equalSecret(value, secret?.trim());
 }
 export function publicAuthPath(path: string): boolean {
   return path === '/sign-in' || path === '/accept-invitation' || path.startsWith('/api/auth/');

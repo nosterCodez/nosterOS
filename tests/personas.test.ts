@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { PERSONAS } from '@/lib/personas-seed';
 import { PersonaSchema } from '@/lib/schemas';
 
@@ -36,9 +36,9 @@ describe('PERSONAS seed data', () => {
 });
 
 describe('personas repo', () => {
-  test('seedDatabase loads all eleven personas, ordered, round-tripped through the repo', () => {
+  test('seedDemoFixture loads all eleven personas, ordered, round-tripped through the repo', () => {
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
     const rows = db.personas.all();
     expect(rows).toHaveLength(11);
     expect(rows.map((p) => p.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);

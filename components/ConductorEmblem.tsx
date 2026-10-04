@@ -1,4 +1,4 @@
-import { SparkIcon } from '@/components/SparkIcon';
+import { OsMark } from '@/components/OsMark';
 
 /**
  * The Conductor's living core — the super-agent's mark on every surface it
@@ -47,7 +47,7 @@ export function ConductorEmblem({
       <span className="conductor-sweep" aria-hidden />
       <span className="conductor-ring" aria-hidden />
       <span className="conductor-core">
-        <SparkIcon size={glyph} shade={shade} />
+        <OsMark size={glyph} color={shade} />
       </span>
     </span>
   );

@@ -19,8 +19,8 @@ export const WatchEntrySchema = z.object({
 });
 export type WatchEntry = z.infer<typeof WatchEntrySchema>;
 
-export function readWatchEntries(): WatchEntry[] {
-  const raw = adStore.readWatchlist() as unknown[];
+export function readWatchEntries(workspaceId: string): WatchEntry[] {
+  const raw = adStore(workspaceId).readWatchlist() as unknown[];
   const out: WatchEntry[] = [];
   for (const row of raw) {
     const parsed = WatchEntrySchema.safeParse(row);
@@ -29,27 +29,27 @@ export function readWatchEntries(): WatchEntry[] {
   return out;
 }
 
-export function writeWatchEntries(entries: WatchEntry[]): void {
-  adStore.writeWatchlist(entries as never[]);
+export function writeWatchEntries(workspaceId: string, entries: WatchEntry[]): void {
+  adStore(workspaceId).writeWatchlist(entries as never[]);
 }
 
-export function removeWatchEntry(brandId: string): WatchEntry[] {
-  const next = readWatchEntries().filter((e) => e.id !== brandId);
-  writeWatchEntries(next);
+export function removeWatchEntry(workspaceId: string, brandId: string): WatchEntry[] {
+  const next = readWatchEntries(workspaceId).filter((e) => e.id !== brandId);
+  writeWatchEntries(workspaceId, next);
   return next;
 }
 
 /** Add by brand id (already known, e.g. from a mine result): no API call. */
-export function addWatchEntry(entry: Omit<WatchEntry, 'addedAt'>): WatchEntry[] {
-  const list = readWatchEntries();
+export function addWatchEntry(workspaceId: string, entry: Omit<WatchEntry, 'addedAt'>): WatchEntry[] {
+  const list = readWatchEntries(workspaceId);
   if (list.some((e) => e.id === entry.id)) return list;
   const next = [...list, { ...entry, addedAt: new Date().toISOString() }];
-  writeWatchEntries(next);
+  writeWatchEntries(workspaceId, next);
   return next;
 }
 
 /** Add by domain: resolves to the biggest brand profile via one API call. */
-export async function addWatchDomain(client: ForeplayClient, domain: string): Promise<WatchEntry | null> {
+export async function addWatchDomain(workspaceId: string, client: ForeplayClient, domain: string): Promise<WatchEntry | null> {
   const clean = domain
     .trim()
     .toLowerCase()
@@ -65,6 +65,6 @@ export async function addWatchDomain(client: ForeplayClient, domain: string): Pr
     avatar: best.avatar ?? null,
     addedAt: new Date().toISOString(),
   };
-  addWatchEntry(entry);
+  addWatchEntry(workspaceId, entry);
   return entry;
 }

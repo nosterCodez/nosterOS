@@ -1,20 +1,22 @@
-# Founder OS
+# OmegaOS
 
 **A personal operating system for a one-person business: a live web command
 center that runs your company as a set of AI-assisted "departments."**
 
-Founder OS turns the tabs, tools, and mental overhead of running a solo business
+OmegaOS turns the tabs, tools, and mental overhead of running a business
 into one screen: unified comms, a client funnel, social growth, finances, a
 knowledge graph, and a roster of named AI agents that each own a real job.
 
-This repository is the **open-source demo build**. It ships seeded with
-realistic placeholder data, so every page is alive out of the box with no
-accounts, no API keys, and nothing to configure. It's the same system taught,
-live, in the [Founder OS cohort](https://www.founderos.example.com); this repo lets
-you explore and run it yourself.
+This is the nosterCodes private-team fork of FounderOS-DEMO (MIT).
+Current setup and isolation decisions are in `docs/handoff/` and
+`docs/architecture/multi-tenant.md`. Normal workspaces start without demo data.
 
-> Want to build your own, live, with guidance? That's what the cohort is for.
-> [founderos.example.com](https://www.founderos.example.com)
+Use `NOSTEROS_ACCESS_TOKEN` for the beta wall. The previous
+`FOUNDER_OS_ACCESS_TOKEN` still works with a one-line deprecation warning.
+Existing `founder_os_access` cookies are exchanged for `nosteros_access`
+on the next request. Keep the same token value when renaming the variable.
+Legacy CLI database tools prefer `NOSTEROS_DB` over `FOUNDER_OS_DB`;
+neither overrides authenticated per-workspace database selection.
 
 ---
 

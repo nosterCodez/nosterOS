@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { challengePage, gateDecision, GATE_COOKIE } from '@/lib/access-gate';
 import { internalAllowed, publicAuthPath } from '@/lib/auth-boundary';
 import { getSessionCookie } from 'better-auth/cookies';
+import { LEGACY_GATE_COOKIE } from '@/lib/auth-constants';
+import { accessToken } from '@/lib/legacy-env';
 
 /**
  * Whole-app access gate. Active only when FOUNDER_OS_ACCESS_TOKEN is set
@@ -10,14 +12,24 @@ import { getSessionCookie } from 'better-auth/cookies';
  */
 export function proxy(req: NextRequest) {
   const decision = gateDecision({
-    token: process.env.FOUNDER_OS_ACCESS_TOKEN,
+    token: accessToken(),
     cookie: req.cookies.get(GATE_COOKIE)?.value ?? null,
+    legacyCookie: req.cookies.get(LEGACY_GATE_COOKIE)?.value ?? null,
     queryToken: req.nextUrl.searchParams.get('token'),
   });
+
+  function migrateCookie(res: NextResponse) {
+    if (decision.kind === 'migrate-cookie') {
+      res.cookies.set(GATE_COOKIE, decision.value, { httpOnly: true, sameSite: 'lax', secure: req.nextUrl.protocol === 'https:', maxAge: 60 * 60 * 24 * 30, path: '/' });
+      res.cookies.delete(LEGACY_GATE_COOKIE);
+    }
+    return res;
+  }
 
   switch (decision.kind) {
     case 'open':
     case 'pass':
+    case 'migrate-cookie':
       break;
     case 'set-cookie': {
       // strip ?token= from the URL so it never lingers in the address bar
@@ -31,6 +43,7 @@ export function proxy(req: NextRequest) {
         maxAge: 60 * 60 * 24 * 30, // re-enter monthly
         path: '/',
       });
+      res.cookies.delete(LEGACY_GATE_COOKIE);
       return res;
     }
     case 'challenge':
@@ -43,15 +56,15 @@ export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const internal = req.method === 'POST' && internalAllowed(pathname, req.headers.get('x-nosteros-internal'));
   if (!publicAuthPath(pathname) && !internal && !getSessionCookie(req)) {
-    if (pathname.startsWith('/api/')) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
+    if (pathname.startsWith('/api/')) return migrateCookie(NextResponse.json({ error: 'Sign in required' }, { status: 401 }));
     const destination = new URL('/sign-in', req.url);
     destination.searchParams.set('next', pathname + req.nextUrl.search);
-    return NextResponse.redirect(destination);
+    return migrateCookie(NextResponse.redirect(destination));
   }
   // Never trust a caller-provided path when deciding whether the layout is public.
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-nosteros-path', pathname);
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  return migrateCookie(NextResponse.next({ request: { headers: requestHeaders } }));
 }
 
 export const config = {

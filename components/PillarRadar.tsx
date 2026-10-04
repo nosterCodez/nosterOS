@@ -9,7 +9,7 @@ import {
 } from '@/lib/pillar-radar';
 
 /**
- * The pillar spider chart (FounderOS-style): one axis per department over a
+ * The pillar spider chart (OmegaOS-style): one axis per department over a
  * three-level hex grid, with the overall-health polygon plus the three signals
  * it's built from (roster active / run recency / SOP coverage) as their own
  * layers. The layers pile up, so hovering the chart SIFTS between them: the

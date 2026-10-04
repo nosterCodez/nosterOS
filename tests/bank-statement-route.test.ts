@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { POST } from '@/app/api/finances/bank-statement/route';
 import { openBankStore } from '@/lib/bank';
+import { workspaceDir } from '@/lib/paths';
+import { closeWorkspaceStores } from '@/lib/workspace-storage';
 
 /**
  * The bank-statement endpoint must accept ALREADY-EXTRACTED statement text,
@@ -21,15 +23,17 @@ const STATEMENT_TEXT = `
 `;
 
 let dbFile: string;
+let root: string;
 
 beforeEach(() => {
-  dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bank-route-')), 'bank.db');
-  process.env.BANK_DB = dbFile;
+  root = fs.mkdtempSync(path.join(os.tmpdir(), 'bank-route-'));
+  vi.stubEnv('DATA_DIR', root);
+  dbFile = path.join(workspaceDir('T'.repeat(32)), 'bank.db');
 });
 
 afterEach(() => {
-  delete process.env.BANK_DB;
-  fs.rmSync(path.dirname(dbFile), { recursive: true, force: true });
+  closeWorkspaceStores(); vi.unstubAllEnvs();
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 describe('POST /api/finances/bank-statement', () => {

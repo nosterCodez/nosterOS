@@ -1,8 +1,8 @@
 {
-  "name": "founder-os",
+  "name": "omegaos",
   "version": "1.0.0",
   "private": true,
-  "description": "FOUNDER OS — personal operating system and AI agent command center",
+  "description": "OmegaOS — business operations and AI agent command center",
   "engines": {
     "node": ">=22"
   },
@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "bootstrap-operator": "tsx scripts/bootstrap-operator.ts",
     "brain:docs": "tsx scripts/generate-brain-docs.ts"
   },
   "dependencies": {

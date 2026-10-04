@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { conversationSummaries, type ConversationSummary } from '@/lib/chats';
 import type { AgentMessage } from '@/lib/schemas';
 
@@ -62,7 +62,7 @@ describe('GET /api/agents/[id]/chat returns the stored history', () => {
   beforeAll(() => {
     process.env.FOUNDER_OS_DB = ':memory:';
     db = openDb(':memory:');
-    seedDatabase(db);
+    seedDemoFixture(db);
   });
 
   test('the route exports GET alongside POST', async () => {

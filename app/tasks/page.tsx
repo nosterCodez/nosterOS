@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import Link from 'next/link';
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { paperclipIssues } from '@/lib/connectors/paperclip';
 import { scheduledJobRows } from '@/lib/scheduled-jobs';
 import { tasksVolume } from '@/lib/tasks-volume';
@@ -21,12 +22,15 @@ const WINDOW_DAYS = 14;
  * from i={6}.
  */
 export default async function TasksPage() {
-  const db = getDb();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  const issues = await paperclipIssues(30);
+  const db = workspace.db;
   const tasks = db.agentTasks.all();
   const agentNames = Object.fromEntries(db.agents.all().map((a) => [a.id, a.name]));
   // The REAL org's queue rides on top: live board issues + a composer that
   // hands the company actual work. Local kanban below stays the OS's own.
-  const issues = await paperclipIssues(30);
   // Scheduled work is agent work: the same page that shows the queue shows
   // what fires on a timer, with its real run history.
   const crons = db.agentCrons.all();

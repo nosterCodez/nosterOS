@@ -236,28 +236,26 @@
 /* Mono  -  MONOLITH SIGNAL (design handoff 2026-07-10): white/grey structure
    on bare black, boxes flattened, zero glow/grid, and a strict traffic-light
    rule  -  color only ever means status: green good · yellow degraded · red bad. */
-/* Mono (Monolith Signal)  -  the default identity; bare :root rides along so a
-   pre-script or no-JS load already renders Monolith. */
+/* Omega is the default identity, including before JavaScript loads. */
 :root,
 :root[data-theme='mono'] {
   color-scheme: dark;
   --bg: #0a0a0a;
   --bg-2: #0a0a0a;
-  --surface: #0a0a0a; /* boxes are gone  -  surfaces flatten to bg */
+  --surface: #101012;
   --surface-2: #141414; /* hover fill (nav rows, list rows) */
   --surface-3: #1c1c1c;
   --border: #242424; /* structural rules */
   --border-strong: #3a3a3a; /* hover brighten, kbd, chip borders */
   --text: #f2f2f2;
   --text-2: #9c9c9c;
-  --text-3: #5c5c5c;
-  /* Accent IS white  -  active nav, primary badges, inverted fills. */
-  --accent: #f2f2f2;
-  --accent-2: #d4d4d4;
+  --text-3: #94949c;
+  /* Red brand accents; status colors retain their operational meaning. */
+  --accent: #ff565d;
+  --accent-2: #ff858a;
   --accent-ink: #0a0a0a;
-  --accent-soft: rgba(242, 242, 242, 0.06);
-  --accent-line: rgba(242, 242, 242, 0.25);
-  /* The only three colors in the system. */
+  --accent-soft: rgba(255, 86, 93, 0.08);
+  --accent-line: rgba(255, 86, 93, 0.35);
   --ok: #2fd36f;
   --warn: #ffb000;
   --err: #ff2d3f;
@@ -265,7 +263,7 @@
   --grid: transparent; /* background grid is dead */
   --hairline: #1c1c1c;
   /* Brain viz  -  neutralized; structure is grey, agents carry status. */
-  --brain-1: #f2f2f2;
+  --brain-1: #ff565d;
   --brain-2: #9c9c9c;
   --brain-3: #5c5c5c;
   /* Funnel temperature = status semantics; segments = grey ramp,

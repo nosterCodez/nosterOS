@@ -1,8 +1,9 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
 import { foldersToClusters } from '@/lib/brain-viz';
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import { BrainCore } from '@/components/BrainCore';
 import { PillarRadar } from '@/components/PillarRadar';
 import { pillarRadarAxes } from '@/lib/pillar-radar';
@@ -96,9 +97,12 @@ function FlowStep({ title, detail, dashed = false }: { title: string; detail: st
 // Every number in the hero and second row comes from lib/doctor-volume, fed
 // with the same doctor, store, radar and run rows the panels below render.
 export default async function DoctorPage() {
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
   const overview = await createGBrainProvider().overview();
   const { store, doctor } = overview;
-  const db = getDb();
+  const db = workspace.db;
   const maxFiles = Math.max(1, ...store.folders.map((f) => f.files));
   const clusters = foldersToClusters(store.folders);
   const storeShort = store.path.replace(process.env.HOME ?? '', '~');
@@ -351,7 +355,7 @@ export default async function DoctorPage() {
               <FlowStep
                 dashed
                 title="Fallback: local grep"
-                detail="If Supabase is paused or unreachable, FOUNDER OS greps the markdown brain-store directly  -  fewer smarts, zero downtime."
+                detail="If Supabase is paused or unreachable, OmegaOS greps the markdown brain-store directly  -  fewer smarts, zero downtime."
               />
             </div>
           </div>

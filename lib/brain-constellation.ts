@@ -32,6 +32,8 @@ import { readStoreNotes as realReadStoreNotes } from '@/lib/connectors/gbrain';
 import { readVaultNotes as realReadVaultNotes } from '@/lib/connectors/obsidian';
 import { agentSlug, buildWikiIndex, pickWikiEntries, toolSlug, type WikiIndex } from '@/lib/brain-wiki';
 import { demoMemoryGraph, distillMemoryGraph, type MemoryGraph } from '@/lib/memory-core';
+import path from 'node:path';
+import { workspaceDir } from '@/lib/paths';
 
 export const MEMORY_TTL_MS = 5 * 60_000;
 export const WIKI_TTL_MS = 5 * 60_000;
@@ -44,14 +46,25 @@ export type ConstellationDeps = {
   now: () => number;
 };
 
-const REAL_DEPS: ConstellationDeps = {
-  readStoreNotes: realReadStoreNotes,
-  readVaultNotes: realReadVaultNotes,
-  now: Date.now,
-};
-
-let memoryCache: { at: number; value: MemoryGraph | undefined } | null = null;
-let wikiCache: { at: number; value: WikiIndex } | null = null;
+function realDeps(workspaceId: string): ConstellationDeps {
+  const dir = workspaceDir(workspaceId);
+  return {
+    readStoreNotes: () => realReadStoreNotes(path.join(dir, 'brain-store')),
+    readVaultNotes: () => realReadVaultNotes(path.join(dir, 'vault')),
+    now: Date.now,
+  };
+}
+type Cache = { memory?: { at: number; value: MemoryGraph | undefined }; wiki?: { at: number; value: WikiIndex } };
+const caches = new Map<string, Cache>();
+function cacheFor(workspaceId: string): Cache {
+  workspaceDir(workspaceId);
+  const cache = caches.get(workspaceId) ?? {};
+  caches.delete(workspaceId);
+  if (caches.size >= 50) caches.delete(caches.keys().next().value!);
+  caches.set(workspaceId, cache);
+  return cache;
+}
+const fallback = () => process.env.DEMO_GATE === '1' ? demoMemoryGraph() : undefined;
 
 /**
  * The operator's memory = the brain-store PLUS the Obsidian vault (the Claude
@@ -60,7 +73,9 @@ let wikiCache: { at: number; value: WikiIndex } | null = null;
  * Never throws: an unreadable store yields the demo stand-in rather than a
  * broken page.
  */
-export function memoryConstellation(deps: ConstellationDeps = REAL_DEPS): MemoryGraph | undefined {
+export function memoryConstellation(workspaceId: string, deps: ConstellationDeps = realDeps(workspaceId)): MemoryGraph | undefined {
+  const cache = cacheFor(workspaceId);
+  const memoryCache = cache.memory;
   if (memoryCache && deps.now() - memoryCache.at < MEMORY_TTL_MS) return memoryCache.value;
   let value: MemoryGraph | undefined;
   try {
@@ -72,11 +87,11 @@ export function memoryConstellation(deps: ConstellationDeps = REAL_DEPS): Memory
     const distilled = distillMemoryGraph(buildBrainGraph([...store, ...vault]), {
       centerFolder: 'Claude Archive',
     });
-    value = distilled.nodes.length > 0 ? distilled : demoMemoryGraph();
+    value = distilled.nodes.length > 0 ? distilled : fallback();
   } catch {
-    value = demoMemoryGraph();
+    value = fallback();
   }
-  memoryCache = { at: deps.now(), value };
+  cache.memory = { at: deps.now(), value };
   return value;
 }
 
@@ -87,7 +102,9 @@ export function memoryConstellation(deps: ConstellationDeps = REAL_DEPS): Memory
  * cadence. Only the pages the graph can actually open are returned to the
  * caller, never the whole index.
  */
-export function wikiFor(agentIds: string[], toolSlugs: string[], deps: ConstellationDeps = REAL_DEPS): WikiIndex {
+export function wikiFor(workspaceId: string, agentIds: string[], toolSlugs: string[], deps: ConstellationDeps = realDeps(workspaceId)): WikiIndex {
+  const cache = cacheFor(workspaceId);
+  let wikiCache = cache.wiki;
   if (!wikiCache || deps.now() - wikiCache.at >= WIKI_TTL_MS) {
     let value: WikiIndex = {};
     try {
@@ -98,6 +115,7 @@ export function wikiFor(agentIds: string[], toolSlugs: string[], deps: Constella
       value = {};
     }
     wikiCache = { at: deps.now(), value };
+    cache.wiki = wikiCache;
   }
   return pickWikiEntries(wikiCache.value, [...agentIds.map(agentSlug), ...toolSlugs.map(toolSlug)]);
 }
@@ -108,21 +126,20 @@ export function wikiFor(agentIds: string[], toolSlugs: string[], deps: Constella
  * their clock, in the background, instead of on whoever's click loses the TTL
  * race.
  */
-export function warmBrainConstellation(deps: ConstellationDeps = REAL_DEPS): void {
-  memoryCache = null;
-  wikiCache = null;
-  memoryConstellation(deps);
-  wikiFor([], [], deps);
+export function warmBrainConstellation(workspaceId: string, deps: ConstellationDeps = realDeps(workspaceId)): void {
+  caches.delete(workspaceId);
+  memoryConstellation(workspaceId, deps);
+  wikiFor(workspaceId, [], [], deps);
 }
 
 /** For a health check: is the expensive path currently cached, or is the
     next real click about to pay for it? */
-export function isConstellationWarm(deps: ConstellationDeps = REAL_DEPS): boolean {
+export function isConstellationWarm(workspaceId: string, deps: ConstellationDeps = realDeps(workspaceId)): boolean {
+  const memoryCache = cacheFor(workspaceId).memory;
   return Boolean(memoryCache) && deps.now() - memoryCache!.at < MEMORY_TTL_MS;
 }
 
 /** Test-only: clear module state between cases. Not exported for app use. */
 export function __resetForTests(): void {
-  memoryCache = null;
-  wikiCache = null;
+  caches.clear();
 }

@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { POST } from '@/app/api/finances/statements/route';
 import { openLedger } from '@/lib/ledger';
+import { workspaceDir } from '@/lib/paths';
+import { closeWorkspaceStores } from '@/lib/workspace-storage';
 
 /**
  * The card-statement endpoint has to take all three card lanes, and has to take
@@ -21,6 +23,7 @@ Closing Date 07/26/26
 `;
 
 let dbFile: string;
+let root: string;
 
 const post = (body: BodyInit, contentType?: string) =>
   POST(
@@ -32,13 +35,14 @@ const post = (body: BodyInit, contentType?: string) =>
   );
 
 beforeEach(() => {
-  dbFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-route-')), 'ledger.db');
-  process.env.LEDGER_DB = dbFile;
+  root = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-route-'));
+  vi.stubEnv('DATA_DIR', root);
+  dbFile = path.join(workspaceDir('T'.repeat(32)), 'ledger.db');
 });
 
 afterEach(() => {
-  delete process.env.LEDGER_DB;
-  fs.rmSync(path.dirname(dbFile), { recursive: true, force: true });
+  closeWorkspaceStores(); vi.unstubAllEnvs();
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 describe('POST /api/finances/statements', () => {

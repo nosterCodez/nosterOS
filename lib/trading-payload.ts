@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { robinhoodStatus } from '@/lib/connectors/robinhood';
 import { phantomBalance } from '@/lib/connectors/phantom';
 import { AGENTIC_ID, type TradingPayload } from '@/lib/trading-view';
@@ -11,8 +11,7 @@ export { AGENTIC_ID, type TradingPayload };
  * from first paint. The shape lives in lib/trading-view.ts (pure) because the
  * client board imports it and must never reach sqlite or the filesystem.
  */
-export async function tradingPayload(): Promise<TradingPayload> {
-  const db = getDb();
+export async function tradingPayload(db: FounderDb): Promise<TradingPayload> {
   const accounts = db.trading.latestSnapshots();
   const history = Object.fromEntries(accounts.map((a) => [a.accountId, db.trading.history(a.accountId)]));
   // Read-only, and a price outage must not blank the balance.

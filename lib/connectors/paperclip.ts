@@ -339,7 +339,7 @@ async function findCockpitIssueByScan(): Promise<RawIssueMatch | null> {
 
     for (const rec of list) {
       const r = rec as Record<string, unknown>;
-      if (r.title !== COCKPIT_TITLE || r.status === 'done' || r.status === 'cancelled' || typeof r.id !== 'string') {
+      if ((r.title !== COCKPIT_TITLE && r.title !== 'Founder OS Cockpit') || r.status === 'done' || r.status === 'cancelled' || typeof r.id !== 'string') {
         continue;
       }
       matches.push({
@@ -423,7 +423,7 @@ export async function ensureCockpitIssue(): Promise<string> {
   const created = (await res.json()) as Record<string, unknown>;
   const issue = (created.issue ?? created) as Record<string, unknown>;
   if (typeof issue.id !== 'string') throw new Error('cockpit issue create returned no id');
-  console.warn('[paperclip] created fallback Founder OS Cockpit issue', issue.id);
+  console.warn('[paperclip] created fallback OmegaOS Cockpit issue', issue.id);
   cockpitIssueId = issue.id;
   return issue.id;
 }

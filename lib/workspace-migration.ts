@@ -67,6 +67,11 @@ async function migrateUnlocked(options: Options): Promise<Result> {
     const owner = control.prepare('SELECT id FROM user WHERE lower(email)=?').get(ownerEmail) as { id: string } | undefined;
     if (!owner) throw new Error('Owner account must already exist: sign in before migration');
     ownerId = owner.id;
+    if (control.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='nosteros_operator'").get()) {
+      const binding = control.prepare('SELECT organizationId,ownerUserId FROM nosteros_operator WHERE id=1').get() as { organizationId: string; ownerUserId: string } | undefined;
+      const expected = control.prepare("SELECT id FROM organization WHERE slug='nostercodes'").get() as { id: string } | undefined;
+      if (binding && (binding.organizationId !== expected?.id || binding.ownerUserId !== ownerId)) throw new Error('Operator binding conflict; no data changed');
+    }
     const workspace = control.prepare("SELECT id, name, metadata FROM organization WHERE slug='nostercodes'").get() as { id: string; name: string; metadata: string } | undefined;
     if (workspace) {
       const member = control.prepare('SELECT role FROM member WHERE organizationId=? AND userId=?').get(workspace.id, ownerId) as { role: string } | undefined;
@@ -144,6 +149,13 @@ async function migrateUnlocked(options: Options): Promise<Result> {
     }
   }
   manifest.state = 'complete';
+  const binding = new Database(controlPath, { fileMustExist: true });
+  try {
+    binding.exec('CREATE TABLE IF NOT EXISTS nosteros_operator (id INTEGER PRIMARY KEY CHECK(id=1), organizationId TEXT NOT NULL, ownerUserId TEXT NOT NULL)');
+    const existing = binding.prepare('SELECT organizationId,ownerUserId FROM nosteros_operator WHERE id=1').get() as { organizationId: string; ownerUserId: string } | undefined;
+    if (existing && (existing.organizationId !== id || existing.ownerUserId !== ownerId)) throw new Error('Operator binding conflict; inspect migration before continuing');
+    binding.prepare('INSERT OR IGNORE INTO nosteros_operator VALUES (1,?,?)').run(id, ownerId);
+  } finally { binding.close(); }
   fs.writeFileSync(`${manifestPath}.tmp`, JSON.stringify(manifest, null, 2), { flag: 'wx' });
   fs.renameSync(`${manifestPath}.tmp`, manifestPath);
   return { status: 'complete', workspaceId: id, files: manifest.files };

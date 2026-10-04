@@ -9,6 +9,14 @@ import { controlDbPath } from '@/lib/paths';
 import { ac, roles } from '@/lib/auth-access';
 import { sendSystemMail, type SystemMessage } from '@/lib/system-mail';
 
+export function invitationIsCurrent(value: unknown, now = Date.now()): boolean {
+  const expiry = typeof value === 'number' ? value
+    : typeof value === 'string' && /^\d{13}$/.test(value) ? Number(value)
+    : typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? Date.parse(value)
+    : NaN;
+  return Number.isFinite(expiry) && expiry > now;
+}
+
 export function createAuth(database: Database.Database, options: {
   baseURL: string; secret: string; send?: (message: SystemMessage) => Promise<void>;
 }) {
@@ -23,7 +31,8 @@ export function createAuth(database: Database.Database, options: {
       const domain = email.slice(email.lastIndexOf('@'));
       const allowed = (list ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
       if (allowed.includes(email) || allowed.includes(domain)) return;
-      const invited = database.prepare("SELECT id FROM invitation WHERE lower(email)=? AND status='pending' AND expiresAt>? LIMIT 1").get(email, Date.now());
+      const pending = database.prepare("SELECT expiresAt FROM invitation WHERE lower(email)=? AND status='pending'").all(email) as { expiresAt: unknown }[];
+      const invited = pending.some(row => invitationIsCurrent(row.expiresAt));
       if (!invited) throw new APIError('FORBIDDEN', { message: 'Registration requires an invitation.' });
     } } } },
     session: { cookieCache: { enabled: false } },

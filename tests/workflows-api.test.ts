@@ -3,7 +3,7 @@ process.env.FOUNDER_OS_DB = ':memory:';
 import { describe, expect, test } from 'vitest';
 import { GET, POST } from '@/app/api/workflows/route';
 import { PATCH, DELETE } from '@/app/api/workflows/[id]/route';
-import { getDb } from '@/lib/data';
+import { getDb } from '@/tests/fixture-db';
 
 function post(body: unknown) {
   return POST(new Request('http://test/api/workflows', { method: 'POST', body: JSON.stringify(body) }));
@@ -47,9 +47,10 @@ const basicInput = {
 };
 
 describe('GET /api/workflows', () => {
-  test('lists exactly what the workflows table holds (the operator seeds its two machines; Slab seeded none)', async () => {
+  test('does not expose upstream sample workflows as production results', async () => {
     const body = await (await GET()).json();
-    expect(body.workflows.map((w: { id: string }) => w.id)).toEqual(getDb().workflows.all().map((w) => w.id));
+    expect(body.workflows).toEqual([]);
+    expect(getDb().workflows.all().length).toBeGreaterThan(0);
   });
 });
 

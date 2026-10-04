@@ -1,8 +1,8 @@
-import { apiSessionError } from '@/lib/session';
+import { apiSessionError, apiWorkspace } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { parseBankStatementSummary } from '@/lib/bank-statements';
 import { pdfToText } from '@/lib/pdf-text';
-import { openBankStore } from '@/lib/bank';
+import { withWorkspaceBank } from '@/lib/workspace-storage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,6 +15,8 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/finances/bank-statement', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
 
   const ctype = req.headers.get('content-type') ?? '';
   let text: string;
@@ -57,11 +59,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'not a recognizable bank statement summary' }, { status: 400 });
   }
 
-  const store = openBankStore();
-  try {
-    store.upsert(summary);
-  } finally {
-    store.close();
-  }
+  await withWorkspaceBank(workspace.workspace.id, store => store.upsert(summary));
   return NextResponse.json({ summary });
 }

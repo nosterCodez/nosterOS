@@ -1,3 +1,4 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import type React from 'react';
 import Link from 'next/link';
 import { Instagram, Linkedin, Mail, Music2, Youtube } from 'lucide-react';
@@ -6,7 +7,7 @@ import { XLogo } from '@/components/XLogo';
 /** Any icon that takes a className: the lucide set and the hand-rolled X mark
     both satisfy it, and the map does not care which it is holding. */
 type PlatformIcon = React.ComponentType<{ className?: string }>;
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import {
   audienceGrowth,
   audienceSeries,
@@ -50,7 +51,7 @@ const RECENT_POSTS = [
   { tag: 'Instagram · Reel', ago: '2h', caption: '3 agents that run my business while I sleep', kind: 'views', views: 12400, likes: 1104 },
   { tag: 'TikTok · Video', ago: '6h', caption: 'POV: your operating system has a command palette', kind: 'views', views: 8100, likes: 640 },
   { tag: 'X · Thread', ago: '1d', caption: 'How I wired 7 real connectors into one OS', kind: 'impressions', views: 1200, likes: 74 },
-  { tag: 'YouTube · Long', ago: '2d', caption: 'Founder OS walkthrough  -  building in public #4', kind: 'views', views: 940, likes: 88 },
+  { tag: 'YouTube · Long', ago: '2d', caption: 'OmegaOS walkthrough  -  building in public #4', kind: 'views', views: 940, likes: 88 },
   { tag: 'Instagram · Carousel', ago: '3d', caption: 'The larp-first, real-ready architecture', kind: 'reach', views: 6700, likes: 717 },
 ];
 
@@ -92,7 +93,10 @@ function agoFrom(iso: string | null): string {
 }
 
 export default async function SocialPage() {
-  const db = getDb();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  return withWorkspaceLease(workspace, async db => {
   // Live follower-count sync from Zernio/Late (falls back to static config when
   // the API is unreachable). This makes every figure on the page real-time.
   await syncFromZernioLive(db);
@@ -420,4 +424,5 @@ export default async function SocialPage() {
       </SlabCard>
     </Slab>
   );
+  });
 }

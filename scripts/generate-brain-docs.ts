@@ -3,23 +3,17 @@
  * people, pillars — wikilinked so the G-Brain constellation gains real
  * structure. Hand-edited files (no generated marker) are never touched.
  *
- *   npm run brain:docs             → writes into ~/knowledge/brain-store
- *   BRAIN_DOCS_DIR=/tmp/x npm run brain:docs
+ *   npm run brain:docs -- --workspace <existing workspace ID>
  */
-import os from 'node:os';
-import path from 'node:path';
+import { maintenanceTarget } from '../lib/workspace-maintenance';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedStructure, seedDemo } from '@/lib/seed';
 import { buildBrainDocs, writeBrainDocs } from '@/lib/brain-docs';
 
-const root =
-  process.env.BRAIN_DOCS_DIR ??
-  process.env.GBRAIN_STORE ??
-  path.join(os.homedir(), 'knowledge', 'brain-store');
-
-const dbPath = process.env.FOUNDER_OS_DB ?? path.join(process.cwd(), 'data', 'founder-os.db');
+const { dbPath, brainRoot: root } = maintenanceTarget(process.argv.slice(2));
 const db = openDb(dbPath);
-seedDatabase(db);
+seedStructure(db);
+if (process.env.DEMO_GATE === '1') seedDemo(db);
 
 const docs = buildBrainDocs({
   departments: db.departments.all(),

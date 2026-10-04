@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/data';
+import { requireWorkspace } from '@/lib/session';
 import { PageHeader } from '@/components/PageHeader';
 import { PersonasViewer } from '@/components/PersonasViewer';
 import { Badge } from '@/components/terminal';
@@ -6,8 +6,10 @@ import { Rise } from '@/components/motion';
 
 export const dynamic = 'force-dynamic';
 
-export default function PersonasPage() {
-  const personas = getDb().personas.all();
+export default async function PersonasPage() {
+  const workspace = await requireWorkspace();
+
+  const personas = workspace.db.personas.all();
 
   return (
     <div>

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 
 let db: FounderDb;
 
@@ -10,7 +10,7 @@ afterEach(() => {
 
 function seeded(): FounderDb {
   db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   return db;
 }
 
@@ -80,7 +80,7 @@ describe('seeded SOP graph data', () => {
     const tasks = d.sopTasks.all().length;
     expect(people).toBeGreaterThan(0);
     expect(tasks).toBeGreaterThan(0);
-    seedDatabase(d);
+    seedDemoFixture(d);
     expect(d.people.all().length).toBe(people);
     expect(d.sopTasks.all().length).toBe(tasks);
   });

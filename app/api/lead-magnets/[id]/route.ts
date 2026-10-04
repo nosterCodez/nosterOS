@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { LeadMagnetStatusSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -28,12 +28,15 @@ const PatchSchema = z
 export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/lead-magnets/[id]', 'PATCH', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const params = await props.params;
   const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const db = getDb();
+  const db = workspace.db;
   const existing = db.leadMagnets.byId(params.id);
   if (!existing) return NextResponse.json({ error: 'lead magnet not found' }, { status: 404 });
 
@@ -47,9 +50,12 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
 export async function DELETE(_req: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/lead-magnets/[id]', 'DELETE', _req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(_req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const params = await props.params;
-  const removed = getDb().leadMagnets.remove(params.id);
+  const removed = workspace.db.leadMagnets.remove(params.id);
   if (!removed) return NextResponse.json({ error: 'lead magnet not found' }, { status: 404 });
   return NextResponse.json({ ok: true, id: params.id });
 }

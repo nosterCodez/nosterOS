@@ -1,5 +1,6 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
 import { paperclipAgents, paperclipIssues, paperclipRuns } from '@/lib/connectors/paperclip';
-import { getDb } from '@/lib/data';
+import { operatorWorkspaceForPage } from '@/lib/session';
 import type { BoardLivePayload } from '@/lib/board-live';
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
@@ -24,6 +25,9 @@ export const dynamic = 'force-dynamic';
  * through lib/agents-volume; the cockpit below keeps its viewport height.
  */
 export default async function AgentsPage() {
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
   // first paint of the live board comes from the server; BoardLive then polls
   const [liveAgents, liveIssues, liveRuns] = await Promise.all([
     paperclipAgents(),
@@ -34,7 +38,7 @@ export default async function AgentsPage() {
     paperclipRuns(120),
   ]);
   // decisions come from the repo layer, not the board: an approve is ours
-  const decisions = getDb().deliverableDecisions.all();
+  const decisions = workspace.db.deliverableDecisions.all();
   const boardInitial: BoardLivePayload = {
     connected: liveAgents.length > 0,
     agents: liveAgents,

@@ -1,9 +1,9 @@
-import { apiSessionError } from '@/lib/session';
+import { apiSessionError, apiWorkspace } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { parseStatementCsv, parseCardStatementText, categorize, type LedgerRow } from '@/lib/statements';
 import { normalizeCardId, type CardId } from '@/lib/cards';
 import { pdfToText } from '@/lib/pdf-text';
-import { openLedger } from '@/lib/ledger';
+import { withWorkspaceLedger } from '@/lib/workspace-storage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -29,6 +29,8 @@ function parseAny(text: string) {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/finances/statements', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
 
   const ctype = req.headers.get('content-type') ?? '';
   const queryCard = new URL(req.url).searchParams.get('card');
@@ -72,8 +74,7 @@ export async function POST(req: Request) {
   // the ledger — a back-dated statement is the data he just submitted too, and
   // the page moves the view to it.
   const uploadedMonths = [...new Set(rows.map((r) => r.date.slice(0, 7)))].sort();
-  const ledger = openLedger();
-  try {
+  return withWorkspaceLedger(workspace.workspace.id, ledger => {
     const inserted = ledger.insertRows(rows);
     return NextResponse.json({
       inserted,
@@ -83,7 +84,5 @@ export async function POST(req: Request) {
       months: ledger.monthsAscending(),
       byCategory: ledger.monthly(),
     });
-  } finally {
-    ledger.close();
-  }
+  });
 }

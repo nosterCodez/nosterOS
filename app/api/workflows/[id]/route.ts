@@ -1,6 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { WorkflowSchema, type Workflow } from '@/lib/schemas';
 import { WorkflowInputSchema, buildWorkflowSteps } from '../shared';
 
@@ -14,9 +14,12 @@ export const dynamic = 'force-dynamic';
 export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/workflows/[id]', 'PATCH', request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const params = await props.params;
-  const db = getDb();
+  const db = workspace.db;
   const existing = db.workflows.get(params.id);
   if (!existing) return NextResponse.json({ error: `unknown workflow: ${params.id}` }, { status: 404 });
 
@@ -42,9 +45,12 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
 export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/workflows/[id]', 'DELETE', _request);
   if (authError) return authError;
+  const workspace = await apiWorkspace(_request.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const params = await props.params;
-  const db = getDb();
+  const db = workspace.db;
   const existing = db.workflows.get(params.id);
   if (!existing) return NextResponse.json({ error: `unknown workflow: ${params.id}` }, { status: 404 });
   db.workflows.remove(params.id);

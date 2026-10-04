@@ -1,8 +1,10 @@
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getBrainProvider } from '@/lib/brain';
-import { getDb } from '@/lib/data';
+import { apiWorkspace, withWorkspaceLease } from '@/lib/session';
+import type { FounderDb } from '@/lib/db';
 import { MEMORY_BUDGET_CHARS, createMemoryProvider, type MemoryBrain } from '@/lib/memory-provider';
 
 export const dynamic = 'force-dynamic';
@@ -36,27 +38,32 @@ function authorized(req: Request): boolean {
 const unauthorized = () =>
   NextResponse.json({ ok: false, error: 'MEMORY_API_TOKEN required' }, { status: 401 });
 
-function provider() {
+function provider(db: FounderDb) {
   // getBrainProvider() returns the federated provider by default, which
   // forwards capture to its gbrain half; the stub cannot capture at all, and
   // remember() reports that honestly rather than pretending to write.
   const brain: MemoryBrain = getBrainProvider();
-  return createMemoryProvider({ db: getDb(), brain });
+  return createMemoryProvider({ db, brain });
 }
 
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/memory', 'GET', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   if (!authorized(req)) return unauthorized();
+
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
 
   const params = new URL(req.url).searchParams;
   const query = params.get('q');
   const budget = Number(params.get('budget'));
-  const brief = await provider().brief({
+  const brief = await withWorkspaceLease(workspace, db => provider(db).brief({
     query,
     budgetChars: Number.isFinite(budget) && budget > 0 ? Math.min(budget, 40_000) : MEMORY_BUDGET_CHARS,
-  });
+  }));
 
   if (params.get('format') === 'md') {
     return new Response(brief.markdown, {
@@ -76,8 +83,13 @@ const RememberSchema = z.object({
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/memory', 'POST', req);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
 
   if (!authorized(req)) return unauthorized();
+
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
 
   let body: unknown;
   try {
@@ -90,7 +102,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: parsed.error.issues }, { status: 400 });
   }
 
-  const outcome = await provider().remember(parsed.data);
+  const outcome = await withWorkspaceLease(workspace, db => provider(db).remember(parsed.data));
   // A capture that did not land is a 502, not an ok:false buried in a 200 —
   // a worker retry loop has to be able to see the difference.
   return NextResponse.json(outcome, { status: outcome.ok ? 200 : 502 });

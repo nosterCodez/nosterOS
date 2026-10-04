@@ -9,7 +9,7 @@
  * venture. Seeded funnel only when nothing live answered. Dependencies are
  * injectable so the wiring is testable without the network.
  */
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { attioFunnelJourneys } from '@/lib/funnel-live';
 import { ghlFunnelJourneys } from '@/lib/funnel-ghl';
 import { mergeStripeWins, stripeFunnelWins, type StripeWin } from '@/lib/funnel-stripe';
@@ -36,18 +36,19 @@ export type FunnelComposeDeps = {
   seed: (venture?: FunnelVenture) => FunnelJourney[];
 };
 
-const DEFAULT_DEPS: FunnelComposeDeps = {
+const defaultDeps = (db: FounderDb): FunnelComposeDeps => ({
   attio: attioFunnelJourneys,
   ghl: ghlFunnelJourneys,
   stripe: stripeFunnelWins,
   trakyo: trakyoTouches,
-  seed: (venture) => getDb().funnel.journeys(venture),
-};
+  seed: (venture) => db.funnel.journeys(venture),
+});
 
 export async function composeFunnelJourneys(
+  db: FounderDb,
   now: Date,
   venture?: FunnelVenture,
-  deps: FunnelComposeDeps = DEFAULT_DEPS,
+  deps: FunnelComposeDeps = defaultDeps(db),
 ): Promise<FunnelComposition> {
   const [attioLive, ghlLive, stripeWins] = await Promise.all([deps.attio(now), deps.ghl(now), deps.stripe(now)]);
   const liveJourneys = [...(attioLive?.journeys ?? []), ...(ghlLive?.journeys ?? [])];

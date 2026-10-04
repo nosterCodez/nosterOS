@@ -20,34 +20,35 @@ export type SavedAd = { ad: WallAd; savedAt: string };
 
 const CAP = 200;
 
-function savedPath(): string {
-  return path.join(storeDir(), 'saved.json');
+function savedPath(workspaceId: string): string {
+  return path.join(storeDir(workspaceId), 'saved.json');
 }
 
-export function readSavedAds(): SavedAd[] {
+export function readSavedAds(workspaceId: string): SavedAd[] {
+  const file = savedPath(workspaceId);
   try {
-    const raw = JSON.parse(fs.readFileSync(savedPath(), 'utf8')) as unknown[];
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as unknown[];
     return raw.filter((r) => SavedAdSchema.safeParse(r).success) as SavedAd[];
   } catch {
     return [];
   }
 }
 
-function writeSavedAds(saved: SavedAd[]): void {
-  fs.mkdirSync(storeDir(), { recursive: true });
-  fs.writeFileSync(savedPath(), JSON.stringify(saved.slice(0, CAP), null, 2) + '\n');
+function writeSavedAds(workspaceId: string, saved: SavedAd[]): void {
+  fs.mkdirSync(storeDir(workspaceId), { recursive: true });
+  fs.writeFileSync(savedPath(workspaceId), JSON.stringify(saved.slice(0, CAP), null, 2) + '\n');
 }
 
-export function saveAd(ad: WallAd): SavedAd[] {
-  const saved = readSavedAds();
+export function saveAd(workspaceId: string, ad: WallAd): SavedAd[] {
+  const saved = readSavedAds(workspaceId);
   if (saved.some((s) => s.ad.id === ad.id)) return saved;
   const next = [{ ad, savedAt: new Date().toISOString() }, ...saved];
-  writeSavedAds(next);
+  writeSavedAds(workspaceId, next);
   return next;
 }
 
-export function unsaveAd(adId: string): SavedAd[] {
-  const next = readSavedAds().filter((s) => s.ad.id !== adId);
-  writeSavedAds(next);
+export function unsaveAd(workspaceId: string, adId: string): SavedAd[] {
+  const next = readSavedAds(workspaceId).filter((s) => s.ad.id !== adId);
+  writeSavedAds(workspaceId, next);
   return next;
 }

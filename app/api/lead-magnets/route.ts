@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { LeadMagnetStatusSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -41,20 +41,26 @@ function slugify(name: string): string {
 export async function GET() {
   const authError = await apiSessionError('/api/lead-magnets', 'GET');
   if (authError) return authError;
+  const workspace = await apiWorkspace();
+  if (workspace instanceof Response) return workspace;
 
-  return NextResponse.json({ leadMagnets: getDb().leadMagnets.all() });
+
+  return NextResponse.json({ leadMagnets: workspace.db.leadMagnets.all() });
 }
 
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/lead-magnets', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   const parsed = CreateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const input = parsed.data;
-  const db = getDb();
+  const db = workspace.db;
 
   const base = slugify(input.name) || 'lead-magnet';
   const taken = new Set(db.leadMagnets.all().map((m) => m.id));

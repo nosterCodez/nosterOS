@@ -1,3 +1,5 @@
+import { apiWorkspace } from '@/lib/session';
+import { apiOperatorWorkspace } from '@/lib/session';
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -20,13 +22,18 @@ const AskSchema = z.object({ question: z.string().min(3).max(600) });
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/ask', 'POST', request);
   if (authError) return authError;
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
+  if (operatorAccess instanceof Response) return operatorAccess;
+  const context = await apiWorkspace(request.headers);
+  if (context instanceof Response) return context;
+  const workspaceId = context.workspace.id;
 
   const parsed = AskSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: 'a question (3-600 chars) is required' }, { status: 400 });
   }
 
-  const wall = storeWall(30).map((w) => ({
+  const wall = storeWall(workspaceId, 30).map((w) => ({
     brand: w.brand,
     hook: w.hook,
     daysRunning: w.daysRunning,
@@ -37,7 +44,7 @@ export async function POST(request: Request) {
       .slice(0, 3)
       .map(([k, v]) => `${k}:${v}`),
   }));
-  const signals = adStore.readSignals().slice(0, 25).map((s) => s.message);
+  const signals = adStore(workspaceId).readSignals().slice(0, 25).map((s) => s.message);
 
   if (wall.length === 0 && signals.length === 0) {
     return NextResponse.json(

@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import { openDb, type FounderDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { buildKnowledgeGraph } from '@/lib/knowledge-graph';
 import { ACTION_LENSES, ALL_LENSES, ENTITY_LENSES, FUNCTION_LENSES, lensNodeSet, type LensContext } from '@/lib/graph-lens';
 
 function contextFromSeed(): LensContext {
   const db: FounderDb = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   const graph = buildKnowledgeGraph(db.agents.all(), db.departments.all(), db.people.all(), db.sopTasks.all());
   // dept resolver mirroring the component's teamForFocus: worker → its dept
   const deptOf = new Map<string, string>();

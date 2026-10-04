@@ -1,4 +1,5 @@
 import type { FounderDb } from '@/lib/db';
+import { workflowTemplates as workflows } from '@/lib/workflow-templates';
 import { PERSONAS } from '@/lib/personas-seed';
 import { runCostUsd } from '@/lib/agent-costs';
 import type {
@@ -1066,7 +1067,7 @@ const tools: Tool[] = [
 // their bar as done/total of the rows they own, so a row without a phase
 // would quietly shrink a percentage instead of showing up in it.
 const roadmap: RoadmapItem[] = [
-  { id: 'rm-v1', title: 'FOUNDER OS v1 baseline', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Six views, SQLite repos, 32 tests.', phaseId: 'phase-2' },
+  { id: 'rm-v1', title: 'OmegaOS v1 baseline', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Six views, SQLite repos, 32 tests.', phaseId: 'phase-2' },
   { id: 'rm-mono', title: 'Monochrome rebuild + real connectors', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Black & white theme; IMAP, Slack, Stripe, gbrain wired.', phaseId: 'phase-1' },
   { id: 'rm-gbrain', title: 'G-Brain provider live', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'gbrain CLI doctor/query + brain-store local fallback.', phaseId: 'phase-1' },
   { id: 'rm-creds-email', title: 'Connect 4 email inboxes', quarter: '2026-Q2', status: 'done', departmentId: 'dept-comms', description: 'Four Gmail IMAP slots live on app passwords, feeding /comms.', phaseId: 'phase-1' },
@@ -1085,7 +1086,7 @@ const roadmap: RoadmapItem[] = [
   { id: 'rm-statements', title: 'Statement ingestion', quarter: '2026-Q3', status: 'now', departmentId: 'dept-finance', description: 'Card and bank statements parsed into /finances instead of hand entry.', phaseId: 'phase-1' },
   { id: 'rm-railway', title: 'Move hosting to Railway', quarter: '2026-Q3', status: 'now', departmentId: 'dept-tech', description: 'Every app moving to one platform; the gated OS demo went first as the pilot.', phaseId: 'phase-4' },
   { id: 'rm-ui', title: 'Interaction rebrand', quarter: '2026-Q3', status: 'now', departmentId: 'dept-tech', description: 'Alex-led design pass over the whole OS now the integrations are live.', phaseId: 'phase-2' },
-  { id: 'rm-auth', title: 'Auth + remote access', quarter: '2026-Q4', status: 'next', departmentId: 'dept-tech', description: 'Reach FOUNDER OS on the host from anywhere, safely.', phaseId: 'phase-4' },
+  { id: 'rm-auth', title: 'Auth + remote access', quarter: '2026-Q4', status: 'next', departmentId: 'dept-tech', description: 'Reach OmegaOS on the host from anywhere, safely.', phaseId: 'phase-4' },
   { id: 'rm-postiz', title: 'Replace Postly with Postiz', quarter: '2026-Q4', status: 'next', departmentId: 'dept-clients', description: 'Self-hosted scheduler with ungated post and channel analytics.', phaseId: 'phase-1' },
   { id: 'rm-board-embed', title: 'Board fully inside the OS', quarter: '2026-Q4', status: 'later', departmentId: 'dept-tech', description: 'Conductor and 40+ agents driven from the OS, SOPs running as real skills.', phaseId: 'phase-3' },
 ];
@@ -1215,7 +1216,7 @@ const socialDms: SocialDm[] = DM_TARGETS.map((t) => ({
 // Instagram DM inbox — realistic seeded conversations so the /social DM tab is
 // alive on a fresh clone. DUMMY until the DMFlow webhook feeds it live
 // (source 'seed-dummy'; real messages arrive as source 'dmflow'). Four
-// threads, inbound + outbound, believable Vantage / FounderOS lead-gen tone.
+// threads, inbound + outbound, believable Vantage / OmegaOS lead-gen tone.
 const socialDmMessages: SocialDmMessage[] = [
   // Alex — agency owner off a reel
   ['ig-alex', 'Alex', 'alex', 'in', 'saw your reel on the 3-agent setup 🔥 do you actually work with agencies?', null, '2026-07-18T14:02:00.000Z'],
@@ -1493,169 +1494,7 @@ const funnelTouches: FunnelTouch[] = FUNNEL_JOURNEYS.flatMap((j) =>
 // The machine, mapped: each venture's process as an owned chain of steps.
 // Real-ready — owners, weekly hours, tools, the bottlenecks that leak money,
 // and the automations (live or suggested) that carry the load back.
-const workflows: Workflow[] = [
-  {
-    id: 'wf-vantage-sales',
-    name: 'Vantage sales machine',
-    subtitle: 'Cold outbound to closed retainer.',
-    revenueUsd: 120_000,
-    order: 0,
-    steps: [
-      {
-        id: 'wf-mer-1',
-        title: 'Run outbound campaigns',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Postly Publisher',
-        hoursPerWeek: 6,
-        tools: ['postly', 'adsmith'],
-        edgeLabel: 'replies',
-        leakUsd: null,
-        automation: { title: 'Always-on content + DM outreach', state: 'live', recoveredUsd: 4200 },
-      },
-      {
-        id: 'wf-mer-2',
-        title: 'Qualify replies',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Comms Agent',
-        hoursPerWeek: 9,
-        tools: ['dmflow', 'gmail'],
-        edgeLabel: 'qualified',
-        leakUsd: 14_000,
-        automation: { title: 'Auto-qualify + book', state: 'suggested', recoveredUsd: 9000 },
-      },
-      {
-        id: 'wf-mer-3',
-        title: 'Book demos',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 4,
-        tools: ['calendar', 'ledger'],
-        edgeLabel: 'demo',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-4',
-        title: 'Sales call',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 10,
-        tools: ['ledger'],
-        edgeLabel: 'proposal',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-5',
-        title: 'Proposal & follow-up',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 5,
-        tools: ['proposal-gen', 'gmail'],
-        edgeLabel: 'won',
-        leakUsd: 6000,
-        automation: { title: 'Proposal follow-up sequence', state: 'suggested', recoveredUsd: 6000 },
-      },
-      {
-        id: 'wf-mer-6',
-        title: 'Onboard & deliver',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Onboarding Agent',
-        hoursPerWeek: 3,
-        tools: ['ledger', 'slack'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Onboarding rails', state: 'live', recoveredUsd: 3000 },
-      },
-    ],
-  },
-  {
-    id: 'wf-lc-delivery',
-    name: 'Launchpad Cohort delivery',
-    subtitle: 'Webinar lead to retained program member.',
-    revenueUsd: 80_000,
-    order: 1,
-    steps: [
-      {
-        id: 'wf-lc-1',
-        title: 'Capture webinar leads',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'GoHighLevel',
-        hoursPerWeek: 2,
-        tools: ['ghl'],
-        edgeLabel: 'registered',
-        leakUsd: null,
-        automation: { title: 'Webinar to GHL sync', state: 'live', recoveredUsd: 2500 },
-      },
-      {
-        id: 'wf-lc-2',
-        title: 'Nurture in GHL',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'GoHighLevel',
-        hoursPerWeek: 3,
-        tools: ['ghl'],
-        edgeLabel: 'booked',
-        leakUsd: 8000,
-        automation: { title: 'Nurture sequences', state: 'live', recoveredUsd: 5000 },
-      },
-      {
-        id: 'wf-lc-3',
-        title: 'Strategy call',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 8,
-        tools: ['ghl', 'calendar'],
-        edgeLabel: 'closed',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-lc-4',
-        title: 'Deliver program',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'LC Team',
-        hoursPerWeek: 12,
-        tools: ['skool'],
-        edgeLabel: 'retained',
-        leakUsd: 5000,
-        automation: { title: 'Skool community ops', state: 'suggested', recoveredUsd: 4000 },
-      },
-      {
-        id: 'wf-lc-5',
-        title: 'Track attribution',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Trakyo',
-        hoursPerWeek: 1,
-        tools: ['trakyo'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Revenue attribution', state: 'suggested', recoveredUsd: 0 },
-      },
-    ],
-  },
-];
+
 
 // Agent task board — seeded across open/doing/done so the Kanban is alive on
 // first load. Demo cards; user-added tasks coexist (we insert by id, never wipe).
@@ -1932,58 +1771,40 @@ export const seededCrons: AgentCron[] = [
  * because nothing ever re-ran the seed. The stamp forces exactly one re-seed
  * per change.
  */
-export const SEED_VERSION = '2026-09-30-alex-first-name';
+export const SEED_VERSION = '2026-10-04-workspace-structure';
 
 /** Structural defaults only: no people, money, activity, clients or history. */
 export function seedStructure(db: FounderDb): void {
-  for (const d of departments) db.departments.insert(d);
-  for (const a of agents) db.agents.insert(a);
-  for (const c of seededCrons) db.agentCrons.insert(c);
-  for (const t of tools) db.tools.insert(t);
-  for (const w of workflows) db.workflows.insert(w);
-  for (const s of skills) db.skills.insert({ ...s, markdown: skillDoc(s) });
-  for (const p of PERSONAS) db.personas.insert(p);
+  for (const d of departments) db.departments.insertIfMissing(d);
+  for (const a of agents) db.agents.insertIfMissing(a);
+  for (const c of seededCrons) db.agentCrons.insertIfMissing(c);
+  for (const t of new Map(tools.map(tool => [tool.id, tool])).values()) db.tools.insertIfMissing(t);
+  for (const s of skills) db.skills.insertIfMissing({ ...s, markdown: skillDoc(s) });
+  for (const p of PERSONAS) db.personas.insertIfMissing(p);
   db.meta.set('structure_seed_version', SEED_VERSION);
 }
 
 /** Demo population is explicit; normal workspace initialization never calls it. */
 export function seedDemo(db: FounderDb): void {
   if (process.env.DEMO_GATE !== '1') throw new Error('Demo seeding requires DEMO_GATE=1');
-  seedDatabase(db);
-}
-
-export function seedDatabase(db: FounderDb): void {
+  for (const w of workflows) db.workflows.insertIfMissing(w);
   // INSERT OR REPLACE in every repo makes re-seeding idempotent by id.
-  for (const c of seededCrons) db.agentCrons.insert(c);
-  for (const d of departments) db.departments.insert(d);
-  for (const a of agents) db.agents.insert(a);
-  // The roster IS the runtime: rows that left the roster leave the DB too,
-  // and departments that left the operating model go with them.
-  db.agents.deleteWhereIdNotIn(agents.map((a) => a.id));
-  db.departments.deleteWhereIdNotIn(departments.map((d) => d.id));
   for (const p of people) db.people.insert(p);
   db.people.deleteWhereIdNotIn(people.map((p) => p.id));
   for (const m of leadMagnets) db.leadMagnets.insert(m);
   db.leadMagnets.deleteWhereIdNotIn(leadMagnets.map((m) => m.id));
   for (const t of sopTasks) db.sopTasks.insert(t);
   db.sopTasks.deleteWhereIdNotIn(sopTasks.map((t) => t.id));
-  db.tools.deleteWhereIdNotIn(tools.map((t) => t.id));
-  for (const w of workflows) db.workflows.insert(w);
-  db.workflows.deleteWhereIdNotIn(workflows.map((w) => w.id));
-  for (const s of skills) db.skills.insert({ ...s, markdown: skillDoc(s) });
-  db.skills.deleteWhereIdNotIn(skills.map((s) => s.id));
   for (const t of agentTasks) db.agentTasks.insert(t); // insert-by-id; user tasks coexist
   // Seeded run history (idempotent by id) so /agents shows runtimes + spend; the
   // operator's own real runs (uuid ids) coexist and add real token cost over time.
   for (const r of seededAgentRuns(agents)) db.agentRuns.insert(r);
-  for (const t of tools) db.tools.insert(t);
   for (const r of roadmap) db.roadmap.insert(r);
   // A row that left the seed left the plan: prune it so retired work cannot
   // outlive its removal on a long-lived install.
   db.roadmap.deleteWhereIdNotIn(roadmap.map((r) => r.id));
   for (const m of metrics) db.metrics.insert(m);
   for (const d of domains) db.domains.insert(d);
-  for (const p of PERSONAS) db.personas.insert(p);
   for (const p of phases) db.phases.insert(p);
   for (const a of socialAccounts) db.social.upsertAccount(a);
   for (const s of socialBaseline) db.social.insertSnapshot(s);

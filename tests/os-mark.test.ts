@@ -21,12 +21,12 @@ const H = (...parts: string[]) => parts.join('');
 describe('OS mark branding', () => {
   test('the mark renders the chrome emblem asset (demo copy), not an inked SVG', () => {
     const mark = read('components/OsMark.tsx');
-    expect(mark).toContain('/os-emblem.png');
+    expect(mark).toContain('/omegaos-logo.png');
     // chrome emblem: no brand-red ink, no drawn ring/seam left behind
     expect(mark).not.toContain('#ef4444');
     expect(mark).not.toContain('<path');
     // the asset itself ships with the app
-    expect(existsSync(join(process.cwd(), 'public/os-emblem.png'))).toBe(true);
+    expect(existsSync(join(process.cwd(), 'public/omegaos-logo.png'))).toBe(true);
   });
 
   test('the emblem is the favicon; the old OS-lettered svg is gone', () => {
@@ -43,7 +43,7 @@ describe('OS mark branding', () => {
   test('the sidebar carries the emblem AND the wordmark, and never says the upstream name', () => {
     const sidebar = read('components/Sidebar.tsx');
     expect(sidebar).toContain('OsMark');
-    expect(sidebar).toContain('FOUNDER OS');
+    expect(sidebar).toContain('OmegaOS');
     expect(sidebar.toLowerCase()).not.toContain(H('ben', 'nett'));
     // the mark renders no text at all
     expect(read('components/OsMark.tsx')).not.toMatch(/<text/);

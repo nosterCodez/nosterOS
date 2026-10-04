@@ -14,7 +14,7 @@ import { recentFathomMeetings, fathomStatus, type FathomMeeting } from '@/lib/co
 import { recentPlaudRecordings, plaudStatus, type PlaudRecording } from '@/lib/connectors/plaud';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 import type { Recording, RecordingsBoard } from '@/lib/recordings-format';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { markIngested } from '@/lib/plaud-ingest';
 
 export { formatDuration } from '@/lib/recordings-format';
@@ -40,7 +40,7 @@ export function mergeRecordings(plaud: PlaudRecording[], fathom: FathomMeeting[]
   return rows.sort((a, b) => stamp(b.at) - stamp(a.at));
 }
 
-export async function gatherRecordings(limit = 30): Promise<RecordingsBoard> {
+export async function gatherRecordings(db: FounderDb, limit = 30): Promise<RecordingsBoard> {
   const [plaud, fathom, plaudState, fathomState] = await Promise.all([
     recentPlaudRecordings(limit).catch(() => [] as PlaudRecording[]),
     recentFathomMeetings(limit).catch(() => [] as FathomMeeting[]),
@@ -49,7 +49,7 @@ export async function gatherRecordings(limit = 30): Promise<RecordingsBoard> {
   ]);
   let ingested: Parameters<typeof markIngested>[1] = [];
   try {
-    ingested = getDb().plaudIngests.all();
+    ingested = db.plaudIngests.all();
   } catch {
     /* a DB hiccup must not blank the tab; rows just show without the brain mark */
   }

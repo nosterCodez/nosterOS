@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from 'vitest';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import {
   SopPlaybookSchema,
   playbookFor,
@@ -13,7 +13,7 @@ import {
 // every single one of them").
 describe('SOP playbooks', () => {
   const db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   const tasks = db.sopTasks.all();
   afterAll(() => db.close());
 

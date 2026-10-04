@@ -1,7 +1,7 @@
 import { apiSessionError } from '@/lib/session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/lib/data';
+import { apiWorkspace } from '@/lib/session';
 import { TradingOrderSchema } from '@/lib/schemas';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +17,9 @@ const BodySchema = z.object({
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/trading/orders', 'POST', req);
   if (authError) return authError;
+  const workspace = await apiWorkspace(req.headers);
+  if (workspace instanceof Response) return workspace;
+
 
   let body: unknown;
   try {
@@ -28,6 +31,6 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: parsed.error.issues }, { status: 400 });
   }
-  getDb().trading.recordOpenOrders(parsed.data.accountId, parsed.data.orders);
+  workspace.db.trading.recordOpenOrders(parsed.data.accountId, parsed.data.orders);
   return NextResponse.json({ ok: true, open: parsed.data.orders.length });
 }

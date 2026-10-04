@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { getDb } from '@/lib/data';
+import type { FounderDb } from '@/lib/db';
 import { latestEmails } from '@/lib/connectors/email';
 import { recentChats } from '@/lib/connectors/whatsapp';
 import { recentMessages } from '@/lib/connectors/slack';
@@ -56,7 +56,7 @@ async function slackItems(): Promise<CommsItem[]> {
   }));
 }
 
-export async function gatherDigestContext(now = Date.now()): Promise<DigestContext> {
+export async function gatherDigestContext(db: FounderDb, now = Date.now()): Promise<DigestContext> {
   const [events, attio] = await Promise.all([
     upcomingEvents(process.env, { days: 7, limit: 40 }).catch(() => []),
     attioClients().catch(() => ({ clients: [] as { name: string }[] })),
@@ -64,7 +64,7 @@ export async function gatherDigestContext(now = Date.now()): Promise<DigestConte
 
   const tags = (() => {
     try {
-      return getDb().contactTags.all();
+      return db.contactTags.all();
     } catch {
       return [];
     }
@@ -84,9 +84,8 @@ export async function gatherDigestContext(now = Date.now()): Promise<DigestConte
  * cleared. Never throws — a database problem must degrade to "no carry-over",
  * not lose this morning's report.
  */
-function backlog(): { previous: DigestEntry[]; cleared: string[] } {
+function backlog(db: FounderDb): { previous: DigestEntry[]; cleared: string[] } {
   try {
-    const db = getDb();
     const last = db.commsDigests.latest();
     const previous = last
       ? ((JSON.parse(last.payload) as DigestRunResult).digest?.entries ?? [])
@@ -97,28 +96,28 @@ function backlog(): { previous: DigestEntry[]; cleared: string[] } {
   }
 }
 
-export async function runCommsDigest(now = Date.now()): Promise<DigestRunResult> {
+export async function runCommsDigest(db: FounderDb, now = Date.now()): Promise<DigestRunResult> {
   const [email, whatsapp, slack, ctx] = await Promise.all([
     guarded('email', () => latestEmails(120)),
     guarded('whatsapp', () => recentChats(80)),
     guarded('slack', slackItems),
-    gatherDigestContext(now),
+    gatherDigestContext(db, now),
   ]);
 
   const items = [...email.items, ...whatsapp.items, ...slack.items];
   // The 24h window decides what is NEW; the previous report decides what is
   // still owed, since the operator does not want an unanswered thread to
   // clear out just because a new report ran, so it rides along underneath.
-  const { previous, cleared } = backlog();
+  const { previous, cleared } = backlog(db);
   const digest = stackDigest(buildDigest(items, ctx), previous, cleared, now);
   return { digest, sources: [email.state, whatsapp.state, slack.state] };
 }
 
 /** Run it and persist, so /comms can render this morning's report on load. */
-export async function runAndStoreCommsDigest(now = Date.now()): Promise<DigestRunResult> {
-  const result = await runCommsDigest(now);
+export async function runAndStoreCommsDigest(db: FounderDb, now = Date.now()): Promise<DigestRunResult> {
+  const result = await runCommsDigest(db, now);
   try {
-    getDb().commsDigests.insert({
+    db.commsDigests.insert({
       id: randomUUID(),
       generatedAt: result.digest.generatedAt,
       payload: JSON.stringify(result),

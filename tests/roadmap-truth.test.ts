@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { openDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
+import { seedDemoFixture } from '@/tests/demo-fixture';
 import { currentFocus, groupRoadmapByQuarter } from '@/lib/roadmap';
 import type { RoadmapItem } from '@/lib/schemas';
 
@@ -56,7 +56,7 @@ describe('currentFocus', () => {
  */
 describe('the seeded roadmap tells the truth', () => {
   const db = openDb(':memory:');
-  seedDatabase(db);
+  seedDemoFixture(db);
   const items = db.roadmap.all();
   const byId = new Map(items.map((i) => [i.id, i]));
 
@@ -107,7 +107,7 @@ describe('roadmap rows that leave the seed leave the database', () => {
   test('re-seeding evicts a row that is no longer in the seed', () => {
     const db = openDb(':memory:');
     db.roadmap.insert(item('rm-creds-notion', '2026-Q2', 'now'));
-    seedDatabase(db);
+    seedDemoFixture(db);
     expect(db.roadmap.all().some((i) => i.id === 'rm-creds-notion')).toBe(false);
   });
 });

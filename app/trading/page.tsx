@@ -1,3 +1,5 @@
+import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { tradingPayload } from '@/lib/trading-payload';
 import { TradingBoard } from '@/components/trading/TradingBoard';
 
@@ -9,6 +11,9 @@ export const dynamic = 'force-dynamic';
  * serves, so the board's 60s refresh cannot drift from first paint.
  */
 export default async function TradingPage() {
-  const initial = await tradingPayload();
+  const workspace = await operatorWorkspaceForPage();
+  if (!workspace) return <OperatorUnavailable />;
+
+  const initial = await withWorkspaceLease(workspace, db => tradingPayload(db));
   return <TradingBoard initial={initial} />;
 }

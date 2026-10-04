@@ -1,3 +1,4 @@
+import { requireWorkspace } from '@/lib/session';
 import type { CSSProperties } from 'react';
 import { readAdpilotFile } from '@/lib/adpilot-data';
 import { adStore } from '@/lib/foreplay/store';
@@ -31,14 +32,15 @@ const RED_THEME = {
   '--hairline': '#2a141a',
 } as CSSProperties;
 
-export default function AdPilotPage() {
-  const { campaigns, syncedAt } = readAdpilotFile();
-  const wall = storeWall(80);
-  const watchlist = readWatchEntries();
-  const saved = readSavedAds();
-  const signals = adStore.readSignals().slice(0, 60);
-  const usage = adStore.readUsage();
-  const meta = adStore.readMeta();
+export default async function AdPilotPage() {
+  const { workspace: { id: workspaceId } } = await requireWorkspace();
+  const { campaigns, syncedAt } = readAdpilotFile(workspaceId);
+  const wall = storeWall(workspaceId, 80);
+  const watchlist = readWatchEntries(workspaceId);
+  const saved = readSavedAds(workspaceId);
+  const signals = adStore(workspaceId).readSignals().slice(0, 60);
+  const usage = adStore(workspaceId).readUsage();
+  const meta = adStore(workspaceId).readMeta();
 
   return (
     <div className="relative" style={RED_THEME} data-adpilot>

@@ -26,11 +26,11 @@ export const AMBIENT_BUDGET_CHARS = 900;
 export const AMBIENT_TTL_MS = 60_000;
 
 type CacheEntry = { at: number; pack: string };
-const cache = new Map<string, CacheEntry>();
+let caches = new WeakMap<FounderDb, Map<string, CacheEntry>>();
 
 /** Tests and a forced refresh need a way to drop it. */
 export function clearAmbientCache(): void {
-  cache.clear();
+  caches = new WeakMap();
 }
 
 function ago(iso: string, now: number): string {
@@ -100,6 +100,8 @@ function buildPack(db: FounderDb, agent: RuntimeAgent, now: number): string {
 }
 
 export function ambientPack(db: FounderDb, agent: RuntimeAgent, opts: { now?: number } = {}): string {
+  let cache = caches.get(db);
+  if (!cache) { cache = new Map(); caches.set(db, cache); }
   const now = opts.now ?? Date.now();
   const hit = cache.get(agent.id);
   if (hit && now - hit.at < AMBIENT_TTL_MS) return hit.pack;
