@@ -1,9 +1,9 @@
-# nosterOS
+# OmegaOS
 
-> nosterOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
+> OmegaOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
 > spec handoff loop live in `AGENTS.md` and `docs/handoff/`. Read those first.
 
-nosterOS is a personal operating system for a one-person business: a web
+OmegaOS is a personal operating system for a one-person business: a web
 command center that runs a company as a set of AI-assisted departments. This
 file is the contributor guide for anyone (human or agent) working in the repo.
 
@@ -91,7 +91,7 @@ provider status.
 
 ## No upsell surfaces
 
-nosterOS is a fork of FounderOS-DEMO. The upstream demo's "join the cohort"
+OmegaOS is a fork of FounderOS-DEMO. The upstream demo's "join the cohort"
 pop-up and footer ad were removed. Don't re-add them when merging upstream;
 `tests/no-upsell.test.ts` enforces it.
 
@@ -104,8 +104,10 @@ pop-up and footer ad were removed. Don't re-add them when merging upstream;
 - Never commit secrets. Credentials belong in `.env.local`, which is
   gitignored.
 - `/org` markup is frozen; do not restructure it.
-- THEME: **Monolith Signal (`mono`) is the default** (`DEFAULT_THEME` in
-  `lib/theme.ts`; bare `:root` in `app/globals.css` carries the mono tokens).
+- THEME: **Omega (`mono`) is the default**: red `#ff565d`, charcoal and white.
+  This supersedes the historical Monolith palette documented below.
+  The default is set by `DEFAULT_THEME` in
+  `lib/theme.ts`; bare `:root` in `app/globals.css` carries the mono tokens.
   "Terminal" (`dark`), the phosphor-green command deck on near-black, stays as
   a pickable colorway. Tokens live in `tailwind.config.ts` (`os.*` colors) AND
   as raw CSS vars in `app/globals.css` (the brain viz SVG + `color-mix`

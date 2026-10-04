@@ -34,7 +34,7 @@ const workspaces = {
   workspaces: [
     { id: 'default', slug: 'default', name: 'Default workspace', organization_id: 'default', status: 'active' },
     { id: 'default:vantage', slug: 'vantage', name: 'Vantage', organization_id: 'founderos', status: 'active' },
-    { id: 'default:founderos', slug: 'founderos', name: 'nosterOS', organization_id: 'founderos', status: 'active' },
+    { id: 'default:founderos', slug: 'founderos', name: 'OmegaOS', organization_id: 'founderos', status: 'active' },
   ],
   pagination: { total: 3, offset: 0, limit: 50 },
 };

@@ -32,7 +32,7 @@ export function Topbar() {
   return (
     <div className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-3.5 border-b border-os-border bg-os-bg2/70 px-6 backdrop-blur">
       <div className="flex items-center gap-[7px] whitespace-nowrap font-mono text-[11px] tracking-[0.04em] text-os-dim">
-        <span>founder-os</span>
+        <span>OmegaOS</span>
         <span className="opacity-45">/</span>
         <span className="text-os-text">{here}</span>
       </div>
@@ -58,7 +58,7 @@ export function Topbar() {
         >
           <Bot className="h-3.5 w-3.5" />
         </button>
-        {/* nosterOS emblem — brand mark in the top-right corner */}
+        {/* OmegaOS emblem — brand mark in the top-right corner */}
         <OsMark size={26} className="ml-1 shrink-0" />
       </div>
     </div>

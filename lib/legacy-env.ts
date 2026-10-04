@@ -5,7 +5,7 @@ function preferred(name: string, legacy: string, env: Record<string, string | un
   const previous = env[legacy]?.trim();
   if (previous && !warned.has(legacy)) {
     warned.add(legacy);
-    console.warn(`[nosterOS] ${legacy} is deprecated; use ${name}.`);
+    console.warn(`[OmegaOS] ${legacy} is deprecated; use ${name}.`);
   }
   return previous || undefined;
 }

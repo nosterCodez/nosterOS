@@ -123,7 +123,7 @@ function boundedRead(
 }
 
 const FDA_HINT =
-  'grant Full Disk Access to the app running nosterOS in System Settings > Privacy & Security > Full Disk Access, then restart the dev server';
+  'grant Full Disk Access to the app running OmegaOS in System Settings > Privacy & Security > Full Disk Access, then restart the dev server';
 
 let statusCache: { at: number; status: ConnectorStatus } | null = null;
 const STATUS_TTL_MS = 60_000;

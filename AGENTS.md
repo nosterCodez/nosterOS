@@ -1,4 +1,4 @@
-# nosterOS: how the agents work in this repo
+# OmegaOS: how the agents work in this repo
 
 ## Update, Oct 3 2026
 
@@ -9,7 +9,7 @@ spec. Escalate money, real messages, credentials, legal text, publishing,
 paid services, and data deletion to Noe. Self-review security changes.
 This update records the explicit approval given in chat.
 
-nosterOS is Noe's command center for nosterMarketing, forked from
+OmegaOS is Noe's command center for nosterMarketing, forked from
 FounderOS-DEMO (MIT). Repo conventions, stack, and architecture rules are in
 `CLAUDE.md`; read it before changing code. This file covers who does what.
 

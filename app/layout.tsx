@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Sidebar } from '@/components/Sidebar';
@@ -22,8 +23,8 @@ const fontMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'nosterOS',
-  description: 'nosterOS: the nosterCodes workspace for business operations, connected tools and AI-assisted teams.',
+  title: 'OmegaOS',
+  description: 'OmegaOS: your command center for business operations, connected tools and AI-assisted teams. Powered by nosterCodes.',
 };
 
 /** The palette builds its own Go-to group from lib/nav; the layout only feeds
@@ -52,7 +53,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <Toaster>
-        {simple ? <main className="mx-auto min-h-screen max-w-xl px-6 py-16">{children}</main> : <>
+        {simple ? <main className="mx-auto min-h-screen max-w-xl px-6 py-10"><Image src="/omegaos-logo.png" alt="OmegaOS, powered by nosterCodes" width={1536} height={1024} priority sizes="320px" className="mx-auto mb-8 h-auto w-full max-w-[320px]" />{children}</main> : <>
         <LensProvider />
         <Sidebar />
         {/* os-shell yields to the Conductor dock: the panel sets --conductor-w

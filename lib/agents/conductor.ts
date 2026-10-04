@@ -27,7 +27,7 @@ function matchAgent(agents: RuntimeAgent[], token: string): RuntimeAgent | undef
 async function pickAgent(routable: RuntimeAgent[], message: string): Promise<string> {
   const roster = routable.map((a) => `- ${a.id}: ${a.name} — ${a.description}`).join('\n');
   const system = [
-    'You are the Conductor, the router for nosterOS operator agents.',
+    'You are the Conductor, the router for OmegaOS operator agents.',
     'Pick the single best-fit agent for the user message.',
     'Reply with ONLY that agent id and nothing else. Options:',
     roster,

@@ -6,7 +6,7 @@ import { AsyncButton } from '@/components/AsyncButton';
 import { ConductorEmblem } from '@/components/ConductorEmblem';
 
 /**
- * The "AI Head" card from the nosterOS board: the Conductor super-agent
+ * The "AI Head" card from the OmegaOS board: the Conductor super-agent
  * with its chat pill. Sending broadcasts the message to every agent in
  * parallel via POST /api/agents/broadcast; replies expand below.
  */

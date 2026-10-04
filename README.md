@@ -1,9 +1,9 @@
-# nosterOS
+# OmegaOS
 
 **A personal operating system for a one-person business: a live web command
 center that runs your company as a set of AI-assisted "departments."**
 
-nosterOS turns the tabs, tools, and mental overhead of running a business
+OmegaOS turns the tabs, tools, and mental overhead of running a business
 into one screen: unified comms, a client funnel, social growth, finances, a
 knowledge graph, and a roster of named AI agents that each own a real job.
 

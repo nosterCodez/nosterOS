@@ -1,24 +1,12 @@
 import type { SVGProps } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-/**
- * The OS mark — the operator's nosterOS brand emblem: the chrome yin-yang circle,
- * extracted from the brand asset onto transparent (public/os-emblem.png) so it
- * drops cleanly onto the dark UI. `color` is kept for API compatibility but no
- * longer inks the mark (the emblem is chrome). The OS logo only — never the
- * "Founder" wordmark.
- */
+/** Frame the supplied emblem without changing the original artwork. */
 export function OsMark({ size = 34, className }: { size?: number; color?: string; className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/os-emblem.png"
-      alt="nosterOS"
-      width={size}
-      height={size}
-      style={{ width: size, height: size, objectFit: 'contain' }}
-      className={className}
-    />
+    <svg width={size} height={size} viewBox="300 0 930 700" role="img" aria-label="OmegaOS" className={className} style={{ flexShrink: 0 }}>
+      <image href="/omegaos-logo.png" width="1536" height="1024" />
+    </svg>
   );
 }
 
@@ -29,17 +17,11 @@ export function OsMark({ size = 34, className }: { size?: number; color?: string
  */
 function OsMarkGlyphBase(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden {...props}>
-      {/* mark-adaptive: the chrome emblem reads near-white, which vanishes on
-          the light themes, so it flattens to white on dark and black on light: without this the board agents disappeared in the light theme. */}
+    <svg viewBox="300 0 930 700" fill="none" aria-hidden {...props}>
       <image
-        href="/os-emblem.png"
-        x={1}
-        y={1}
-        width={22}
-        height={22}
-        preserveAspectRatio="xMidYMid meet"
-        className="mark-adaptive"
+        href="/omegaos-logo.png"
+        width={1536}
+        height={1024}
       />
     </svg>
   );

@@ -20,7 +20,7 @@ const win = (over: Partial<StripeWin> = {}): StripeWin => ({
   email: 'buyer@example.com',
   name: 'Cohort Buyer',
   amountUsd: 1497,
-  product: 'nosterOS Cohort',
+  product: 'OmegaOS Cohort',
   at: '2026-08-10',
   ...over,
 });

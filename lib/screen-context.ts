@@ -228,8 +228,8 @@ export async function screenContextFor(
     if (clean.startsWith('/roadmap')) {
       return { title, context: `${title}: ${db.roadmap.all().length} roadmap items across quarters.`, quickActions };
     }
-    return { title, context: `${title} view of nosterOS.`, quickActions };
+    return { title, context: `${title} view of OmegaOS.`, quickActions };
   } catch {
-    return { title, context: `${title} view of nosterOS.`, quickActions };
+    return { title, context: `${title} view of OmegaOS.`, quickActions };
   }
 }

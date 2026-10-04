@@ -20,7 +20,7 @@
 export const COCKPIT_TITLE = 'nosterOS Cockpit';
 
 export const COCKPIT_DESCRIPTION =
-  'Standing thread: the operator talks to the Conductor from the nosterOS panel. ' +
+  'Standing thread: the operator talks to the Conductor from the OmegaOS panel. ' +
   'Conductor: treat new comments here as direct messages from the operator. Reply in this thread, concisely. ' +
   'Delegate real work to the departments/Hermes Workers as separate tasks rather than doing it inline. ' +
   'This issue is a chat lane, not a task: leave it in backlog and never move it to in_progress or blocked, ' +

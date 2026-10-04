@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { sendSystemMail } from '@/lib/system-mail';
+import { brandedSender, sendSystemMail } from '@/lib/system-mail';
+
+test('the sender display name updates without changing its address', () => {
+  expect(brandedSender('nosterOS <auth@example.com>')).toBe('OmegaOS <auth@example.com>');
+  expect(brandedSender('"nosterOS" <auth@example.com>')).toBe('OmegaOS <auth@example.com>');
+  expect(brandedSender('nosteros@example.com')).toBe('nosteros@example.com');
+  expect(brandedSender('Custom <auth@example.com>')).toBe('Custom <auth@example.com>');
+});
 
 const smtp = vi.hoisted(() => ({ sendMail: vi.fn(), close: vi.fn(), createTransport: vi.fn() }));
 vi.mock('nodemailer', () => ({ default: { createTransport: smtp.createTransport } }));
@@ -8,7 +15,7 @@ beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'production');
   vi.stubEnv('NOSTEROS_BASE_URL', 'https://os.example.com');
   vi.stubEnv('RESEND_API_KEY', 'test-only-key');
-  vi.stubEnv('SYSTEM_MAIL_FROM', 'nosterOS <auth@example.com>');
+  vi.stubEnv('SYSTEM_MAIL_FROM', 'OmegaOS <auth@example.com>');
   vi.stubEnv('SMTP_HOST', 'smtp.example.com');
   smtp.createTransport.mockReturnValue(smtp);
 });
@@ -20,7 +27,7 @@ test('Resend delivers fixed templates over HTTPS instead of SMTP', async () => {
   await sendSystemMail(input);
   expect(fetch).toHaveBeenCalledWith('https://api.resend.com/emails', expect.objectContaining({ method: 'POST', redirect: 'error', signal: expect.any(AbortSignal) }));
   const body = JSON.parse(fetch.mock.calls[0][1].body);
-  expect(body).toMatchObject({ to: [input.email], from: 'nosterOS <auth@example.com>', subject: 'Sign in to nosterOS' });
+  expect(body).toMatchObject({ to: [input.email], from: 'OmegaOS <auth@example.com>', subject: 'Sign in to OmegaOS' });
   expect(body.text).toContain(input.url);
   expect(smtp.createTransport).not.toHaveBeenCalled();
 });

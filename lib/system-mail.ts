@@ -6,14 +6,18 @@ const message = z.discriminatedUnion('template', [
   z.object({ template: z.literal('workspace-invitation'), email: z.string().email(), url: z.string().url(), workspace: z.string().min(1).max(200) }).strict(),
 ]);
 export type SystemMessage = z.infer<typeof message>;
+/** Upgrade only the legacy display name, never the configured sender address. */
+export function brandedSender(value: string): string {
+  return value.replace(/^"?nosterOS"?(?=\s*<)/, 'OmegaOS');
+}
 export async function sendSystemMail(input: SystemMessage): Promise<void> {
   const data = message.parse(input);
   const base = new URL(process.env.NOSTEROS_BASE_URL || 'http://localhost:4100');
   if (new URL(data.url).origin !== base.origin) throw new Error('System mail link must use NOSTEROS_BASE_URL');
   const invitation = data.template === 'workspace-invitation';
   const content = {
-    subject: invitation ? 'Your nosterOS workspace invitation' : 'Sign in to nosterOS',
-    text: `${invitation ? `You have been invited to ${data.workspace}.` : 'Use this single-use link to sign in to nosterOS.'}\n\n${data.url}\n\nIf you did not request this, you can ignore this message.`,
+    subject: invitation ? 'Your OmegaOS workspace invitation' : 'Sign in to OmegaOS',
+    text: `${invitation ? `You have been invited to ${data.workspace}.` : 'Use this single-use link to sign in to OmegaOS.'}\n\n${data.url}\n\nIf you did not request this, you can ignore this message.`,
   };
   if (process.env.RESEND_API_KEY?.trim()) {
     const from = process.env.SYSTEM_MAIL_FROM?.trim();
@@ -24,7 +28,7 @@ export async function sendSystemMail(input: SystemMessage): Promise<void> {
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST', redirect: 'error', cache: 'no-store', signal: controller.signal,
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: [data.email], ...content }),
+        body: JSON.stringify({ from: brandedSender(from), to: [data.email], ...content }),
       });
       if (!response.ok) throw new Error('Provider rejected system mail');
       const result = await response.json();
@@ -51,7 +55,7 @@ export async function sendSystemMail(input: SystemMessage): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
-      transport.sendMail({ from: process.env.SMTP_FROM, to: data.email, ...content }),
+      transport.sendMail({ from: brandedSender(process.env.SMTP_FROM), to: data.email, ...content }),
       new Promise<never>((_resolve, reject) => {
         timer = setTimeout(() => reject(new Error('SMTP deadline exceeded')), 10_000);
       }),

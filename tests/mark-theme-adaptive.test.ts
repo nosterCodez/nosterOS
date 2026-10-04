@@ -26,9 +26,10 @@ describe('graph marks invert with the theme', () => {
     expect(osmark).not.toContain("filter: 'brightness(0) invert(1)'");
   });
 
-  test('both marks opt into the shared adaptive class', () => {
+  test('legacy monochrome mark adapts while OmegaOS keeps its supplied colors', () => {
     expect(vantage).toContain('mark-adaptive');
-    expect(osmark).toContain('mark-adaptive');
+    expect(osmark).not.toContain('mark-adaptive');
+    expect(osmark).toContain('/omegaos-logo.png');
   });
 
   test('the class paints the marks white by default (dark canvases)', () => {

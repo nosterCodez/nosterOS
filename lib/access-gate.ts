@@ -1,7 +1,7 @@
 /**
  * Production access gate, pure logic (middleware.ts is the thin edge wrapper).
  *
- * Deployed nosterOS instances live on public URLs (Railway hands out
+ * Deployed OmegaOS instances live on public URLs (Railway hands out
  * *.up.railway.app). Set FOUNDER_OS_ACCESS_TOKEN and every request must
  * present the token once (?token=… or the challenge form); a cookie remembers
  * the browser after that. Leave it unset and the gate stays open — local dev
@@ -42,7 +42,7 @@ export function challengePage(): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>nosterOS · Private</title>
+<title>OmegaOS · Private</title>
 <style>
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
          background:#0a0a0a; color:#f5f5f5; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
@@ -59,7 +59,7 @@ export function challengePage(): string {
 </head>
 <body>
   <div class="card">
-    <div class="mark"><b>n</b>osterOS</div>
+    <div class="mark"><b>Omega</b>OS</div>
     <p>This OS is private. Enter your access token.</p>
     <form method="GET" action="/">
       <input name="token" type="password" placeholder="access token" autofocus>

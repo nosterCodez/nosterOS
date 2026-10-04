@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { gateDecision, challengePage, GATE_COOKIE } from '@/lib/access-gate';
 
 /**
- * The production access gate. A student's nosterOS deploys to a PUBLIC
+ * The production access gate. A student's OmegaOS deploys to a PUBLIC
  * Railway URL; without this, anyone who finds the domain browses their
  * company OS. Setting FOUNDER_OS_ACCESS_TOKEN locks every page behind a
  * one-time token entry (cookie remembers the browser). Unset = open, so
@@ -42,7 +42,7 @@ describe('challenge page', () => {
     const html = challengePage();
     expect(html).toContain('<form');
     expect(html).toContain('name="token"');
-    expect(html).toContain('nosterOS');
+    expect(html).toContain('OmegaOS');
   });
 });
 

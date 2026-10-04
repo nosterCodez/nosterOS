@@ -320,7 +320,7 @@ export const PERSONAS: Persona[] = [
   {
     "id": "persona-saas-founder",
     "order": 5,
-    "name": "SaaS nosterOS",
+    "name": "SaaS OmegaOS",
     "archetype": "SaaS Founder",
     "tagline": "Solo indie SaaS founder running product, growth, and MRR on autopilot",
     "summary": "A bootstrapped indie software founder running a self-serve SaaS solo. This OS variant turns the whole funnel — signup to expansion to churn-save — into a closed loop of named agents so one person operates like a Series A growth team.",
