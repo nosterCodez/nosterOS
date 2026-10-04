@@ -105,7 +105,7 @@ describe('/integrations mock-3f: the test is a real connector read', () => {
 
 describe('/integrations mock-3f: radius rule', () => {
   const files = [
-    'app/integrations/page.tsx',
+    'app/integrations/host/page.tsx',
     'components/ConnectionCard.tsx',
     'components/ConnectFlow.tsx',
     'components/IntegrationCategory.tsx',

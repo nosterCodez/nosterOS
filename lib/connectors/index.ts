@@ -24,7 +24,7 @@ import { metaAdsStatus } from '@/lib/connectors/meta-ads';
 import { ghlStatus } from '@/lib/connectors/ghl';
 import { paperclipStatus } from '@/lib/connectors/paperclip';
 import { getBrainProvider } from '@/lib/brain';
-import { resolveManychatKey, runtimeEnv } from '@/lib/creds';
+import { resolveManychatKey, runtimeEnv } from '@/lib/operator-creds';
 import { GATED } from '@/lib/connectors/demo-status';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 

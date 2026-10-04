@@ -14,7 +14,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * error. Never a fake "connected". fetch is injectable so the request and
  * parse logic are testable offline.
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 const KEY = 'FATHOM_API_KEY';

@@ -4,7 +4,7 @@
  * key-presence plus the store's last-synced credit meter; it never spends
  * API credits just to render the Connections board.
  */
-import { CRED_FILES, resolveCred } from '@/lib/creds';
+import { CRED_FILES, resolveCred } from '@/lib/operator-creds';
 import { FOREPLAY_KEY } from '@/lib/foreplay/client';
 import { adStore } from '@/lib/foreplay/store';
 import type { ConnectorStatus } from '@/lib/connectors/types';

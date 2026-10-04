@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { archiveStatus, getArchiveJob, startArchiveJob, type ArchiveSource } from '@/lib/call-archive';
 import { gbrainStorePath } from '@/lib/connectors/gbrain';
-import { resolveAttioKey, resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveAttioKey, resolveCred, CRED_FILES } from '@/lib/operator-creds';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

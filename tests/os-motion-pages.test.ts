@@ -21,7 +21,7 @@ const PAGES: Array<[string, number]> = [
   ['app/content/lead-magnets/page.tsx', 1],
   ['app/doctor/page.tsx', 3],
   ['app/funnel/page.tsx', 2],
-  ['app/integrations/page.tsx', 3],
+  ['app/integrations/host/page.tsx', 3],
   ['app/org/page.tsx', 1],
   ['app/personas/page.tsx', 1],
   ['app/skills/page.tsx', 1],

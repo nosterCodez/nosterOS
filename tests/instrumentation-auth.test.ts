@@ -45,9 +45,9 @@ describe('internal request authentication', () => {
     vi.resetModules();
     vi.stubEnv('DEMO_GATE', undefined);
     vi.stubEnv('RAILWAY_ENVIRONMENT', 'production');
-    vi.doMock('@/lib/creds', () => ({ resolveCred: () => undefined, CRED_FILES: {} }));
+    vi.doMock('@/lib/operator-creds', () => ({ resolveCred: () => undefined, CRED_FILES: {} }));
     const { metaAdsStatus } = await import('@/lib/connectors/meta-ads');
     expect((await metaAdsStatus()).state).toBe('not_configured');
-    vi.doUnmock('@/lib/creds');
+    vi.doUnmock('@/lib/operator-creds');
   });
 });

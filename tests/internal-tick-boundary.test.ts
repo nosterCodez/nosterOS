@@ -14,6 +14,7 @@ vi.mock('@/lib/operator-workspace', () => ({ operatorWorkspaceId: () => null }))
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(); vi.useRealTimers(); });
 
 test('production-shaped loopback calls pass both auth layers and quietly skip an unbound operator', async () => {
+  vi.stubEnv('NOSTEROS_OPERATOR_FEATURES', '1');
   vi.stubEnv('NOSTEROS_BASE_URL', 'https://os.noepenaa.com');
   vi.stubEnv('NOSTEROS_ACCESS_TOKEN', ' outer \n');
   vi.stubEnv('NOSTEROS_INTERNAL_SECRET', ' inner \n');

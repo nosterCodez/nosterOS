@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status';
-import { readEnvLocal, upsertEnvLocal } from '@/lib/creds';
+import { readEnvLocal, upsertEnvLocal } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 /**

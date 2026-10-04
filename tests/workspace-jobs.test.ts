@@ -16,6 +16,7 @@ vi.mock('@/lib/operator-workspace', () => ({ operatorWorkspaceId: vi.fn(() => 'A
 const A = 'A'.repeat(32), B = 'B'.repeat(32), C = 'C'.repeat(32);
 let root: string;
 function setup() {
+  vi.stubEnv('NOSTEROS_OPERATOR_FEATURES', '1');
   root = mkdtempSync(path.join(tmpdir(), 'nosteros-jobs-'));
   vi.stubEnv('DATA_DIR', root); vi.stubEnv('DEMO_GATE', '');
   vi.stubEnv('NOSTEROS_INTERNAL_SECRET', 'test-only-secret');
@@ -88,4 +89,12 @@ test('malformed workspace metadata cannot stop valid job discovery', async () =>
     expect((await listWorkspaces()).map(w => w.id)).toEqual([A]);
     expect(warning).toHaveBeenCalledWith(`[workspace:${B}] invalid metadata; job skipped`);
   } finally { warning.mockRestore(); }
+});
+test('internal host ticks quietly skip when operator features are disabled', async () => {
+  setup(); vi.stubEnv('NOSTEROS_OPERATOR_FEATURES', '');
+  state.headers.set('x-nosteros-internal', 'test-only-secret');
+  const work = vi.fn();
+  expect(await (await workspaceJob('/api/cron/tick', work)).json()).toEqual({ ok: true, skipped: 'operator-features-disabled', workspaces: [] });
+  expect(work).not.toHaveBeenCalled();
+  expect(operatorWorkspaceId).not.toHaveBeenCalled();
 });

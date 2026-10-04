@@ -44,7 +44,7 @@ export function connectorDependency(file: string, seen = new Set<string>()): str
     const target = [base + '.ts', base + '.tsx', base + '/index.ts'].find(candidate => fs.existsSync(candidate));
     if (!target) continue;
     // Pure parsers under connectors remain harmless; follow their actual imports.
-    if (target === 'lib/creds.ts') return target;
+    if (target === 'lib/operator-creds.ts') return target;
     const result = connectorDependency(target, seen);
     if (result) return result;
   }

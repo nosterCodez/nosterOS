@@ -49,13 +49,16 @@ way: new data = new repo method + Zod schema + seed entry + test.
   returns an honest `ConnectorStatus` and never reports a fake "connected".
   With no credentials configured they degrade to a clearly-labelled
   disconnected state rather than failing the page.
-- `lib/creds.ts` — credential resolution. Reads `process.env` first. Never
-  commit a secret value or paste a key into the repo.
+- `lib/creds.ts` — explicit workspace credential resolution from encrypted
+  connections only; never falls back to environment or host files. Legacy
+  `lib/operator-creds.ts` is restricted to operator-gated consumers.
 - `lib/agents/runtime.ts` + `real.ts` — the agent registry. Every seeded agent
   row maps 1:1 to a `RuntimeAgent` with a real `run()` (enforced by the seed
   tests). Runs persist to `agent_runs` via `POST /api/agents/[id]/run`.
-- `/integrations` is the live connections board (`GET /api/connections`).
-- Credentials go in `.env.local` (gitignored). See `.env.example`.
+- `/integrations` manages encrypted workspace credentials. Saved does not mean
+  verified or syncing; OAuth/provider onboarding remains M4, collectors M5.
+- Platform secrets go in `.env.local` / deployment secrets. Customer credentials
+  stay encrypted in workspace databases. See `.env.example` and M3's spec.
 
 ## Knowledge core (G-Brain)
 

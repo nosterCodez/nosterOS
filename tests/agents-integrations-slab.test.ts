@@ -59,7 +59,7 @@ describe('/agents in the Brand Deals look', () => {
 });
 
 describe('/integrations in the Brand Deals look', () => {
-  const page = read('app/integrations/page.tsx');
+  const page = read('app/integrations/host/page.tsx');
   const browser = read('components/IntegrationBrowser.tsx');
 
   test('composes the slab kit instead of the console header', () => {

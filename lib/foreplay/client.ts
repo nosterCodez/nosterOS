@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 
 /**
  * Foreplay public API client (public.api.foreplay.co, spec 0.26.x): the read

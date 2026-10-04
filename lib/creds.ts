@@ -1,151 +1,86 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import type { FounderDb } from '@/lib/db';
+import type { Envelope } from '@/lib/connection-records';
+import { CONNECTION_FIELDS, connectionField, type ConnectionMetadata } from '@/lib/connection-fields';
 
-/**
- * Credential resolution for connectors. Everything comes from the environment:
- * a fresh read of .env.local first (so the connect flow takes effect without a
- * restart), then process.env, then ONE optional generic file at
- * ~/.founder-os/.env for a machine that keeps its keys outside the project.
- * Nothing reaches into any other application's config, and no secret is ever
- * copied into this repo.
- */
-
-export function parseEnvFile(content: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const raw of content.split('\n')) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const stripped = line.startsWith('export ') ? line.slice(7) : line;
-    const eq = stripped.indexOf('=');
-    if (eq <= 0) continue;
-    const key = stripped.slice(0, eq).trim();
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) continue;
-    let value = stripped.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"') && value.length >= 2) ||
-      (value.startsWith("'") && value.endsWith("'") && value.length >= 2)
-    ) {
-      value = value.slice(1, -1);
-    }
-    out[key] = value;
-  }
-  return out;
+type Context = { workspace: { id: string }; db: FounderDb };
+export class VaultError extends Error { constructor() { super('Connection vault unavailable'); } }
+function masterKey() {
+  const value = process.env.NOSTEROS_MASTER_KEY;
+  if (!value || !/^[a-fA-F0-9]{64}$/.test(value)) throw new VaultError();
+  return Buffer.from(value, 'hex');
 }
-
-const HOME = os.homedir();
-
-/** The ONE optional fallback file, deliberately generic: a connector must never
- *  reach into a particular person's machine or another app's config. Override
- *  it with FOUNDER_OS_CRED_FILE. */
-export function credFilePath(): string {
-  return process.env.FOUNDER_OS_CRED_FILE ?? path.join(HOME, '.founder-os', '.env');
+function aad(context: Context, purpose: string) {
+  if (!/^[A-Za-z0-9]{32}$/.test(context.workspace.id)) throw new VaultError();
+  return Buffer.from(JSON.stringify(['OmegaOS', 1, context.workspace.id, purpose]));
 }
-
-/** Kept as a record so call sites read `CRED_FILES.<whatever>`; every entry is
- *  the same generic file. There is only one. */
-export const CRED_FILES = {
-  get socialMedia() {
-    return credFilePath();
-  },
-  get brainAgent() {
-    return credFilePath();
-  },
-  get arcads() {
-    return credFilePath();
-  },
-};
-
-function readEnvFileSafe(filePath: string): Record<string, string> {
+function encrypt(key: Buffer, value: Buffer, associated: Buffer): Envelope {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+  cipher.setAAD(associated);
+  const ciphertext = Buffer.concat([cipher.update(value), cipher.final()]);
+  return { version: 1, iv: iv.toString('base64'), tag: cipher.getAuthTag().toString('base64'), ciphertext: ciphertext.toString('base64') };
+}
+function decrypt(key: Buffer, envelope: Envelope, associated: Buffer) {
+  const iv = Buffer.from(envelope.iv, 'base64'), tag = Buffer.from(envelope.tag, 'base64');
+  if (envelope.version !== 1 || iv.length !== 12 || tag.length !== 16) throw new VaultError();
+  const cipher = createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+  cipher.setAAD(associated); cipher.setAuthTag(tag);
+  return Buffer.concat([cipher.update(Buffer.from(envelope.ciphertext, 'base64')), cipher.final()]);
+}
+function withDataKey<T>(context: Context, create: boolean, work: (key: Buffer | undefined) => T): T {
+  const master = masterKey(); let key: Buffer | undefined;
   try {
-    return parseEnvFile(fs.readFileSync(filePath, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-/* ---- .env.local as a live store (the Connections board's connect flow) ----
- * Next only loads .env.local into process.env at boot; the connect flow needs
- * a paste to take effect immediately. So .env.local is ALSO read fresh at
- * call time, and it outranks process.env (the file is what booted the process,
- * so a fresh read is never staler than boot). FOUNDER_OS_ENV_LOCAL overrides
- * the path for tests. */
-
-export function envLocalPath(): string {
-  return process.env.FOUNDER_OS_ENV_LOCAL ?? path.join(process.cwd(), '.env.local');
-}
-
-export function readEnvLocal(): Record<string, string> {
-  return readEnvFileSafe(envLocalPath());
-}
-
-/** Update or append KEY=value lines, preserving every unrelated line verbatim. */
-export function upsertEnvLocal(values: Record<string, string>): void {
-  const file = envLocalPath();
-  let raw = '';
-  try {
-    raw = fs.readFileSync(/*turbopackIgnore: true*/ file, 'utf8');
-  } catch {
-    raw = '';
-  }
-  const lines = raw.length > 0 ? raw.split('\n') : [];
-  const pending = new Map(Object.entries(values));
-  const next = lines.map((line) => {
-    const key = line.trim().replace(/^export /, '').split('=')[0]?.trim();
-    if (key && pending.has(key)) {
-      const v = pending.get(key)!;
-      pending.delete(key);
-      return `${key}=${v}`;
+    const associated = aad(context, 'workspace-data-key');
+    const record = context.db.connectionRecords.key();
+    const keyId = createHash('sha256').update(master).digest('hex');
+    if (record) {
+      if (record.keyId !== keyId) throw new VaultError();
+      key = decrypt(master, record.envelope, associated);
+      if (key.length !== 32) throw new VaultError();
+    } else if (create) {
+      key = randomBytes(32);
+      context.db.connectionRecords.createKey({ keyId, envelope: encrypt(master, key, associated) });
     }
-    return line;
+    return work(key);
+  } catch { throw new VaultError(); }
+  finally { key?.fill(0); master.fill(0); }
+}
+export function vaultReady(context: Context): boolean {
+  try { return withDataKey(context, false, () => true); } catch { return false; }
+}
+export function connectionMetadata(context: Context): ConnectionMetadata[] {
+  const rows = context.db.connectionRecords.all();
+  return CONNECTION_FIELDS.map(field => {
+    const row = rows.find(row => row.name === field.name);
+    return { ...field, status: !row ? 'not_configured' : row.revokedAt ? 'revoked' : 'saved', updatedAt: row?.updatedAt ?? null };
   });
-  while (next.length > 0 && next[next.length - 1] === '') next.pop();
-  for (const [key, v] of pending) next.push(`${key}=${v}`);
-  fs.writeFileSync(file, next.join('\n') + '\n', { mode: 0o600 });
 }
-
-/** Drop the named keys; every other line stays byte-identical. */
-export function removeEnvLocal(keys: string[]): void {
-  const file = envLocalPath();
-  let raw = '';
-  try {
-    raw = fs.readFileSync(/*turbopackIgnore: true*/ file, 'utf8');
-  } catch {
-    return;
-  }
-  const drop = new Set(keys);
-  const next = raw
-    .split('\n')
-    .filter((line) => !drop.has(line.trim().replace(/^export /, '').split('=')[0]?.trim() ?? ''));
-  fs.writeFileSync(file, next.join('\n'), { mode: 0o600 });
+export function saveCredential(context: Context, name: string, value: string): void {
+  connectionField(name);
+  if (!value.trim() || value.length > 4096 || /[\r\n\0]/.test(value)) throw new Error('Invalid connection value');
+  if (name === 'STRIPE_SECRET_KEY' && !/^rk_(test|live)_/.test(value)) throw new Error('Use a Stripe restricted key');
+  context.db.connectionRecords.atomic(() => withDataKey(context, true, key => {
+    const plaintext = Buffer.from(value.trim());
+    try { context.db.connectionRecords.put({ name, envelope: encrypt(key!, plaintext, aad(context, name)), updatedAt: new Date().toISOString(), revokedAt: null }); }
+    finally { plaintext.fill(0); }
+  }));
 }
-
-/** process.env with a fresh .env.local overlay — hand this to connectors that
- *  take an env record so a just-pasted key connects without a restart. */
-export function runtimeEnv(): Record<string, string | undefined> {
-  return { ...process.env, ...readEnvLocal() };
+/** No env/file fallback and no cache: replacement/revocation takes effect on the next read. */
+export function resolveCred(context: Context, name: string): string | undefined {
+  connectionField(name);
+  const row = context.db.connectionRecords.get(name);
+  if (!row || row.revokedAt) return undefined;
+  return withDataKey(context, false, key => {
+    if (!key) throw new VaultError();
+    const plaintext = decrypt(key, row.envelope, aad(context, name));
+    try { return plaintext.toString('utf8'); } finally { plaintext.fill(0); }
+  });
 }
-
-/** Fresh .env.local first, then process.env, then each env file in order. */
-export function resolveCred(name: string, files: string[]): string | undefined {
-  const fromLocal = readEnvLocal()[name];
-  if (fromLocal) return fromLocal;
-  const fromEnv = process.env[name];
-  if (fromEnv) return fromEnv;
-  for (const file of files) {
-    const value = readEnvFileSafe(file)[name];
-    if (value) return value;
-  }
-  return undefined;
-}
-
-/** Attio's key: env only — .env.local, then process.env, then the one generic
- *  fallback file. */
-export function resolveAttioKey(): string | undefined {
-  return resolveCred('ATTIO_API_KEY', [credFilePath()]);
-}
-
-/** ManyChat's key, resolved exactly the same way. */
-export function resolveManychatKey(): string | undefined {
-  return resolveCred('MANYCHAT_API_KEY', [credFilePath()]);
+export function revokeCredential(context: Context, name: string): void {
+  connectionField(name); aad(context, name);
+  context.db.connectionRecords.atomic(() => {
+    const row = context.db.connectionRecords.get(name);
+    if (row && !row.revokedAt) context.db.connectionRecords.put({ ...row, revokedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+  });
 }

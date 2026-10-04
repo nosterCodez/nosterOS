@@ -76,7 +76,7 @@ describe('the tile shows the right affordance', () => {
 
   test('the card threads readiness down from the server', () => {
     expect(card).toContain('oauth');
-    expect(read('app/integrations/page.tsx')).toContain('oauthReadiness');
+    expect(read('app/integrations/host/page.tsx')).toContain('oauthReadiness');
   });
 });
 

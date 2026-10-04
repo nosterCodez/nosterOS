@@ -41,6 +41,7 @@ export async function forEachWorkspace<T>(workspaces: WorkspaceData['workspace']
 export async function workspaceJob<T>(route: string, work: (context: WorkspaceData) => Promise<T>) {
   const h = await headers();
   if (internalAllowed(route, h.get('x-nosteros-internal'))) {
+    if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1') return Response.json({ ok: true, skipped: 'operator-features-disabled', workspaces: [] });
     const operatorId = operatorWorkspaceId();
     if (!operatorId) return Response.json({ ok: true, skipped: 'operator-unavailable', workspaces: [] });
     const workspaces = (await listWorkspaces()).filter(workspace => workspace.id === operatorId);

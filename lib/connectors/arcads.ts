@@ -1,5 +1,5 @@
 import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status';
-import { CRED_FILES, resolveCred } from '@/lib/creds';
+import { CRED_FILES, resolveCred } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 export async function arcadsStatus(): Promise<ConnectorStatus> {

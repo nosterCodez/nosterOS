@@ -11,7 +11,7 @@ import {
   resolveCred,
   runtimeEnv,
   CRED_FILES,
-} from '@/lib/creds';
+} from '@/lib/operator-creds';
 
 describe('parseEnvFile', () => {
   test('parses KEY=value lines and ignores comments and blanks', () => {
@@ -117,12 +117,12 @@ describe('credential lookups are environment-only', () => {
    * most the one generic fallback file. This pins that nothing creeps back in.
    */
   test('lib/creds.ts reaches into no app config and no per-person path', () => {
-    const src = fs.readFileSync(path.join(process.cwd(), 'lib/creds.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(process.cwd(), 'lib/operator-creds.ts'), 'utf8');
     expect(src).not.toMatch(/\.claude\.json|mcpServers|social-config|brain-agent|Projects/);
   });
 
   test('resolveAttioKey and resolveManychatKey both go through resolveCred', () => {
-    const src = fs.readFileSync(path.join(process.cwd(), 'lib/creds.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(process.cwd(), 'lib/operator-creds.ts'), 'utf8');
     for (const fn of ['resolveAttioKey', 'resolveManychatKey']) {
       const body = src.slice(src.indexOf(`export function ${fn}`));
       expect(body.slice(0, body.indexOf('\n}'))).toContain('resolveCred(');

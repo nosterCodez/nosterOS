@@ -75,6 +75,7 @@ const PAGES: PageEntry[] = [
   { file: 'funnel/page.tsx', load: () => import('@/app/funnel/page'), props: { searchParams: {} } },
   { file: 'workflows/page.tsx', load: () => import('@/app/workflows/page') },
   { file: 'integrations/page.tsx', load: () => import('@/app/integrations/page') },
+  { file: 'integrations/host/page.tsx', load: () => import('@/app/integrations/host/page') },
   { file: 'roadmap/page.tsx', load: () => import('@/app/roadmap/page') },
   { file: 'analytics/page.tsx', load: () => import('@/app/analytics/page') },
   { file: 'reference/page.tsx', load: () => import('@/app/reference/page') },

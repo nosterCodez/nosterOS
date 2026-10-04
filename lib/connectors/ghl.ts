@@ -5,7 +5,7 @@ import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status
  * a Private Integration Token (Settings → Private Integrations, read scopes)
  * plus the location id. Never reports a fake "connected".
  */
-import { resolveCred, CRED_FILES } from '@/lib/creds';
+import { resolveCred, CRED_FILES } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 export async function ghlStatus(): Promise<ConnectorStatus> {

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { readEnvLocal, upsertEnvLocal } from '@/lib/creds';
+import { readEnvLocal, upsertEnvLocal } from '@/lib/operator-creds';
 import { OAUTH_PROVIDERS, oauthProvider, refreshRequestBody, type OAuthProvider } from '@/lib/oauth/providers';
 
 /**
