@@ -11,6 +11,7 @@ import { toolBrand } from '@/lib/workflow-tool-brands';
 import { agentAvatars } from '@/lib/agent-avatars';
 import type { AgentRun } from '@/lib/schemas';
 import { workflowsVolume } from '@/lib/workflows-volume';
+import { visibleWorkflows } from '@/lib/workspace-workflows';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export default async function WorkflowsPage() {
   const workspace = await requireWorkspace();
 
   const db = workspace.db;
-  const workflows = db.workflows.all();
+  const workflows = visibleWorkflows(db.workflows.all());
   const agents = db.agents.all();
 
   // The clock half: what the OS runs on a schedule, and whether it actually

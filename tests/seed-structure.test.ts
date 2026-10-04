@@ -6,7 +6,7 @@ afterEach(() => { for (const db of handles.splice(0)) db.close(); vi.unstubAllEn
 test('structure upgrades preserve customized agents, disabled schedules, workflows, skills and extra rows', () => {
   const db = openDb(':memory:'); handles.push(db); seedStructure(db);
   const agent = { ...db.agents.all()[0], name: 'My agent', model: 'custom-model' };
-  const workflow = { ...db.workflows.all()[0], name: 'My workflow' };
+  const workflow = { id: 'custom-workflow', name: 'My workflow', subtitle: '', revenueUsd: 0, order: 0, steps: [] };
   const skill = { ...db.skills.all()[0], markdown: 'My instructions' };
   const cron = db.agentCrons.all()[0];
   db.agents.insert(agent); db.workflows.insert(workflow); db.skills.insert(skill);
@@ -22,8 +22,9 @@ test('structure upgrades preserve customized agents, disabled schedules, workflo
 });
 test('structure seeding restores missing defaults without demo clients or activity', () => {
   const db = openDb(':memory:'); handles.push(db); seedStructure(db);
-  const workflow = db.workflows.all()[0]; db.workflows.remove(workflow.id);
+  const agent = db.agents.all()[0];
   seedStructure(db);
-  expect(db.workflows.get(workflow.id)).toEqual(workflow);
+  expect(db.workflows.all()).toEqual([]);
+  expect(db.agents.all().find(row => row.id === agent.id)).toEqual(agent);
   expect(db.people.all()).toEqual([]); expect(db.agentRuns.recent(10)).toEqual([]);
 });

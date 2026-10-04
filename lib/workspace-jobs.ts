@@ -39,7 +39,7 @@ export async function forEachWorkspace<T>(workspaces: WorkspaceData['workspace']
 }
 /** Env-backed jobs remain operator-only until M3 supplies workspace credentials. */
 export async function workspaceJob<T>(route: string, work: (context: WorkspaceData) => Promise<T>) {
-  const h = new Headers(await headers());
+  const h = await headers();
   if (internalAllowed(route, h.get('x-nosteros-internal'))) {
     const operatorId = operatorWorkspaceId();
     if (!operatorId) return Response.json({ ok: true, skipped: 'operator-unavailable', workspaces: [] });
@@ -47,7 +47,7 @@ export async function workspaceJob<T>(route: string, work: (context: WorkspaceDa
     const results = await forEachWorkspace(workspaces, work);
     return Response.json({ ok: results.every(result => result.ok), workspaces: results });
   }
-  const context = await apiOperatorWorkspace(h);
+  const context = await apiOperatorWorkspace(h as Headers);
   if (context instanceof Response) return context;
   return withWorkspaceDb(context.workspace.id, async db => Response.json(await work({ workspace: context.workspace, db })));
 }

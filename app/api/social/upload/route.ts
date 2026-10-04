@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/social/upload', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const form = await req.formData().catch(() => null);

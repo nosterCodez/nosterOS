@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(_req: Request, props: { params: Promise<{ platform: string }> }) {
   const authError = await apiSessionError('/api/social/[platform]', 'GET', _req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(_req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(_req.headers);
   if (workspace instanceof Response) return workspace;

@@ -15,7 +15,7 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/finances/bank-statement', 'POST', req);
   if (authError) return authError;
-  const workspace = await apiWorkspace();
+  const workspace = await apiWorkspace(req.headers);
   if (workspace instanceof Response) return workspace;
 
   const ctype = req.headers.get('content-type') ?? '';

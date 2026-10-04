@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/agents/broadcast', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(req.headers);
   if (workspace instanceof Response) return workspace;

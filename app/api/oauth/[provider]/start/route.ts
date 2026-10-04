@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request, props: { params: Promise<{ provider: string }> }) {
   const authError = await apiSessionError('/api/oauth/[provider]/start', 'GET', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const params = await props.params;

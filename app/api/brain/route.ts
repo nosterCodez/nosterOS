@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/brain', 'GET', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const provider = getBrainProvider();

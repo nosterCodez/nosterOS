@@ -42,7 +42,7 @@ const WallAdShape = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/saved', 'POST', request);
   if (authError) return authError;
-  const context = await apiWorkspace();
+  const context = await apiWorkspace(request.headers);
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
 
@@ -56,7 +56,7 @@ const RemoveSchema = z.object({ adId: z.string().min(1) });
 export async function DELETE(request: Request) {
   const authError = await apiSessionError('/api/adscout/saved', 'DELETE', request);
   if (authError) return authError;
-  const context = await apiWorkspace();
+  const context = await apiWorkspace(request.headers);
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
 

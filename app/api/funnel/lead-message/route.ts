@@ -17,7 +17,7 @@ const FEED_BUDGET_MS = 4000;
 export async function GET(request: Request) {
   const authError = await apiSessionError('/api/funnel/lead-message', 'GET', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const url = new URL(request.url);

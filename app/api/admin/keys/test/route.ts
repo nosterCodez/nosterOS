@@ -25,7 +25,7 @@ const TestKeySchema = z.object({
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/admin/keys/test', 'POST', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(request.headers);
   if (workspace instanceof Response) return workspace;

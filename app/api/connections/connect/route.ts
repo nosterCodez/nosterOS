@@ -31,7 +31,7 @@ function entryFor(slug: string) {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/connections/connect', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: z.infer<typeof ConnectBody>;
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const authError = await apiSessionError('/api/connections/connect', 'DELETE', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: z.infer<typeof DisconnectBody>;

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
   const authError = await apiSessionError('/api/board/agents/[id]/run', 'POST', _req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(_req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const params = await props.params;

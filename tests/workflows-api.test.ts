@@ -47,9 +47,10 @@ const basicInput = {
 };
 
 describe('GET /api/workflows', () => {
-  test('lists exactly what the workflows table holds (the operator seeds its two machines; Slab seeded none)', async () => {
+  test('does not expose upstream sample workflows as production results', async () => {
     const body = await (await GET()).json();
-    expect(body.workflows.map((w: { id: string }) => w.id)).toEqual(getDb().workflows.all().map((w) => w.id));
+    expect(body.workflows).toEqual([]);
+    expect(getDb().workflows.all().length).toBeGreaterThan(0);
   });
 });
 

@@ -28,7 +28,7 @@ async function conductorModel(): Promise<string | null> {
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/conductor/context', 'GET', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
   const workspace = await apiWorkspace(req.headers);
   if (workspace instanceof Response) return workspace;

@@ -49,7 +49,7 @@ function provider(db: FounderDb) {
 export async function GET(req: Request) {
   const authError = await apiSessionError('/api/memory', 'GET', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   if (!authorized(req)) return unauthorized();
@@ -83,7 +83,7 @@ const RememberSchema = z.object({
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/memory', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   if (!authorized(req)) return unauthorized();

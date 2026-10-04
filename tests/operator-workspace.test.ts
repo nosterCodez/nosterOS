@@ -23,7 +23,7 @@ function setup() {
   db.prepare('INSERT INTO user VALUES (?,?)').run('owner', owner);
   db.prepare('INSERT INTO member VALUES (?,?,?)').run(A, 'owner', 'owner');
   mocks.session.mockResolvedValue({ user: { id: 'member', email: 'member@example.com', name: 'Member' }, session: { activeOrganizationId: A } });
-  mocks.member.mockResolvedValue({ role: 'member' });
+  mocks.member.mockResolvedValue({ role: 'member', organizationId: A, userId: 'member' });
   mocks.organization.mockResolvedValue({ id: A, name: 'nosterCodes', metadata: { kind: 'agency' } });
 }
 afterEach(() => { db?.close(); if(root) rmSync(root,{recursive:true,force:true}); vi.unstubAllEnvs(); vi.resetAllMocks(); });

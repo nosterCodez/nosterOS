@@ -1,4 +1,5 @@
 import type { FounderDb } from '@/lib/db';
+import { workflowTemplates as workflows } from '@/lib/workflow-templates';
 import { PERSONAS } from '@/lib/personas-seed';
 import { runCostUsd } from '@/lib/agent-costs';
 import type {
@@ -1493,169 +1494,7 @@ const funnelTouches: FunnelTouch[] = FUNNEL_JOURNEYS.flatMap((j) =>
 // The machine, mapped: each venture's process as an owned chain of steps.
 // Real-ready — owners, weekly hours, tools, the bottlenecks that leak money,
 // and the automations (live or suggested) that carry the load back.
-const workflows: Workflow[] = [
-  {
-    id: 'wf-vantage-sales',
-    name: 'Vantage sales machine',
-    subtitle: 'Cold outbound to closed retainer.',
-    revenueUsd: 120_000,
-    order: 0,
-    steps: [
-      {
-        id: 'wf-mer-1',
-        title: 'Run outbound campaigns',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Postly Publisher',
-        hoursPerWeek: 6,
-        tools: ['postly', 'adsmith'],
-        edgeLabel: 'replies',
-        leakUsd: null,
-        automation: { title: 'Always-on content + DM outreach', state: 'live', recoveredUsd: 4200 },
-      },
-      {
-        id: 'wf-mer-2',
-        title: 'Qualify replies',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Comms Agent',
-        hoursPerWeek: 9,
-        tools: ['dmflow', 'gmail'],
-        edgeLabel: 'qualified',
-        leakUsd: 14_000,
-        automation: { title: 'Auto-qualify + book', state: 'suggested', recoveredUsd: 9000 },
-      },
-      {
-        id: 'wf-mer-3',
-        title: 'Book demos',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 4,
-        tools: ['calendar', 'ledger'],
-        edgeLabel: 'demo',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-4',
-        title: 'Sales call',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 10,
-        tools: ['ledger'],
-        edgeLabel: 'proposal',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-mer-5',
-        title: 'Proposal & follow-up',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 5,
-        tools: ['proposal-gen', 'gmail'],
-        edgeLabel: 'won',
-        leakUsd: 6000,
-        automation: { title: 'Proposal follow-up sequence', state: 'suggested', recoveredUsd: 6000 },
-      },
-      {
-        id: 'wf-mer-6',
-        title: 'Onboard & deliver',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Onboarding Agent',
-        hoursPerWeek: 3,
-        tools: ['ledger', 'slack'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Onboarding rails', state: 'live', recoveredUsd: 3000 },
-      },
-    ],
-  },
-  {
-    id: 'wf-lc-delivery',
-    name: 'Launchpad Cohort delivery',
-    subtitle: 'Webinar lead to retained program member.',
-    revenueUsd: 80_000,
-    order: 1,
-    steps: [
-      {
-        id: 'wf-lc-1',
-        title: 'Capture webinar leads',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'GoHighLevel',
-        hoursPerWeek: 2,
-        tools: ['ghl'],
-        edgeLabel: 'registered',
-        leakUsd: null,
-        automation: { title: 'Webinar to GHL sync', state: 'live', recoveredUsd: 2500 },
-      },
-      {
-        id: 'wf-lc-2',
-        title: 'Nurture in GHL',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'GoHighLevel',
-        hoursPerWeek: 3,
-        tools: ['ghl'],
-        edgeLabel: 'booked',
-        leakUsd: 8000,
-        automation: { title: 'Nurture sequences', state: 'live', recoveredUsd: 5000 },
-      },
-      {
-        id: 'wf-lc-3',
-        title: 'Strategy call',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'Alex · Founder',
-        hoursPerWeek: 8,
-        tools: ['ghl', 'calendar'],
-        edgeLabel: 'closed',
-        leakUsd: null,
-        automation: null,
-      },
-      {
-        id: 'wf-lc-4',
-        title: 'Deliver program',
-        detail: '',
-        branch: null,
-        ownerKind: 'human',
-        owner: 'LC Team',
-        hoursPerWeek: 12,
-        tools: ['skool'],
-        edgeLabel: 'retained',
-        leakUsd: 5000,
-        automation: { title: 'Skool community ops', state: 'suggested', recoveredUsd: 4000 },
-      },
-      {
-        id: 'wf-lc-5',
-        title: 'Track attribution',
-        detail: '',
-        branch: null,
-        ownerKind: 'agent',
-        owner: 'Trakyo',
-        hoursPerWeek: 1,
-        tools: ['trakyo'],
-        edgeLabel: null,
-        leakUsd: null,
-        automation: { title: 'Revenue attribution', state: 'suggested', recoveredUsd: 0 },
-      },
-    ],
-  },
-];
+
 
 // Agent task board — seeded across open/doing/done so the Kanban is alive on
 // first load. Demo cards; user-added tasks coexist (we insert by id, never wipe).
@@ -1932,7 +1771,7 @@ export const seededCrons: AgentCron[] = [
  * because nothing ever re-ran the seed. The stamp forces exactly one re-seed
  * per change.
  */
-export const SEED_VERSION = '2026-09-30-alex-first-name';
+export const SEED_VERSION = '2026-10-04-workspace-structure';
 
 /** Structural defaults only: no people, money, activity, clients or history. */
 export function seedStructure(db: FounderDb): void {
@@ -1940,7 +1779,6 @@ export function seedStructure(db: FounderDb): void {
   for (const a of agents) db.agents.insertIfMissing(a);
   for (const c of seededCrons) db.agentCrons.insertIfMissing(c);
   for (const t of new Map(tools.map(tool => [tool.id, tool])).values()) db.tools.insertIfMissing(t);
-  for (const w of workflows) db.workflows.insertIfMissing(w);
   for (const s of skills) db.skills.insertIfMissing({ ...s, markdown: skillDoc(s) });
   for (const p of PERSONAS) db.personas.insertIfMissing(p);
   db.meta.set('structure_seed_version', SEED_VERSION);
@@ -1949,6 +1787,7 @@ export function seedStructure(db: FounderDb): void {
 /** Demo population is explicit; normal workspace initialization never calls it. */
 export function seedDemo(db: FounderDb): void {
   if (process.env.DEMO_GATE !== '1') throw new Error('Demo seeding requires DEMO_GATE=1');
+  for (const w of workflows) db.workflows.insertIfMissing(w);
   // INSERT OR REPLACE in every repo makes re-seeding idempotent by id.
   for (const p of people) db.people.insert(p);
   db.people.deleteWhereIdNotIn(people.map((p) => p.id));

@@ -1,5 +1,6 @@
 import { apiSessionError } from '@/lib/session';
 import { randomUUID } from 'node:crypto';
+import { visibleWorkflows } from '@/lib/workspace-workflows';
 import { NextResponse } from 'next/server';
 import { apiWorkspace } from '@/lib/session';
 import { WorkflowSchema, type Workflow } from '@/lib/schemas';
@@ -17,7 +18,7 @@ export async function GET() {
   if (workspace instanceof Response) return workspace;
 
 
-  return NextResponse.json({ workflows: workspace.db.workflows.all() });
+  return NextResponse.json({ workflows: visibleWorkflows(workspace.db.workflows.all()) });
 }
 
 /** Creates a new workflow from the builder panel. Never touches an

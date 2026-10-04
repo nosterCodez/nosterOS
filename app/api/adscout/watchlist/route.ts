@@ -32,9 +32,9 @@ const AddSchema = z.union([
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'POST', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
-  const context = await apiWorkspace();
+  const context = await apiWorkspace(request.headers);
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
 
@@ -69,9 +69,9 @@ const RemoveSchema = z.object({ brandId: z.string().min(1) });
 export async function DELETE(request: Request) {
   const authError = await apiSessionError('/api/adscout/watchlist', 'DELETE', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
-  const context = await apiWorkspace();
+  const context = await apiWorkspace(request.headers);
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
 

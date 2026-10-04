@@ -22,7 +22,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/conductor/chat', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   let body: { message?: string };

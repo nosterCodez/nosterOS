@@ -21,7 +21,7 @@ const DraftRequestSchema = z.object({ prompt: z.string().min(1).max(4000) });
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/workflows/draft', 'POST', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const parsed = DraftRequestSchema.safeParse(await request.json().catch(() => null));

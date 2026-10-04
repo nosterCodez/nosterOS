@@ -22,9 +22,9 @@ const AskSchema = z.object({ question: z.string().min(3).max(600) });
 export async function POST(request: Request) {
   const authError = await apiSessionError('/api/adscout/ask', 'POST', request);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(request.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
-  const context = await apiWorkspace();
+  const context = await apiWorkspace(request.headers);
   if (context instanceof Response) return context;
   const workspaceId = context.workspace.id;
 

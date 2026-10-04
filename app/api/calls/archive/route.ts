@@ -36,7 +36,7 @@ const Body = z.object({ sources: z.array(z.enum(['attio', 'fathom'])).min(1).opt
 export async function POST(req: Request) {
   const authError = await apiSessionError('/api/calls/archive', 'POST', req);
   if (authError) return authError;
-  const operatorAccess = await apiOperatorWorkspace();
+  const operatorAccess = await apiOperatorWorkspace(req.headers);
   if (operatorAccess instanceof Response) return operatorAccess;
 
   const parsed = Body.safeParse(await req.json().catch(() => ({})));
