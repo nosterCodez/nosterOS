@@ -12,7 +12,8 @@ const values: Record<string, string> = {
   NOSTEROS_OWNER_EMAIL: 'noster@nostermarketing.com',
   NOSTEROS_SIGNUP_ALLOWLIST: 'noster@nostermarketing.com,jesusgarcia@nostermarketing.com',
 };
-for (const key of ['BETTER_AUTH_SECRET', 'NOSTEROS_INTERNAL_SECRET', 'FOUNDER_OS_ACCESS_TOKEN']) {
+for (const key of ['BETTER_AUTH_SECRET', 'NOSTEROS_INTERNAL_SECRET', 'NOSTEROS_ACCESS_TOKEN']) {
+  if (key === 'NOSTEROS_ACCESS_TOKEN' && !current[key] && current.FOUNDER_OS_ACCESS_TOKEN) { values[key] = current.FOUNDER_OS_ACCESS_TOKEN; continue; }
   if (!current[key]) values[key] = randomBytes(48).toString('base64url');
 }
 for (const [key, value] of Object.entries(values)) {

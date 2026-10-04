@@ -176,7 +176,7 @@ describe('blueprint hierarchy — the graph as buckets', () => {
   it('search finds by name and by subline and reports the path', () => {
     const hits = searchHierarchy(idx, 'attio');
     expect(hits.map((x) => x.id)).toEqual(expect.arrayContaining(['agent-crm', 'connector-attio']));
-    expect(hits.find((x) => x.id === 'connector-attio')?.path).toBe('Founder OS › Connectors');
+    expect(hits.find((x) => x.id === 'connector-attio')?.path).toBe('nosterOS › Connectors');
     expect(searchHierarchy(idx, 'closer')[0]?.id).toBe('agent-atlas');
     expect(searchHierarchy(idx, 'zzz')).toHaveLength(0);
   });
@@ -184,7 +184,7 @@ describe('blueprint hierarchy — the graph as buckets', () => {
   it('the ask scope describes the selection, its members and its relations, never invents', () => {
     const scope = describeScope(h, idx, 'dept-sales') as { scope: string; path: string; inside?: unknown[]; relations?: string[] };
     expect(scope.scope).toBe('Sales');
-    expect(scope.path).toBe('Founder OS › Sales');
+    expect(scope.path).toBe('nosterOS › Sales');
     expect(scope.inside).toHaveLength(3);
     expect(scope.relations?.some((r) => r.includes('Attio'))).toBe(true);
     const whole = describeScope(h, idx, null) as { scope: string; containers: unknown[] };

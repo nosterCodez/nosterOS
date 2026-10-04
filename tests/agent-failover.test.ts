@@ -330,7 +330,7 @@ describe('alerts on the cockpit thread', () => {
 
   test('the rendered note is marked as automation so the Conductor does not answer it', () => {
     const body = renderFailoverAlert(alert);
-    expect(body).toMatch(/^\[Founder OS failover\]/);
+    expect(body).toMatch(/^\[nosterOS failover\]/);
     expect(body).toContain(alert.message);
     expect(body).toMatch(/no reply needed/i);
   });

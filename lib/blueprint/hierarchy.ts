@@ -260,7 +260,7 @@ export function buildHierarchy(graph: BlueprintGraph): Hierarchy {
       type: 'container',
       id: APP_ID,
       kind: 'app',
-      name: 'Founder OS',
+      name: 'nosterOS',
       sub: 'the running OS · the Conductor commands agents · agents belong to departments · agents use tools',
       icon: 'layout-dashboard',
       rows: appRows,

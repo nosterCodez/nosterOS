@@ -43,7 +43,7 @@ describe('OS mark branding', () => {
   test('the sidebar carries the emblem AND the wordmark, and never says the upstream name', () => {
     const sidebar = read('components/Sidebar.tsx');
     expect(sidebar).toContain('OsMark');
-    expect(sidebar).toContain('FOUNDER OS');
+    expect(sidebar).toContain('nosterOS');
     expect(sidebar.toLowerCase()).not.toContain(H('ben', 'nett'));
     // the mark renders no text at all
     expect(read('components/OsMark.tsx')).not.toMatch(/<text/);

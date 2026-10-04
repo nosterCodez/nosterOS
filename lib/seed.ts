@@ -1066,7 +1066,7 @@ const tools: Tool[] = [
 // their bar as done/total of the rows they own, so a row without a phase
 // would quietly shrink a percentage instead of showing up in it.
 const roadmap: RoadmapItem[] = [
-  { id: 'rm-v1', title: 'FOUNDER OS v1 baseline', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Six views, SQLite repos, 32 tests.', phaseId: 'phase-2' },
+  { id: 'rm-v1', title: 'nosterOS v1 baseline', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Six views, SQLite repos, 32 tests.', phaseId: 'phase-2' },
   { id: 'rm-mono', title: 'Monochrome rebuild + real connectors', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'Black & white theme; IMAP, Slack, Stripe, gbrain wired.', phaseId: 'phase-1' },
   { id: 'rm-gbrain', title: 'G-Brain provider live', quarter: '2026-Q2', status: 'done', departmentId: 'dept-tech', description: 'gbrain CLI doctor/query + brain-store local fallback.', phaseId: 'phase-1' },
   { id: 'rm-creds-email', title: 'Connect 4 email inboxes', quarter: '2026-Q2', status: 'done', departmentId: 'dept-comms', description: 'Four Gmail IMAP slots live on app passwords, feeding /comms.', phaseId: 'phase-1' },
@@ -1085,7 +1085,7 @@ const roadmap: RoadmapItem[] = [
   { id: 'rm-statements', title: 'Statement ingestion', quarter: '2026-Q3', status: 'now', departmentId: 'dept-finance', description: 'Card and bank statements parsed into /finances instead of hand entry.', phaseId: 'phase-1' },
   { id: 'rm-railway', title: 'Move hosting to Railway', quarter: '2026-Q3', status: 'now', departmentId: 'dept-tech', description: 'Every app moving to one platform; the gated OS demo went first as the pilot.', phaseId: 'phase-4' },
   { id: 'rm-ui', title: 'Interaction rebrand', quarter: '2026-Q3', status: 'now', departmentId: 'dept-tech', description: 'Alex-led design pass over the whole OS now the integrations are live.', phaseId: 'phase-2' },
-  { id: 'rm-auth', title: 'Auth + remote access', quarter: '2026-Q4', status: 'next', departmentId: 'dept-tech', description: 'Reach FOUNDER OS on the host from anywhere, safely.', phaseId: 'phase-4' },
+  { id: 'rm-auth', title: 'Auth + remote access', quarter: '2026-Q4', status: 'next', departmentId: 'dept-tech', description: 'Reach nosterOS on the host from anywhere, safely.', phaseId: 'phase-4' },
   { id: 'rm-postiz', title: 'Replace Postly with Postiz', quarter: '2026-Q4', status: 'next', departmentId: 'dept-clients', description: 'Self-hosted scheduler with ungated post and channel analytics.', phaseId: 'phase-1' },
   { id: 'rm-board-embed', title: 'Board fully inside the OS', quarter: '2026-Q4', status: 'later', departmentId: 'dept-tech', description: 'Conductor and 40+ agents driven from the OS, SOPs running as real skills.', phaseId: 'phase-3' },
 ];
@@ -1215,7 +1215,7 @@ const socialDms: SocialDm[] = DM_TARGETS.map((t) => ({
 // Instagram DM inbox — realistic seeded conversations so the /social DM tab is
 // alive on a fresh clone. DUMMY until the DMFlow webhook feeds it live
 // (source 'seed-dummy'; real messages arrive as source 'dmflow'). Four
-// threads, inbound + outbound, believable Vantage / FounderOS lead-gen tone.
+// threads, inbound + outbound, believable Vantage / nosterOS lead-gen tone.
 const socialDmMessages: SocialDmMessage[] = [
   // Alex — agency owner off a reel
   ['ig-alex', 'Alex', 'alex', 'in', 'saw your reel on the 3-agent setup 🔥 do you actually work with agencies?', null, '2026-07-18T14:02:00.000Z'],

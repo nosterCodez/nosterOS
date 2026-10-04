@@ -287,7 +287,7 @@ export function planFailover(input: { agents: FailoverAgent[]; runs: FailoverRun
  * same parked seat would earn a note per tick. The trailer tells the Conductor
  * (which reads the same thread) that this is automation, not the operator talking.
  */
-export const FAILOVER_NOTE_PREFIX = '[Founder OS failover]';
+export const FAILOVER_NOTE_PREFIX = '[nosterOS failover]';
 
 export function failoverAlertMarker(alert: FailoverAlert): string {
   return `${FAILOVER_NOTE_PREFIX} ${alert.agentName} ${alert.kind} ${alert.runFinishedAt}`;

@@ -1,9 +1,10 @@
 import path from 'node:path';
+import { databaseOverride } from '../lib/legacy-env';
 import fs from 'node:fs';
 import { openDb } from '../lib/db';
 import { seedStructure, seedDemo } from '../lib/seed';
 
-const dbPath = process.env.FOUNDER_OS_DB ?? path.join(process.cwd(), 'data', 'founder-os.db');
+const dbPath = databaseOverride() ?? path.join(process.cwd(), 'data', 'founder-os.db');
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const db = openDb(dbPath);
 seedStructure(db);

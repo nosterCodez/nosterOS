@@ -13,8 +13,9 @@
  * build time. A fetch has no such problem.
  */
 import { GATE_COOKIE } from '@/lib/auth-constants';
+import { accessToken } from '@/lib/legacy-env';
 
-export function internalRequestHeaders(secret: string | undefined, token = process.env.FOUNDER_OS_ACCESS_TOKEN): Record<string, string> {
+export function internalRequestHeaders(secret: string | undefined, token = accessToken()): Record<string, string> {
   return { ...(secret ? { 'x-nosteros-internal': secret } : {}), ...(token ? { Cookie: `${GATE_COOKIE}=${token}` } : {}) };
 }
 

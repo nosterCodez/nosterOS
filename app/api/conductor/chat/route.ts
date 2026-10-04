@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * The REAL Conductor chat — the panel talks to the board's CEO (Claude Fable 5
- * with its persistent session) through the standing "Founder OS Cockpit" issue.
+ * with its persistent session) through the standing "nosterOS Cockpit" issue.
  * Async by nature: POST wakes the Conductor; GET polls the thread for replies.
  */
 export async function GET() {

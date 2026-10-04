@@ -90,7 +90,7 @@ describe('the real email shape (regression)', () => {
 
 describe('group chats', () => {
   test('a WhatsApp group is detected from the sender label', () => {
-    expect(isGroupChat(item({ source: 'whatsapp', sender: 'FounderOS Cohort 1 (12)' }))).toBe(true);
+    expect(isGroupChat(item({ source: 'whatsapp', sender: 'nosterOS Cohort 1 (12)' }))).toBe(true);
   });
 
   test('a one-to-one WhatsApp thread is not a group', () => {
@@ -180,12 +180,12 @@ describe('companies and software stay out of the people tier (live-data regressi
 });
 
 describe('name matching is strict enough to trust (live-data regression)', () => {
-  // Company-shaped senders like "Vantage Supply" and "FounderOS - Cohort 1"
+  // Company-shaped senders like "Vantage Supply" and "nosterOS - Cohort 1"
   // used to land in the CALL tier, because a single shared token against any
   // calendar title was enough and the calendar is full of the word Vantage.
   // The top tier is only useful if it means what it says.
   test('sharing one company word with a calendar title is NOT a call', () => {
-    const cal = ['Vantage standup', 'FounderOS cohort call'];
+    const cal = ['Vantage standup', 'nosterOS cohort call'];
     expect(classify(item({ sender: 'Vantage Supply' }), ctx({ meetingTitles: cal })).tier).not.toBe('call');
     expect(classify(item({ sender: 'Vantage Logistics' }), ctx({ meetingTitles: cal })).tier).not.toBe('call');
   });

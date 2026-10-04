@@ -34,7 +34,7 @@ describe('sidebar rail', () => {
   });
 
   test('this instance keeps its own wordmark and storage keys', () => {
-    expect(sidebar).toContain('FOUNDER OS');
+    expect(sidebar).toContain('nosterOS');
     expect(sidebar).not.toContain(H('BEN', 'NETT OS'));
     expect(sidebar).toContain('founderos.sidebar.w');
     expect(sidebar).toContain('founderos.sidebar.collapsed');

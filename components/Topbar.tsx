@@ -58,7 +58,7 @@ export function Topbar() {
         >
           <Bot className="h-3.5 w-3.5" />
         </button>
-        {/* Founder OS emblem — brand mark in the top-right corner */}
+        {/* nosterOS emblem — brand mark in the top-right corner */}
         <OsMark size={26} className="ml-1 shrink-0" />
       </div>
     </div>

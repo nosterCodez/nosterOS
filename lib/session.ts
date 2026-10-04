@@ -2,6 +2,8 @@ import { headers } from 'next/headers';
 import { getAuth } from '@/lib/auth';
 import { equalSecret, internalAllowed, safeNext } from '@/lib/auth-boundary';
 import { GATE_COOKIE } from '@/lib/access-gate';
+import { LEGACY_GATE_COOKIE } from '@/lib/auth-constants';
+import { accessToken } from '@/lib/legacy-env';
 import { redirect } from 'next/navigation';
 import { openWorkspaceDb } from '@/lib/workspace-storage';
 import { operatorWorkspaceId } from '@/lib/operator-workspace';
@@ -79,8 +81,10 @@ export async function operatorWorkspaceForPage(): Promise<WorkspaceCtx | null> {
 export async function apiSessionError(path: string, method: string, request?: Request): Promise<Response | null> {
   try {
     const h = request?.headers ?? new Headers(await headers());
-    const outer = process.env.FOUNDER_OS_ACCESS_TOKEN;
-    const cookie = (h.get('cookie') ?? '').split(';').map(s => s.trim()).find(s => s.startsWith(`${GATE_COOKIE}=`))?.slice(GATE_COOKIE.length + 1);
+    const outer = accessToken();
+    const cookies = (h.get('cookie') ?? '').split(';').map(s => s.trim());
+    const readCookie = (name: string) => cookies.find(s => s.startsWith(`${name}=`))?.slice(name.length + 1);
+    const cookie = readCookie(GATE_COOKIE) ?? readCookie(LEGACY_GATE_COOKIE);
     if (outer && !equalSecret(cookie, outer)) throw new SessionError('Beta access required');
     if (method === 'POST' && internalAllowed(path, h.get('x-nosteros-internal'))) return null;
     const session = await requireSession(h);

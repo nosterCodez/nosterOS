@@ -41,7 +41,7 @@ export async function GET(req: Request) {
         () =>
           resolve({
             title: screenTitleFor(path),
-            context: `${screenTitleFor(path)} view of Founder OS.`,
+            context: `${screenTitleFor(path)} view of nosterOS.`,
             quickActions: quickActionsFor(path),
           }),
         CONTEXT_BUDGET_MS,

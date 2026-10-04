@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { gateDecision, challengePage, GATE_COOKIE } from '@/lib/access-gate';
 
 /**
- * The production access gate. A student's FounderOS deploys to a PUBLIC
+ * The production access gate. A student's nosterOS deploys to a PUBLIC
  * Railway URL; without this, anyone who finds the domain browses their
  * company OS. Setting FOUNDER_OS_ACCESS_TOKEN locks every page behind a
  * one-time token entry (cookie remembers the browser). Unset = open, so
@@ -42,7 +42,7 @@ describe('challenge page', () => {
     const html = challengePage();
     expect(html).toContain('<form');
     expect(html).toContain('name="token"');
-    expect(html.toLowerCase()).toContain('founderos');
+    expect(html).toContain('nosterOS');
   });
 });
 
@@ -51,7 +51,7 @@ describe('middleware wiring', () => {
 
   test('proxy.ts exists and uses the pure gate', () => {
     expect(src).toContain("from '@/lib/access-gate'");
-    expect(src).toContain('FOUNDER_OS_ACCESS_TOKEN');
+    expect(src).toContain('accessToken()');
     // reads the cookie through the shared constant, not a re-typed literal
     expect(src).toContain('GATE_COOKIE');
     expect(GATE_COOKIE.length).toBeGreaterThan(0);

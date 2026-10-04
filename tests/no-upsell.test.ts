@@ -7,7 +7,7 @@ const read = (p: string) => readFileSync(join(root, p), 'utf8');
 
 /**
  * nosterOS is a private operator console, not a demo funnel. The upstream
- * FounderOS demo shipped a "join the cohort" pop-up and a footer ad on every
+ * nosterOS demo shipped a "join the cohort" pop-up and a footer ad on every
  * page; those were removed and must not come back with an upstream merge.
  */
 describe('no upstream course upsell', () => {

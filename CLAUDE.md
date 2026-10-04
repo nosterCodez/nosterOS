@@ -1,9 +1,9 @@
-# FOUNDER OS
+# nosterOS
 
 > nosterOS fork: who does what (Noe / Claude as architect / Codex as builder) and the
 > spec handoff loop live in `AGENTS.md` and `docs/handoff/`. Read those first.
 
-Founder OS is a personal operating system for a one-person business: a web
+nosterOS is a personal operating system for a one-person business: a web
 command center that runs a company as a set of AI-assisted departments. This
 file is the contributor guide for anyone (human or agent) working in the repo.
 
@@ -98,7 +98,7 @@ pop-up and footer ad were removed. Don't re-add them when merging upstream;
 ## Conventions
 
 - TDD: failing test first, then implementation. Tests live in `tests/`,
-  one file per module; use the `FOUNDER_OS_DB=:memory:` pattern (see
+  one file per module; use the `NOSTEROS_DB=:memory:` pattern (see
   `tests/db.test.ts`).
 - Zod-validate anything that crosses the DB or API boundary.
 - Never commit secrets. Credentials belong in `.env.local`, which is
@@ -124,7 +124,7 @@ pop-up and footer ad were removed. Don't re-add them when merging upstream;
   #2fd36f`/`warn #ffb000`/`err #ff2d3f`). Shared primitives in
   `components/terminal.tsx` (`Dot`, `Badge`, `Label`, `SectionHead`, `Kbd`,
   `Spark`). `/org` inherits the tokens through Tailwind classes only.
-- Env vars: `FOUNDER_OS_DB`, `BRAIN_PROVIDER`, `GBRAIN_BIN`, `GBRAIN_STORE`,
+- Env vars: `NOSTEROS_DB`, `BRAIN_PROVIDER`, `GBRAIN_BIN`, `GBRAIN_STORE`,
   plus connector credentials in `.env.local`.
 - Heavy interaction-driven visualizations load via `next/dynamic`
   (`ssr: false`) behind dimension-matched skeletons (see

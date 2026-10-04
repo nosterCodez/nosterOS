@@ -7,6 +7,7 @@
  *   BRAIN_DOCS_DIR=/tmp/x npm run brain:docs
  */
 import os from 'node:os';
+import { databaseOverride } from '../lib/legacy-env';
 import path from 'node:path';
 import { openDb } from '@/lib/db';
 import { seedStructure, seedDemo } from '@/lib/seed';
@@ -17,7 +18,7 @@ const root =
   process.env.GBRAIN_STORE ??
   path.join(os.homedir(), 'knowledge', 'brain-store');
 
-const dbPath = process.env.FOUNDER_OS_DB ?? path.join(process.cwd(), 'data', 'founder-os.db');
+const dbPath = databaseOverride() ?? path.join(process.cwd(), 'data', 'founder-os.db');
 const db = openDb(dbPath);
 seedStructure(db);
 if (process.env.DEMO_GATE === '1') seedDemo(db);

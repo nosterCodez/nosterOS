@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 
 /**
- * Superset dispatch — the Conductor's hands for code changes. Founder OS never
+ * Superset dispatch — the Conductor's hands for code changes. nosterOS never
  * edits its own UI in-process; instead this connector shells the local
  * Superset CLI to spin up an isolated workspace (own worktree + branch) with a
  * real coding agent inside, carrying the house rules in its prompt. Exec is
@@ -50,7 +50,7 @@ export function branchFor(request: string, now: Date = new Date()): string {
 
 export function workerPromptFor(request: string, branch: string): string {
   return [
-    `You are a coding agent working the Founder OS repo on branch \`${branch}\` in an isolated Superset workspace.`,
+    `You are a coding agent working the nosterOS repo on branch \`${branch}\` in an isolated Superset workspace.`,
     '',
     `Task from the Conductor (UI change requested by the operator):`,
     request,

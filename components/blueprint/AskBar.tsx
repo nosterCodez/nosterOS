@@ -76,7 +76,7 @@ export const AskBar = forwardRef<AskHandle, { scope: HAny | null; onClearScope: 
         <div className="bh-ask-row">
           <button type="button" className="pressable bh-ask-scope" title={scope ? 'Clear selection (esc)' : 'Ask about the whole system'} onClick={() => (scope ? onClearScope() : inputRef.current?.focus())}>
             <i className="sw" />
-            <span>{scope ? `Ask about ${scope.name}` : 'Ask Founder OS'}</span>
+            <span>{scope ? `Ask about ${scope.name}` : 'Ask nosterOS'}</span>
           </button>
           <input
             ref={inputRef}

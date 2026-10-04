@@ -1,5 +1,5 @@
 /**
- * The shape of the "Founder OS Cockpit" issue on the Paperclip board.
+ * The shape of the "nosterOS Cockpit" issue on the Paperclip board.
  *
  * The cockpit is a standing chat thread between the operator and the Conductor,
  * not a task with a disposition. Paperclip has two automations that treat it
@@ -17,10 +17,10 @@
  * connector applies it on create and on repair.
  */
 
-export const COCKPIT_TITLE = 'Founder OS Cockpit';
+export const COCKPIT_TITLE = 'nosterOS Cockpit';
 
 export const COCKPIT_DESCRIPTION =
-  'Standing thread: the operator talks to the Conductor from the Founder OS panel. ' +
+  'Standing thread: the operator talks to the Conductor from the nosterOS panel. ' +
   'Conductor: treat new comments here as direct messages from the operator. Reply in this thread, concisely. ' +
   'Delegate real work to the departments/Hermes Workers as separate tasks rather than doing it inline. ' +
   'This issue is a chat lane, not a task: leave it in backlog and never move it to in_progress or blocked, ' +

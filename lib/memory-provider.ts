@@ -240,7 +240,7 @@ export function renderBrief(input: RenderInput): { markdown: string; truncated: 
   const degraded = !!input.query && !input.brain.connected;
 
   const header = [
-    `# Founder OS memory · ${new Date(input.now).toISOString()}`,
+    `# nosterOS memory · ${new Date(input.now).toISOString()}`,
     `G-Brain: ${input.brain.detail}`,
   ].join('\n');
 

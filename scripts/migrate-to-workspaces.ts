@@ -8,7 +8,7 @@ async function main() {
   if (args.some(arg => !['--dry-run', '--server-stopped'].includes(arg))) throw new Error('Supported options: --dry-run, --server-stopped');
   const dryRun = args.includes('--dry-run');
   if (!dryRun && !args.includes('--server-stopped')) throw new Error('Stop the app and background jobs, then pass --server-stopped. Test on a copy first.');
-  for (const key of ['FOUNDER_OS_DB', 'BANK_DB', 'LEDGER_DB', 'PAYKIT_DB', 'ADSCOUT_STORE_DIR', 'ADPILOT_DATA_PATH']) {
+  for (const key of ['NOSTEROS_DB', 'FOUNDER_OS_DB', 'BANK_DB', 'LEDGER_DB', 'PAYKIT_DB', 'ADSCOUT_STORE_DIR', 'ADPILOT_DATA_PATH']) {
     if (process.env[key]) throw new Error(`${key} overrides the default data layout. Consolidate a verified copy under DATA_DIR before migration.`);
   }
   const result = await migrateToWorkspaces({ root: dataDir(), ownerEmail: process.env.NOSTEROS_OWNER_EMAIL ?? '', dryRun });
