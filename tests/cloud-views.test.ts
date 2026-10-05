@@ -85,7 +85,8 @@ test('each Meta source offers its own account picker after shared authorization'
     expect(html).toContain('Find accounts');
     expect(html).toContain('Advanced account selection');
     expect(html).toContain('One Facebook sign-in connects Meta to this workspace');
-    expect(html).toContain('Read-only access; no posts or campaign changes');
+    expect(html).toContain('OmegaOS only reads reports and business assets; no posts or campaign changes');
+    expect(html).toContain('business_management permission can allow management actions');
     expect(html).not.toContain('checked=""');
     if (id === 'instagram') expect(html).toContain('professional account linked to a Facebook Page');
   }
@@ -136,6 +137,14 @@ test('configured paused source allows manual sync and dashboard explains first c
   expect(overview).toContain('Ready for first sync');
   expect(overview).toContain('Automatic updates are optional');
   expect(overview).toContain('/integrations#source-ga4');
+});
+
+test('provider diagnostics render for administrators but not read-only members', () => {
+  const source = { ...sources.find(s => s.id === 'etsy')!, status: 'error', appReady: true, lastError: { provider: 'etsy' as const, httpStatus: 403, code: 'invalid_token' as const } };
+  const admin = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+  expect(admin).toContain('Provider diagnostic: etsy HTTP 403 / invalid_token');
+  const member = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32), readOnly: true }));
+  expect(member).not.toContain('Provider diagnostic'); expect(member).not.toContain('invalid_token');
 });
 
 test('working Google reports lead the dashboard and retain resource, delay, no-data and refresh context', async () => {

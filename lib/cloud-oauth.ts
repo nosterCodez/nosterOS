@@ -16,7 +16,7 @@ export function cloudProvider(input: string): Provider {
     case 'google': return { id, ...google, scopes: ['https://www.googleapis.com/auth/webmasters.readonly', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/youtube.readonly'] };
     case 'google-business': return { id, ...google, scopes: ['https://www.googleapis.com/auth/business.manage'] };
     case 'google-ads': return { id, ...google, scopes: ['https://www.googleapis.com/auth/adwords'] };
-    case 'meta': return { id, authorize: `https://www.facebook.com/${version ?? ''}/dialog/oauth`, token: `https://graph.facebook.com/${version ?? ''}/oauth/access_token`, env: 'OMEGA_META', scopes: ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read'], pkce: false, separator: ',', refresh: false };
+    case 'meta': return { id, authorize: `https://www.facebook.com/${version ?? ''}/dialog/oauth`, token: `https://graph.facebook.com/${version ?? ''}/oauth/access_token`, env: 'OMEGA_META', scopes: ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read', 'business_management'], pkce: false, separator: ',', refresh: false };
     case 'tiktok': return { id, authorize: 'https://www.tiktok.com/v2/auth/authorize/', token: 'https://open.tiktokapis.com/v2/oauth/token/', env: 'OMEGA_TIKTOK', scopes: ['user.info.basic', 'user.info.stats'], pkce: false, separator: ',', clientName: 'client_key', refresh: true };
     case 'linkedin': throw new CloudError('setup'); // Developer app and reporting product access are not approved.
     case 'etsy': return { id, authorize: 'https://www.etsy.com/oauth/connect', token: 'https://api.etsy.com/v3/public/oauth/token', env: 'OMEGA_ETSY', scopes: ['shops_r'], pkce: true, refresh: true };
@@ -133,11 +133,13 @@ export async function completeAuthorization(ctx: AuthContext, id: string, code: 
     if (!permissions.success || !p.scopes.every(scope => permissions.data.data.some(item => item.permission === scope && item.status === 'granted'))) throw new CloudError('permission');
   }
   await reauthorize();
-  ctx.db.connectionRecords.atomic(() => {
+  return ctx.db.connectionRecords.atomic(() => {
     if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
+    const reconnected = Boolean(oauthGeneration(ctx, id));
     const generation = randomUUID();
     saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation, ...(shop ? { shop } : {}) }));
     for (const source of CLOUD_SOURCES) if (source.provider === id) ctx.db.cloudSources.reauthorize(source.id, generation);
+    return { reconnected };
   });
 }
 export function oauthGeneration(ctx: VaultContext, id: string) {

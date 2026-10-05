@@ -4,7 +4,7 @@ import { readVaultValue, saveVaultValue } from '@/lib/creds';
 import { beginAuthorization, completeAuthorization, disconnectOAuth, providerReady } from '@/lib/cloud-oauth';
 
 let db: ReturnType<typeof openDb>;
-const required = ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read'];
+const required = ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read', 'business_management'];
 const ctx = () => ({ workspace: { id: 'A'.repeat(32) }, user: { id: 'owner' }, sessionBinding: 'session-a', db });
 const start = () => new URL(beginAuthorization(ctx(), 'meta').url);
 const permissions = () => ({ data: required.map(permission => ({ permission, status: 'granted' })) });

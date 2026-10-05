@@ -1,5 +1,7 @@
+import { etsyDiagnostic, type ProviderDiagnostic } from '@/lib/cloud-diagnostics';
+
 export class CloudError extends Error {
-  constructor(public code: 'permission' | 'authentication' | 'api_disabled' | 'platform_approval' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider') { super(code); }
+  constructor(public code: 'permission' | 'authentication' | 'api_disabled' | 'platform_approval' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider', public diagnostic?: ProviderDiagnostic) { super(code); }
 }
 const HOSTS = new Set(['oauth2.googleapis.com', 'www.googleapis.com', 'analyticsdata.googleapis.com', 'analyticsadmin.googleapis.com', 'mybusinessbusinessinformation.googleapis.com', 'businessprofileperformance.googleapis.com', 'googleads.googleapis.com', 'api.stripe.com', 'graph.facebook.com', 'open.tiktokapis.com', 'api.etsy.com', 'api.linkedin.com', 'www.linkedin.com']);
 async function boundedJson(response: Response, limit: number): Promise<unknown> {
@@ -41,6 +43,12 @@ export async function cloudJson(url: string, init: RequestInit = {}, fetcher: ty
     const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
     const response = await fetcher(target.toString(), { ...init, signal, redirect: 'error', cache: 'no-store' });
     if (!response.ok) {
+      if (target.hostname === 'api.etsy.com' && response.status >= 400 && response.status <= 599) {
+        let error: unknown;
+        try { const body = await boundedJson(response, 65_536); if (record(body)) error = body.error; } catch { /* Unknown errors remain redacted. */ }
+        if (signal.aborted) throw new CloudError('timeout');
+        throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider', etsyDiagnostic(response.status, error));
+      }
       const metaCode = target.hostname === 'graph.facebook.com' ? await metaError(response) : undefined;
       if (metaCode) throw new CloudError(metaCode);
       const googleCode = response.status === 403 && target.hostname.endsWith('.googleapis.com') ? await googleError(response) : undefined;

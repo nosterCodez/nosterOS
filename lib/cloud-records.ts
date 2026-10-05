@@ -1,9 +1,10 @@
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { ProviderDiagnosticSchema, type ProviderDiagnostic } from '@/lib/cloud-diagnostics';
 export const CloudSnapshotSchema = z.object({ at: z.string().datetime(), period: z.string().max(200), values: z.record(z.string(), z.number().finite().nullable()), mode: z.enum(['test', 'live']).optional() }).strict();
 export type CloudSnapshot = z.infer<typeof CloudSnapshotSchema>;
-const SourceSchema = z.object({ id: z.string(), resource: z.string(), enabled: z.boolean(), revision: z.string(), credentialVersion: z.string(), lastAttempt: z.number().nullable(), snapshot: CloudSnapshotSchema.nullable(), error: z.string().nullable(), claim: z.string().nullable(), claimUntil: z.number() });
+const SourceSchema = z.object({ id: z.string(), resource: z.string(), enabled: z.boolean(), revision: z.string(), credentialVersion: z.string(), lastAttempt: z.number().nullable(), snapshot: CloudSnapshotSchema.nullable(), error: z.string().nullable(), claim: z.string().nullable(), claimUntil: z.number(), lastError: z.object({ detail: ProviderDiagnosticSchema, credentialVersion: z.string() }).nullable().default(null) });
 export type SourceRecord = z.infer<typeof SourceSchema>;
 export function createCloudSources(db: Database.Database) {
   db.exec('CREATE TABLE IF NOT EXISTS cloud_sources(id TEXT PRIMARY KEY,payload TEXT NOT NULL)');
@@ -14,11 +15,16 @@ export function createCloudSources(db: Database.Database) {
     get,
     configure(id: string, resource: string, enabled: boolean, credentialVersion: string) {
       const old = get(id), sameSource = old?.resource === resource && old?.credentialVersion === credentialVersion;
-      put({ id, resource, enabled, credentialVersion, revision: randomUUID(), lastAttempt: old?.lastAttempt ?? null, snapshot: sameSource ? old?.snapshot ?? null : null, error: null, claim: null, claimUntil: 0 });
+      put({ id, resource, enabled, credentialVersion, revision: randomUUID(), lastAttempt: old?.lastAttempt ?? null, snapshot: sameSource ? old?.snapshot ?? null : null, error: null, lastError: null, claim: null, claimUntil: 0 });
     },
     reauthorize(id: string, credentialVersion: string) {
       const old = get(id);
-      if (old) put({ ...old, credentialVersion, revision: randomUUID(), error: null, claim: null, claimUntil: 0 });
+      if (old) put({ ...old, credentialVersion, revision: randomUUID(), error: null, lastError: null, claim: null, claimUntil: 0 });
+    },
+    recordError(id: string, credentialVersion: string, error: string, detail: ProviderDiagnostic) {
+      const old = get(id);
+      // Discovery can fail before resource selection. Keep that source unconfigured.
+      put({ id, resource: '', enabled: false, revision: randomUUID(), credentialVersion: '', lastAttempt: null, snapshot: null, claim: null, claimUntil: 0, ...old, error, lastError: { detail, credentialVersion } });
     },
     claim(id: string, revision: string, claim: string, now: number, manual = false) {
       return db.transaction(() => { const r = get(id); const cooldown = manual && r?.error ? 60_000 : 15 * 60_000;
@@ -26,14 +32,14 @@ export function createCloudSources(db: Database.Database) {
         put({ ...r, claim, claimUntil: now + 120_000, lastAttempt: now }); return true;
       }).immediate();
     },
-    finish(id: string, revision: string, claim: string, snapshot: CloudSnapshot | null, error: string | null, writePoints: () => void = () => {}, stopScheduling = false) {
+    finish(id: string, revision: string, claim: string, snapshot: CloudSnapshot | null, error: string | null, writePoints: () => void = () => {}, stopScheduling = false, diagnostic: ProviderDiagnostic | null = null) {
       // A valid claim may be manual while paused; configure/disconnect always change revision.
       return db.transaction(() => { const r = get(id); if (!r || r.revision !== revision || r.claim !== claim) return false;
         if (snapshot) {
           writePoints();
           db.prepare('INSERT INTO cloud_source_history(source_id,revision,resource,credential_version,payload) VALUES (?,?,?,?,?)').run(id, revision, r.resource, r.credentialVersion, JSON.stringify(CloudSnapshotSchema.parse(snapshot)));
         }
-        put({ ...r, enabled: stopScheduling ? false : r.enabled, snapshot: snapshot ?? r.snapshot, error, claim: null, claimUntil: 0 }); return true;
+        put({ ...r, enabled: stopScheduling ? false : r.enabled, snapshot: snapshot ?? r.snapshot, error, lastError: diagnostic ? { detail: diagnostic, credentialVersion: r.credentialVersion } : null, claim: null, claimUntil: 0 }); return true;
       }).immediate();
     },
     invalidate(id: string) { const r = get(id); if (r) put({ ...r, enabled: false, revision: randomUUID(), claim: null, claimUntil: 0 }); },

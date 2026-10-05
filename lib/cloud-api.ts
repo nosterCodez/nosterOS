@@ -25,13 +25,24 @@ export async function cloudRequest(request: Request) {
         const provider = cloudSource(action.id).provider;
         if (!provider) throw new CloudError('setup');
         const generation = credentialVersion(ctx, action.id);
-        const result = await discoverResources(ctx, action.id);
+        let result, failure: unknown;
+        try { result = await discoverResources(ctx, action.id); } catch (e) { failure = e; }
         const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
         if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || credentialVersion(ctx, action.id) !== generation) throw new CloudError('changed');
+        if (failure instanceof CloudError && failure.diagnostic) {
+          db.cloudSources.recordError(action.id, generation, CLOUD_ERROR_TEXT[failure.code], failure.diagnostic);
+          console.warn('[cloud-provider-error]', { workspaceId: context.workspace.id, source: action.id, ...failure.diagnostic });
+          return json({ error: CLOUD_ERROR_TEXT[failure.code], sources: sourceViews(ctx, true) }, 400);
+        }
+        if (failure) throw failure;
         return json(result);
       }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);
-      if (action?.action === 'sync') outcome = await syncSource(ctx, action.id, { manual: true });
+      if (action?.action === 'sync') {
+        outcome = await syncSource(ctx, action.id, { manual: true });
+        const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
+        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id) throw new CloudError('changed');
+      }
       if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id), Date.now(), action.shop));
       if (action?.action === 'disconnect') {
         const source = cloudSource(action.id);
@@ -39,7 +50,7 @@ export async function cloudRequest(request: Request) {
         if (source.provider) { disconnectOAuth(ctx, source.provider); for (const s of CLOUD_SOURCES.filter(s => s.provider === source.provider)) db.cloudSources.invalidate(s.id); }
         else db.cloudSources.invalidate(source.id);
       }
-      return json({ sources: sourceViews(ctx), ...(outcome ? { outcome } : {}) });
+      return json({ sources: sourceViews(ctx, true), ...(outcome ? { outcome } : {}) });
     });
   } catch (e) {
     if (e instanceof SessionError) return json({ error: e.message }, e.status);
@@ -57,11 +68,11 @@ export async function cloudCallback(request: Request, provider: string) {
   try {
     const context = await requireWorkspace('admin', request.headers, 'api');
     const url = new URL(request.url); if (url.searchParams.has('error')) throw new CloudError('permission');
-    await withWorkspaceLease(context, db => completeAuthorization({ ...context, db, sessionBinding: sessionBinding(request) }, oauthId(provider), url.searchParams.get('code') ?? '', url.searchParams.get('state') ?? '', fetch, async () => {
+    const result = await withWorkspaceLease(context, db => completeAuthorization({ ...context, db, sessionBinding: sessionBinding(request) }, oauthId(provider), url.searchParams.get('code') ?? '', url.searchParams.get('state') ?? '', fetch, async () => {
       const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
       if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id) throw new CloudError('changed');
     }, url.searchParams));
-    destination.searchParams.set('connection', 'authorized');
+    destination.searchParams.set('connection', result.reconnected ? 'reconnected' : 'authorized');
   } catch { destination.searchParams.set('connection', 'failed'); }
   return new Response(null, { status: 303, headers: { Location: destination.toString(), 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } });
 }

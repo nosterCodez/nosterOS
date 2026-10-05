@@ -118,3 +118,19 @@ Chrome profile that owns the nosterlogistics app also has an open shop
    shop endpoint handles a user with exactly one shop.
 3. Reconnect should show "Reconnected" feedback instead of silently
    reloading.
+
+### Addendum Report - October 5, 2026, 17:23 CDT
+- Restored both earlier reports and Claude's addendum in commit `20832a4`; this implementation remains local, with no push or deployment.
+- Added `business_management` to requested and checked Meta permissions; Noe must add it to the Meta configuration and reconnect. No provider configuration changed here.
+- Meta discovery unions personal and portfolio assets, deduplicates, and caps discovery at 10 businesses and 100 Pages (100 ad accounts), with bounded cursor pagination and request counts.
+- Graph discovery uses GET only; tests cover this, both caps, deduplication, and personal Pages when no businesses exist. OAuth token exchange remains its separate protocol operation.
+- Claude explicitly approved updating the old four-scope and /me-only request-count assertions to the five-permission, bounded-portfolio behavior.
+- Added Etsy HTTP-status/allowlisted-code diagnostics; unknown provider text becomes `unrecognized_provider_error`. No raw provider bodies, secrets, or headers are persisted or logged.
+- Diagnostics are credential-generation-bound, owner/admin-only, and logged with workspace ID; post-I/O membership and generation checks prevent stale/cross-workspace disclosure.
+- Discovery errors before shop selection stay unconfigured, including after reconnect. Added regression tests for this and safe diagnostic visibility/redaction.
+- Reauthorization now shows Reconnected feedback while retaining M6i resource selections and scheduling preferences; first authorization remains distinct.
+- Typecheck and isolated production build passed. Full Windows suite: 3,889 passed, 4 known baseline assertion failures; 367/374 suites passed, including 3 known EPERM cleanup failures among the 7 failed suites.
+- Baseline failures: interaction-layer BrainCore path exemption, paths, skills-plugins, superset-dispatch; cleanup: lead-magnet-actions, lead-magnets-route, roadmap-mock-5h. No new failure outside that baseline.
+- Etsy keystring:shared_secret header and single-shop response handling passed synthetic GET tests. Actual deployed credentials and the live Etsy error cause remain unverified.
+- Railway's connected tool could not execute in the running app/token context, so the two requested live Etsy GETs produced no verified status/code. No token export, private-key-file read, service restart, or workaround deployment was attempted.
+- Removed build-generated tsconfig includes; shared dev server and unrelated handoff edits were left untouched. Next: Claude review/deploy approval for M6h+M6i, then capture a real Etsy diagnostic or provide authenticated app-runtime execution for the requested GETs.

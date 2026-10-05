@@ -59,7 +59,7 @@ function metaToken() {
 }
 test('discovers Pages without requesting or returning Page tokens', async () => {
   metaToken();
-  const fetcher = vi.fn(async (_url: string | URL | Request) => Response.json({ data: [{ id: '123', name: 'Business Page', access_token: 'must-not-escape' }] }));
+  const fetcher = vi.fn(async (url: string | URL | Request) => Response.json({ data: new URL(String(url)).pathname.endsWith('/me/accounts') ? [{ id: '123', name: 'Business Page', access_token: 'must-not-escape' }] : [] }));
   expect(await discoverResources(ctx(), 'facebook', fetcher)).toEqual({ resources: [{ id: '123', label: 'Business Page' }], truncated: false });
   const url = new URL(String(fetcher.mock.calls[0]?.[0]));
   expect(url.pathname).toBe('/v26.0/me/accounts');
@@ -68,25 +68,26 @@ test('discovers Pages without requesting or returning Page tokens', async () => 
 });
 test('discovers linked Instagram accounts and skips Pages without them', async () => {
   metaToken();
-  const fetcher = vi.fn(async () => Response.json({ data: [{ id: '1', name: 'Page', instagram_business_account: { id: '99', username: 'business' } }, { id: '2', name: 'Other Page' }] }));
+  const fetcher = vi.fn(async (url: string | URL | Request) => Response.json({ data: new URL(String(url)).pathname.endsWith('/me/accounts') ? [{ id: '1', name: 'Page', instagram_business_account: { id: '99', username: 'business' } }, { id: '2', name: 'Other Page' }] : [] }));
   expect((await discoverResources(ctx(), 'instagram', fetcher)).resources).toEqual([{ id: '99', label: '@business - Page' }]);
 });
 test('discovers ad accounts with numeric IDs and does not follow next URLs', async () => {
   metaToken(); const urls: string[] = [];
   const fetcher = vi.fn(async (url: string | URL | Request) => {
     urls.push(String(url));
+    if (new URL(String(url)).pathname.endsWith('/me/businesses')) return Response.json({ data: [] });
     return Response.json({ data: [{ id: 'act_123', account_id: '123', name: 'Business ads' }], ...(urls.length === 1 ? { paging: { next: 'https://evil.test/?access_token=secret', cursors: { after: 'cursor' } } } : {}) });
   });
   expect((await discoverResources(ctx(), 'meta-ads', fetcher)).resources).toEqual([{ id: '123', label: 'Business ads' }]);
-  expect(urls).toHaveLength(2);
+  expect(urls).toHaveLength(3);
   expect(urls.every(u => new URL(u).hostname === 'graph.facebook.com')).toBe(true);
   expect(new URL(urls[1]).searchParams.get('after')).toBe('cursor');
 });
 test('bounds Meta pagination and rejects malformed paging or asset data', async () => {
   metaToken();
-  const fetcher = vi.fn(async () => Response.json({ data: [], paging: { next: 'https://graph.facebook.com/next', cursors: { after: 'more' } } }));
+  const fetcher = vi.fn(async (url: string | URL | Request) => Response.json(new URL(String(url)).pathname.endsWith('/me/businesses') ? { data: [] } : { data: [], paging: { next: 'https://graph.facebook.com/next', cursors: { after: `more-${fetcher.mock.calls.length}` } } }));
   expect((await discoverResources(ctx(), 'facebook', fetcher)).truncated).toBe(true);
-  expect(fetcher).toHaveBeenCalledTimes(5);
+  expect(fetcher).toHaveBeenCalledTimes(6);
   await expect(discoverResources(ctx(), 'facebook', async () => Response.json({ data: [{ id: '../me', name: 'Invalid' }] }))).rejects.toThrow('invalid_data');
   await expect(discoverResources(ctx(), 'facebook', async () => Response.json({ data: [], paging: { next: 'https://example.com' } }))).rejects.toThrow('invalid_data');
 });

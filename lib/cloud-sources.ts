@@ -29,17 +29,19 @@ export function configureSource(ctx: VaultContext, id: string, input: { resource
   if (id === 'printify' && previous?.error === PRINTIFY_RECONNECT && previous.credentialVersion === generation) throw new CloudError('authentication');
   ctx.db.cloudSources.configure(id, resource, input.enabled, generation);
 }
-export function sourceView(ctx: VaultContext, id: string, now = Date.now()) {
+export function sourceView(ctx: VaultContext, id: string, now = Date.now(), includeDiagnostics = false) {
   const source = cloudSource(id), record = ctx.db.cloudSources.get(id);
   let generation = ''; let vaultError = false;
   try { generation = credentialVersion(ctx, id); } catch { vaultError = true; }
   const matches = Boolean(generation && generation === record?.credentialVersion);
+  const configured = Boolean(record && matches && (!source.resourcePattern || new RegExp(source.resourcePattern).test(record.resource)));
   const snapshot: CloudSnapshot | null = matches ? record?.snapshot ?? null : null;
   const stale = Boolean(snapshot && (record?.error || now - Date.parse(snapshot.at) > 2 * 15 * 60_000));
-  const status = source.planned ? 'planned' : vaultError ? 'vault_unavailable' : !generation ? 'not_connected' : rejectedSource(ctx, id) ? 'error' : !record || !matches ? 'needs_setup' : record.error === VERIFICATION_PAUSED || (id === 'printify' && record.error === PRINTIFY_RECONNECT) ? 'error' : !record.enabled ? 'paused' : record.error ? 'error' : snapshot ? stale ? 'stale' : 'connected' : 'ready';
+  const status = source.planned ? 'planned' : vaultError ? 'vault_unavailable' : !generation ? 'not_connected' : rejectedSource(ctx, id) ? 'error' : !record || !configured ? 'needs_setup' : record.error === VERIFICATION_PAUSED || (id === 'printify' && record.error === PRINTIFY_RECONNECT) ? 'error' : !record.enabled ? 'paused' : record.error ? 'error' : snapshot ? stale ? 'stale' : 'connected' : 'ready';
   return { ...source, resource: record?.resource ?? '', enabled: record?.enabled ?? false, status, stale, snapshot, error: matches ? record?.error ?? null : null,
+    ...(includeDiagnostics ? { lastError: generation && record?.lastError?.credentialVersion === generation ? record.lastError.detail : null } : {}),
     connectionMethod: id === 'printify' && !vaultError ? printifyCredential(ctx).method : null,
     appReady: source.provider ? providerReady(source.provider) : true, lastAttempt: matches ? record?.lastAttempt ?? null : null };
 }
-export function sourceViews(ctx: VaultContext) { return CLOUD_SOURCES.map(s => sourceView(ctx, s.id)); }
+export function sourceViews(ctx: VaultContext, includeDiagnostics = false) { return CLOUD_SOURCES.map(s => sourceView(ctx, s.id, Date.now(), includeDiagnostics)); }
 export type CloudSourceView = ReturnType<typeof sourceView>;

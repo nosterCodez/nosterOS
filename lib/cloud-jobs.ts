@@ -55,7 +55,11 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
     // A delayed failure cannot disable a replacement token or a new OAuth grant.
     let unchanged = false;
     try { unchanged = credentialVersion(ctx, id) === generation; } catch { /* Vault unavailable. */ }
-    if ((!rejectedPersonalToken && !deniedOAuth) || unchanged) ctx.db.cloudSources.finish(id, record.revision, claim, null, error, undefined, rejectedPersonalToken || deniedOAuth);
+    if ((!rejectedPersonalToken && !deniedOAuth) || unchanged) {
+      const diagnostic = e instanceof CloudError ? e.diagnostic ?? null : null;
+      const saved = ctx.db.cloudSources.finish(id, record.revision, claim, null, error, undefined, rejectedPersonalToken || deniedOAuth, diagnostic);
+      if (saved && diagnostic) console.warn('[cloud-provider-error]', { workspaceId: ctx.workspace.id, source: id, ...diagnostic });
+    }
   } finally { signal.removeEventListener('abort', onAbort); }
   ctx.db.collectorRuns.finish(runId, { ok: !error, pointsWritten, error });
   return { ok: !error, pointsWritten, error };

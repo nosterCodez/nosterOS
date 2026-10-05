@@ -100,6 +100,46 @@ test('auto-read configure persists across fresh reads; viewer toggles fail witho
   expect((await call('POST', { ...configuration, enabled: false })).status).toBe(200);
   expect((await (await call()).json()).sources.find((s: { id: string }) => s.id === 'ga4').enabled).toBe(false);
 });
+
+test('successful reauthorization redirects with reconnected feedback and preserves saved settings', async () => {
+  vi.stubEnv('OMEGA_GOOGLE_CLIENT_ID', 'fixture-client'); vi.stubEnv('OMEGA_GOOGLE_CLIENT_SECRET', 'fixture-secret');
+  saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:google:tokens', JSON.stringify({ access: 'old-fixture', expires: Date.now() + 3600000, generation: 'old' }));
+  await call('POST', configuration);
+  const start = await (await call('POST', { action: 'authorize', id: 'google' })).json();
+  const callback = new URL('http://localhost:4100/api/connections/oauth/google/callback');
+  callback.searchParams.set('code', 'fixture-code'); callback.searchParams.set('state', new URL(start.url).searchParams.get('state')!);
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ access_token: 'new-fixture', expires_in: 3600 })));
+  try {
+    const result = await cloudCallback(new Request(callback, { headers: { cookie: 'better-auth.session_token=test' } }), 'google');
+    expect(result.headers.get('location')).toBe('http://localhost:4100/integrations?connection=reconnected');
+    expect(dbs.get(A)!.cloudSources.get('ga4')).toMatchObject({ resource: '12345', enabled: true });
+  } finally { vi.unstubAllGlobals(); }
+});
+
+test('Etsy diagnostics require current admin access, persist safely and never leak across workspaces', async () => {
+  vi.stubEnv('OMEGA_ETSY_CLIENT_ID', 'fixture'); vi.stubEnv('OMEGA_ETSY_CLIENT_SECRET', 'fixture-secret');
+  saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:etsy:tokens', JSON.stringify({ access: '123.fixture-token', generation: 'one', expires: Date.now() + 3600000 }));
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const fetcher = vi.fn(async () => Response.json({ error: 'invalid_token', secret: 'private-provider-text' }, { status: 403 }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const action = { action: 'resources', id: 'etsy' };
+    identity(A, 'viewer'); expect((await call('POST', action)).status).toBe(403); expect(fetcher).not.toHaveBeenCalled();
+    identity();
+    const response = await call('POST', action); expect(response.status).toBe(400);
+    const body = await response.json();
+    const detail = { provider: 'etsy', httpStatus: 403, code: 'invalid_token' };
+    expect(body.sources.find((s: { id: string }) => s.id === 'etsy').lastError).toEqual(detail);
+    expect(JSON.stringify(body)).not.toContain('private-provider-text'); expect(JSON.stringify(body)).not.toContain('fixture-token');
+    expect(warn).toHaveBeenCalledWith('[cloud-provider-error]', { workspaceId: A, source: 'etsy', ...detail });
+    identity(B);
+    expect((await (await call()).json()).sources.find((s: { id: string }) => s.id === 'etsy').lastError).toBeNull();
+    expect(dbs.get(B)!.cloudSources.get('etsy')).toBeUndefined();
+    identity(); warn.mockClear();
+    fetcher.mockImplementation(async () => { identity(A, 'viewer'); return Response.json({ error: 'invalid_token' }, { status: 403 }); });
+    expect((await call('POST', action)).status).toBe(403); expect(warn).not.toHaveBeenCalled();
+  } finally { vi.unstubAllGlobals(); warn.mockRestore(); }
+});
 test('cross origin, invalid resource, large body and disabled broad-scope providers are rejected', async () => {
   expect((await call('POST', configuration, { origin: 'https://attacker.example' })).status).toBe(403);
   expect((await call('POST', configuration, { origin: '' })).status).toBe(403);
@@ -180,7 +220,7 @@ test('Meta discovery works without Google credentials and discards changed works
   vi.stubEnv('OMEGA_META_API_VERSION', 'v26.0');
   const context = { workspace: { id: A }, db: dbs.get(A)! };
   saveVaultValue(context, 'oauth:meta:tokens', JSON.stringify({ access: 'private-meta-token', expires: Date.now() + 3600000, generation: 'one' }));
-  const fetcher = vi.fn(async () => Response.json({ data: [{ id: '123', name: 'Business Page' }] }));
+  const fetcher = vi.fn(async (url: string | URL | Request) => Response.json({ data: new URL(String(url)).pathname.endsWith('/me/accounts') ? [{ id: '123', name: 'Business Page' }] : [] }));
   vi.stubGlobal('fetch', fetcher);
   try {
     const action = { action: 'resources', id: 'facebook' };

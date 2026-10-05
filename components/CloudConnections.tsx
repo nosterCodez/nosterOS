@@ -54,7 +54,7 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
     {accountSaved && <p className="mt-3 text-xs leading-5 text-os-muted">Account connection saved to this workspace. Reporting: {SOURCE_STATUS[source.status]}.</p>}
     {source.connectionMethod && <p className="mt-2 text-xs text-os-muted">Active method: {source.connectionMethod}</p>}
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
-    {source.provider === 'meta' && <p className="mt-3 text-xs leading-5 text-os-muted">One Facebook sign-in connects Meta to this workspace. Choose each Page, Instagram account, or ad account separately. Read-only access; no posts or campaign changes.{source.id === 'instagram' && ' Instagram must be a professional account linked to a Facebook Page you can access.'}</p>}
+    {source.provider === 'meta' && <p className="mt-3 text-xs leading-5 text-os-muted">One Facebook sign-in connects Meta to this workspace. Choose each Page, Instagram account, or ad account separately. OmegaOS only reads reports and business assets; no posts or campaign changes. Meta's business_management permission can allow management actions, but OmegaOS does not use them.{source.id === 'instagram' && ' Instagram must be a professional account linked to a Facebook Page you can access.'}</p>}
     {readOnly && <p className="mt-3 text-xs leading-5 text-os-muted">A workspace owner or administrator manages this connection.{source.error && ` ${source.error}`}</p>}
     {!source.planned && !readOnly && <>
       {source.provider ? <div className="mt-4">
@@ -91,6 +91,7 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
       </form>}
       {confirm && <div className="mt-4 border-t border-os-border pt-3 text-xs leading-5"><p>{source.provider ? 'Disconnect this provider from this workspace? Other sources using the same provider will also stop. Revoke access at the provider separately.' : 'Stop automatic collection? Your stored credentials stay in Advanced connections until removed.'}</p><div className="mt-2 flex gap-3"><button className="pressable underline" disabled={busy} onClick={() => void run({ action: 'disconnect', id: source.id })}>Confirm disconnect</button><button className="pressable underline" onClick={() => setConfirm(false)}>Keep</button></div></div>}
       {source.error && <p className="mt-3 text-xs text-os-warn">{source.error}</p>}
+      {source.lastError && <p className="mt-3 break-words text-xs text-os-muted">Provider diagnostic: {source.lastError.provider} HTTP {source.lastError.httpStatus} / {source.lastError.code}</p>}
       <p role="status" aria-live="polite" className="mt-3 text-xs leading-5 text-os-muted">{busy ? 'Working...' : message}</p>
     </>}
   </section>;
@@ -106,10 +107,10 @@ export function CloudConnections({ initial, workspaceId, readOnly = false }: { i
   async function act(body: object): Promise<Result> {
     const response = await fetch('/api/admin/sources', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-omegaos-workspace': workspaceId }, body: JSON.stringify(body) });
     const result = await response.json();
+    if (result.sources) setSources(result.sources);
     if (!response.ok) throw new Error(response.status === 409 ? 'Workspace changed. Reload before continuing.' : result.error ?? 'Connection update failed.');
     if (result.url) { window.location.assign(result.url); return { message: 'Opening account sign-in...' }; }
     if (result.resources) return { resources: result.resources, truncated: result.truncated };
-    if (result.sources) setSources(result.sources);
     return { message: result.outcome?.error ?? result.outcome?.skipped ?? (result.outcome?.ok ? 'Sync complete.' : 'Settings saved.') };
   }
   return <div className="min-w-0 max-w-6xl">

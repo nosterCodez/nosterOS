@@ -19,7 +19,7 @@ the configured trusted `NOSTEROS_BASE_URL` origin, never the request Host header
 | --- | --- | --- |
 | Google | OMEGA_GOOGLE_CLIENT_ID / CLIENT_SECRET | webmasters.readonly, analytics.readonly, youtube.readonly; enable those APIs, configure consent/test users, verify application before wider use |
 | Google Business | Google data app plus OMEGA_GOOGLE_BUSINESS_ENABLED=1 only after access/callback verification | Separate business.manage authorization; OAuth permits edits, but OmegaOS only GETs locations and reports; Google project approval and nonzero quota required |
-| Meta | OMEGA_META_CLIENT_ID / CLIENT_SECRET / OMEGA_META_API_VERSION | pages_show_list, pages_read_engagement, instagram_basic, ads_read; approved app permissions, selected Page/professional Instagram/ad account; explicitly choose supported Graph version |
+| Meta | OMEGA_META_CLIENT_ID / CLIENT_SECRET / OMEGA_META_API_VERSION / optional CONFIG_ID | pages_show_list, pages_read_engagement, instagram_basic, ads_read, business_management; configure all five in Facebook Login for Business when using CONFIG_ID; explicitly choose supported Graph version |
 | TikTok | OMEGA_TIKTOK_CLIENT_ID / CLIENT_SECRET | user.info.basic, user.info.stats; Login Kit and statistics permission approval |
 | Etsy | OMEGA_ETSY_CLIENT_ID / CLIENT_SECRET | shops_r; approved application, matching shop ID; API key:secret header and PKCE |
 | Stripe | No platform app | Workspace owner saves a restricted key with Charges read permission; collection is GET only; test/live labeled; no writes tested to infer key privileges |
@@ -51,6 +51,17 @@ M5i adds Facebook Page, linked Instagram professional account and Meta ad-accoun
 pickers using the same limits. Graph discovery follows only bounded cursors on
 the fixed Graph host; it never follows `paging.next` URLs or returns Page tokens.
 The Meta credential generation (not Google's) is rechecked after discovery.
+M6h expands discovery with GET-only business portfolio reads: `/me/businesses`,
+`/{business-id}/owned_pages`, `/client_pages`, and `/owned_ad_accounts`, unioned
+with personal-account assets. Deduped results are capped at 100 Pages/ad accounts
+and 10 businesses, five response pages per edge, 100 requests and 15 seconds total.
+The business_management permission can permit management operations; OmegaOS
+uses it only for these reads. Noe must add it to the Meta configuration and
+reconnect. The app remains development-mode, not approved for public onboarding.
+Etsy failures retain HTTP status plus an allowlisted code only; unknown provider
+strings are replaced with unrecognized_provider_error. Diagnostics are bound to
+the workspace credential generation and shown only to owners/admins. Server logs
+include the workspace ID and safe diagnostic, never headers/tokens/raw bodies.
 M5j adds Etsy owner-shop discovery using the documented numeric token prefix,
 validates the returned owner, and strips everything except shop ID/name. It also
 adds Business Profile location discovery through accounts/-/locations, requesting

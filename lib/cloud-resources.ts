@@ -8,6 +8,7 @@ import { printifyShops } from '@/lib/cloud-printify';
 import { shopifyResource } from '@/lib/cloud-shopify';
 import { printifyAccess } from '@/lib/printify-credentials';
 import { credentialVersion } from '@/lib/cloud-sources';
+import { discoverMetaResources } from '@/lib/cloud-meta';
 
 export type CloudResource = { id: string; label: string };
 export type ResourceDiscovery = { resources: CloudResource[]; truncated: boolean };
@@ -19,10 +20,6 @@ const Channels = z.object({ items: z.array(z.object({ id: text, snippet: z.objec
 const Locations = z.object({ locations: z.array(z.object({ name: z.string().regex(/^locations\/\d{1,30}$/), title: text })).max(100).default([]), nextPageToken: pageToken });
 const etsyId = z.union([z.number().int().positive().safe(), z.string().regex(/^[1-9]\d{0,29}$/)]).transform(String);
 const EtsyShop = z.object({ shop_id: etsyId, user_id: etsyId, shop_name: text });
-const metaId = z.string().regex(/^\d{1,30}$/);
-const MetaPaging = z.object({ next: z.string().max(16000).optional(), cursors: z.object({ after: z.string().min(1).max(4096).optional() }).optional() }).optional();
-const MetaPages = z.object({ data: z.array(z.object({ id: metaId, name: text, instagram_business_account: z.object({ id: metaId, username: text.optional() }).nullish() })).max(100), paging: MetaPaging });
-const MetaAds = z.object({ data: z.array(z.object({ account_id: metaId, name: text })).max(100), paging: MetaPaging });
 
 export async function discoverResources(ctx: VaultContext, id: string, fetcher: typeof fetch = fetch): Promise<ResourceDiscovery> {
   if (!['search-console', 'ga4', 'youtube', 'google-business', 'google-ads', 'facebook', 'instagram', 'meta-ads', 'etsy', 'printify', 'shopify'].includes(id)) throw new CloudError('setup');
@@ -33,6 +30,12 @@ export async function discoverResources(ctx: VaultContext, id: string, fetcher: 
   const signal = AbortSignal.timeout(15000);
   const shop = id === 'shopify' ? authorizedShop(ctx) : undefined;
   const token = id === 'printify' ? await printifyAccess(ctx, signal, fetcher) : await accessFor(ctx, provider, signal, fetcher);
+  if (meta) {
+    const result = await discoverMetaResources(id, token, signal, fetcher);
+    signal.throwIfAborted();
+    if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
+    return result;
+  }
   if (id === 'shopify') {
     const result = await shopifyResource(token, shop!, signal, fetcher);
     signal.throwIfAborted();
@@ -65,23 +68,15 @@ export async function discoverResources(ctx: VaultContext, id: string, fetcher: 
   const resources = new Map<string, CloudResource>();
   let next: string | undefined, truncated = false;
   for (let page = 0; page < 5; page++) {
-    const url = new URL(meta ? `https://graph.facebook.com/${version}/me/${id === 'meta-ads' ? 'adaccounts' : 'accounts'}` : id === 'google-business' ? 'https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations' : id === 'search-console' ? 'https://www.googleapis.com/webmasters/v3/sites' : id === 'ga4' ? 'https://analyticsadmin.googleapis.com/v1beta/accountSummaries' : 'https://www.googleapis.com/youtube/v3/channels');
-    if (meta) { url.searchParams.set('limit', '100'); url.searchParams.set('fields', id === 'meta-ads' ? 'account_id,name' : id === 'instagram' ? 'id,name,instagram_business_account{id,username}' : 'id,name'); }
+    const url = new URL(id === 'google-business' ? 'https://mybusinessbusinessinformation.googleapis.com/v1/accounts/-/locations' : id === 'search-console' ? 'https://www.googleapis.com/webmasters/v3/sites' : id === 'ga4' ? 'https://analyticsadmin.googleapis.com/v1beta/accountSummaries' : 'https://www.googleapis.com/youtube/v3/channels');
     if (id === 'ga4') url.searchParams.set('pageSize', '200');
     if (id === 'google-business') { url.searchParams.set('pageSize', '100'); url.searchParams.set('readMask', 'name,title'); }
     if (id === 'youtube') { url.searchParams.set('part', 'snippet'); url.searchParams.set('mine', 'true'); url.searchParams.set('maxResults', '50'); }
-    if (next) url.searchParams.set(meta ? 'after' : 'pageToken', next);
+    if (next) url.searchParams.set('pageToken', next);
     const raw = await cloudJson(url.toString(), { headers: { Authorization: `Bearer ${token}` }, signal }, fetcher);
     let entries: CloudResource[];
     try {
-      if (meta) {
-        const result = id === 'meta-ads' ? MetaAds.parse(raw) : MetaPages.parse(raw);
-        // Graph next URLs may contain credentials; use only the bounded cursor.
-        next = result.paging?.next ? result.paging.cursors?.after : undefined;
-        if (result.paging?.next && !next) throw new CloudError('invalid_data');
-        if (id === 'meta-ads') entries = MetaAds.parse(raw).data.map(a => ({ id: a.account_id, label: a.name }));
-        else entries = MetaPages.parse(raw).data.flatMap(p => id === 'facebook' ? [{ id: p.id, label: p.name }] : p.instagram_business_account ? [{ id: p.instagram_business_account.id, label: p.instagram_business_account.username ? `@${p.instagram_business_account.username} - ${p.name}` : p.name }] : []);
-      } else if (id === 'search-console') {
+      if (id === 'search-console') {
         entries = Sites.parse(raw).siteEntry.filter(s => s.permissionLevel !== 'siteUnverifiedUser').map(s => ({ id: s.siteUrl, label: s.siteUrl }));
         next = undefined;
       } else if (id === 'ga4') {

@@ -15,11 +15,11 @@ export default async function IntegrationsPage({ searchParams }: { searchParams?
   }
   const initial = await withWorkspaceLease(context, db => {
     const scoped = { ...context, db };
-    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped), email: emailDefaults(scoped) };
+    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped, true), email: emailDefaults(scoped) };
   });
   const result = (await searchParams)?.connection;
   return <><PageHeader eyebrow={context.workspace.name} title="Connections" />
-    {result && <p role="status" className="mb-6 text-sm text-os-muted">{result === 'authorized' ? 'Connected. Your account connection is securely saved to this workspace. Choose what to report on below; automatic updates stay off until you enable them.' : 'Authorization did not complete. Check the account, app permissions and active workspace, then try again.'}</p>}
+    {result && <p role="status" className="mb-6 text-sm text-os-muted">{result === 'reconnected' ? 'Reconnected. Your saved account selections and automatic-update settings have been kept. The next sync will check access.' : result === 'authorized' ? 'Connected. Your account connection is securely saved to this workspace. Choose what to report on below and review your automatic-update settings.' : 'Authorization did not complete. Check the account, app permissions and active workspace, then try again.'}</p>}
     <CloudConnections key={`sources:${context.workspace.id}`} workspaceId={context.workspace.id} initial={initial.sources} />
     <details id="credentials" className="mt-12 scroll-mt-24"><summary className="mb-5 cursor-pointer text-sm font-semibold focus-visible:outline focus-visible:outline-os-accent">Advanced connections</summary><WorkspaceConnections key={context.workspace.id} workspaceId={context.workspace.id} initial={initial} /></details></>;
 }
