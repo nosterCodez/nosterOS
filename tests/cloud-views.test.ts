@@ -62,3 +62,15 @@ test('dashboard renders real zero, unknown placeholders, source period, stale an
     writeFileSync(join(process.env.OMEGA_PREVIEW_DIR, 'dashboard.html'), html);
   }
 });
+
+test('configured paused source allows manual sync and dashboard explains first collection', async () => {
+  const paused = { ...sources.find(s => s.id === 'ga4')!, resource: '123', status: 'paused', appReady: true };
+  const connection = renderToStaticMarkup(createElement(CloudConnections, { initial: [paused], workspaceId: 'A'.repeat(32) }));
+  const syncButton = connection.match(/<button[^>]*>(?:(?!<\/button>)[\s\S])*Sync now<\/button>/)?.[0];
+  expect(syncButton).toBeDefined(); expect(syncButton).not.toContain('disabled=""');
+  vi.mocked(sourceViews).mockReturnValue([paused]);
+  const overview = renderToStaticMarkup(await WorkspaceDashboard());
+  expect(overview).toContain('Ready for first sync');
+  expect(overview).toContain('Automatic updates are optional');
+  expect(overview).toContain('/integrations#source-ga4');
+});

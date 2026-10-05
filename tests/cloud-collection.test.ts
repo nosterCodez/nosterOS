@@ -16,6 +16,31 @@ function token(id = 'google', expires = Date.now() + 3600000) { saveVaultValue(c
 function mockFetch(body: unknown) { return vi.fn<typeof fetch>().mockImplementation(async () => Response.json(body)); }
 beforeEach(() => { db = openDb(':memory:'); vi.stubEnv('NOSTEROS_MASTER_KEY', randomBytes(32).toString('hex')); vi.stubEnv('NOSTEROS_BASE_URL', 'http://localhost:4100'); vi.stubEnv('OMEGA_GOOGLE_CLIENT_ID', 'client'); vi.stubEnv('OMEGA_GOOGLE_CLIENT_SECRET', 'secret'); });
 afterEach(() => { db.close(); vi.unstubAllEnvs(); });
+test('manual sync collects while paused without enabling scheduled collection and retains cooldown', async () => {
+  token(); configureSource(context(), 'ga4', { enabled: false, resource: '123' });
+  const collect = vi.fn<typeof collectCloud>().mockResolvedValue({ at: now.toISOString(), period: 'Fixture GA4', values: { users: 7, sessions: 9, keyEvents: 0 } });
+  expect(await syncSource(context(), 'ga4', { now, collect })).toMatchObject({ skipped: 'paused' });
+  expect(collect).not.toHaveBeenCalled();
+  expect(await syncSource(context(), 'ga4', { now, collect, manual: true })).toMatchObject({ ok: true, pointsWritten: 3 });
+  expect(sourceView(context(), 'ga4')).toMatchObject({ enabled: false, status: 'paused', snapshot: { values: { users: 7 } } });
+  expect(await syncSource(context(), 'ga4', { now, collect, manual: true })).toHaveProperty('skipped');
+  expect(await syncSource(context(), 'ga4', { now: new Date(+now + 900001), collect })).toMatchObject({ skipped: 'paused' });
+  expect(collect).toHaveBeenCalledOnce();
+});
+
+test('paused manual sync cannot publish after a concurrent disconnect or reconfiguration', async () => {
+  token(); configureSource(context(), 'ga4', { enabled: false, resource: '123' });
+  const collect = vi.fn<typeof collectCloud>().mockImplementation(async () => {
+    configureSource(context(), 'ga4', { enabled: false, resource: '456' });
+    return { at: now.toISOString(), period: 'Old resource', values: { users: 999 } };
+  });
+  expect(await syncSource(context(), 'ga4', { now, collect, manual: true })).toMatchObject({ ok: false });
+  expect(sourceView(context(), 'ga4').snapshot).toBeNull();
+  expect(db.metricPoints.latest('cloud.ga4.users', 'workspace')).toBeNull();
+  collect.mockImplementation(async () => { db.cloudSources.invalidate('ga4'); return { at: now.toISOString(), period: 'Disconnected', values: { users: 999 } }; });
+  expect(await syncSource(context(), 'ga4', { now: new Date(+now + 900001), collect, manual: true })).toMatchObject({ ok: false });
+  expect(sourceView(context(), 'ga4').snapshot).toBeNull();
+});
 test('Stripe paginates, uses captured amounts, excludes other currency/failed charges and labels test mode', async () => {
   saveCredential(context(), 'STRIPE_SECRET_KEY', 'rk_test_fixture');
   const charge = { id: 'ch_1', amount: 2000, amount_captured: 1000, amount_refunded: 200, paid: true, captured: true, status: 'succeeded', currency: 'usd', livemode: false };

@@ -28,7 +28,7 @@ export async function cloudRequest(request: Request) {
         return json(result);
       }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);
-      if (action?.action === 'sync') outcome = await syncSource(ctx, action.id);
+      if (action?.action === 'sync') outcome = await syncSource(ctx, action.id, { manual: true });
       if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id)));
       if (action?.action === 'disconnect') {
         const source = cloudSource(action.id);

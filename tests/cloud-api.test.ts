@@ -24,6 +24,22 @@ beforeEach(() => {
 });
 afterEach(() => { dbs.forEach(db => db.close()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 const configuration = { action: 'configure', id: 'ga4', resource: '12345', enabled: true };
+test('admin manual sync reads only its workspace and leaves recurring collection disabled', async () => {
+  saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:google:tokens', JSON.stringify({ access: 'fixture-token', refresh: 'fixture-refresh', expires: Date.now() + 3600000, generation: 'fixture' }));
+  await call('POST', { ...configuration, enabled: false });
+  const fetcher = vi.fn(async () => Response.json({ metricHeaders: [{ name: 'activeUsers' }], rows: [{ metricValues: [{ value: '12' }] }] }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    identity(A, 'member'); expect((await call('POST', { action: 'sync', id: 'ga4' })).status).toBe(403);
+    identity(); expect((await call('POST', { action: 'sync', id: 'ga4' }, { origin: 'https://attacker.test' })).status).toBe(403);
+    const result = await (await call('POST', { action: 'sync', id: 'ga4' })).json();
+    expect(result.outcome.ok).toBe(true);
+    expect(result.sources.find((s: { id: string }) => s.id === 'ga4')).toMatchObject({ enabled: false, snapshot: { values: { users: 12 } } });
+    identity(B); expect((await (await call('POST', { action: 'sync', id: 'ga4' })).json()).outcome).toHaveProperty('skipped');
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(dbs.get(B)!.cloudSources.get('ga4')).toBeUndefined();
+  } finally { vi.unstubAllGlobals(); }
+});
 test('admin can configure only the current workspace; state and responses are isolated', async () => {
   expect((await call('POST', configuration)).status).toBe(200); identity(B, 'admin');
   const response = await (await call()).json(); expect(response.sources.find((s: { id: string }) => s.id === 'ga4').resource).toBe('');

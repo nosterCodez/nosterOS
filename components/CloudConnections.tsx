@@ -34,7 +34,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Unable to update connection.'); }
     finally { setBusy(false); }
   }
-  return <section aria-label={source.name} className="min-w-0 rounded border border-os-border p-5">
+  return <section id={`source-${source.id}`} aria-label={source.name} className="min-w-0 scroll-mt-24 rounded border border-os-border p-5">
     <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{connectionLabel}</span></div>
     {accountSaved && <p className="mt-3 text-xs leading-5 text-os-muted">Account connection saved to this workspace. Reporting: {SOURCE_STATUS[source.status]}.</p>}
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
@@ -65,7 +65,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
         <label className="flex items-start gap-2 text-xs leading-5"><input type="checkbox" className="mt-1" checked={enabled} onChange={event => setEnabled(event.target.checked)} disabled={busy} />Automatically read these account metrics every 15 minutes.</label>
         <div className="flex flex-wrap gap-2">
           <button type="submit" className={`pressable ${control}`} disabled={busy || Boolean(source.resourceLabel && !resource)}><Save size={15} aria-hidden="true" />Save settings</button>
-          <button type="button" className={`pressable ${control}`} disabled={busy || !source.enabled || source.status === 'needs_setup'} onClick={() => void run({ action: 'sync', id: source.id })}><RefreshCw size={15} aria-hidden="true" />Sync now</button>
+          <button type="button" className={`pressable ${control}`} disabled={busy || source.status === 'needs_setup' || resource !== source.resource || enabled !== source.enabled} onClick={() => void run({ action: 'sync', id: source.id })}><RefreshCw size={15} aria-hidden="true" />Sync now</button>
           <button type="button" title={`Disconnect ${source.name}`} aria-label={`Disconnect ${source.name}`} className={`pressable ${control}`} disabled={busy} onClick={() => setConfirm(!confirm)}><Unplug size={15} aria-hidden="true" /></button>
         </div>
       </form>}

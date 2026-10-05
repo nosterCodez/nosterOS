@@ -16,13 +16,14 @@ export function createCloudSources(db: Database.Database) {
       const old = get(id), sameSource = old?.resource === resource && old?.credentialVersion === credentialVersion;
       put({ id, resource, enabled, credentialVersion, revision: randomUUID(), lastAttempt: old?.lastAttempt ?? null, snapshot: sameSource ? old?.snapshot ?? null : null, error: null, claim: null, claimUntil: 0 });
     },
-    claim(id: string, revision: string, claim: string, now: number) {
-      return db.transaction(() => { const r = get(id); if (!r || !r.enabled || r.revision !== revision || r.claimUntil > now || (r.lastAttempt !== null && now - r.lastAttempt < 15 * 60_000)) return false;
+    claim(id: string, revision: string, claim: string, now: number, manual = false) {
+      return db.transaction(() => { const r = get(id); if (!r || (!r.enabled && !manual) || r.revision !== revision || r.claimUntil > now || (r.lastAttempt !== null && now - r.lastAttempt < 15 * 60_000)) return false;
         put({ ...r, claim, claimUntil: now + 120_000, lastAttempt: now }); return true;
       }).immediate();
     },
     finish(id: string, revision: string, claim: string, snapshot: CloudSnapshot | null, error: string | null, writePoints: () => void = () => {}) {
-      return db.transaction(() => { const r = get(id); if (!r || !r.enabled || r.revision !== revision || r.claim !== claim) return false;
+      // A valid claim may be manual while paused; configure/disconnect always change revision.
+      return db.transaction(() => { const r = get(id); if (!r || r.revision !== revision || r.claim !== claim) return false;
         if (snapshot) {
           writePoints();
           db.prepare('INSERT INTO cloud_source_history(source_id,revision,resource,credential_version,payload) VALUES (?,?,?,?,?)').run(id, revision, r.resource, r.credentialVersion, JSON.stringify(CloudSnapshotSchema.parse(snapshot)));

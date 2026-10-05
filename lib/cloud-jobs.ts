@@ -9,14 +9,14 @@ import { getMetric } from '@/lib/metrics/registry';
 import { listWorkspaces } from '@/lib/workspace-jobs';
 import { withWorkspaceDb } from '@/lib/workspace-storage';
 
-export async function syncSource(ctx: VaultContext, id: string, options: { signal?: AbortSignal; collect?: typeof collectCloud; now?: Date; budgetMs?: number } = {}) {
+export async function syncSource(ctx: VaultContext, id: string, options: { manual?: boolean; signal?: AbortSignal; collect?: typeof collectCloud; now?: Date; budgetMs?: number } = {}) {
   const source = cloudSource(id), record = ctx.db.cloudSources.get(id), now = options.now ?? new Date();
   const claim = randomUUID();
-  if (source.planned || !record?.enabled) return { ok: false, skipped: 'paused' };
+  if (source.planned || !record || (!record.enabled && !options.manual)) return { ok: false, skipped: 'paused' };
   let generation = '';
   try { generation = credentialVersion(ctx, id); } catch { return { ok: false, skipped: 'vault unavailable' }; }
   if (!generation || generation !== record.credentialVersion) return { ok: false, skipped: 'configure connection' };
-  if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now)) return { ok: false, skipped: 'already syncing or next sync not due' };
+  if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now, options.manual)) return { ok: false, skipped: 'Already syncing or synced recently. Try again after 15 minutes.' };
   const runId = ctx.db.collectorRuns.start(`cloud.${id}`, now);
   const budget = AbortSignal.timeout(options.budgetMs ?? 11000);
   const signal = options.signal ? AbortSignal.any([budget, options.signal]) : budget;
