@@ -1,6 +1,6 @@
 # M5b: Returning accounts and emailed team invitations
 
-Status: deployment approved by Noe; release verification in progress
+Status: deployed to private beta; real-inbox/new-device check pending
 Review: Astra security self-review
 
 ## Request
@@ -58,3 +58,17 @@ Run typecheck, full tests, build and document remaining live checks.
 - Browser fixture checks passed at 390px and 1280px: no document overflow, choose workspace, invite payload, resend and acceptance. Compiled CSS with fallback font and mocked HTTP; not production inbox verification.
 - Updated stale-beta-cookie test to use the still-protected get-session endpoint and smoke mocks; reviewed email-entry platform-secret boundary separately without relaxing connector access rules.
 - No real emails, credentials, account records, purchases or Railway settings changed. Existing localhost:4100 server left running; temporary preview stopped. Next: approve deployment and a real invitation/new-device inbox test.
+
+## Deployment Report - Oct 4, 2026 (America/Chicago)
+- Noe explicitly approved deployment in chat; main fast-forwarded through 88de372, including M4/M5 and M5b.
+- Railway deployment f726b44d-3b4d-4bf2-b294-eef42cfffe39 reported SUCCESS at 2026-10-05T01:13:51Z.
+- Existing nosteros-web service, /data volume, accounts, platform secrets and provider configuration retained; no new infrastructure or purchases.
+- Re-ran 29 focused auth/invitation/cloud security tests: all passed. Earlier full-suite/build/typecheck results above still apply to unchanged application code.
+- Anonymous checks: / remains 401 with email-entry link; /sign-in is 200 with the sign-in form.
+- Invalid /join token returns 400/no-store; anonymous get-session and admin/sources APIs remain 401.
+- Existing signed-in Chrome session survived deployment and rendered the new Connections screen with honest disconnected/planned statuses.
+- Live Members page displayed the existing owner and Send email invitation control; no invitation or email was submitted.
+- Live /onboarding listed nosterCodes and Isolation QA - Oct 4, not the create form; selecting nosterCodes opened the existing dashboard and persisted that selection.
+- Dashboard showed no collected data, not fabricated metrics. OAuth account registration/consent and first real sync remain separate setup work.
+- Runtime became Ready; existing proxy-IP shared rate-limit bucket warning remains a follow-up. No new runtime failure observed in checked logs.
+- Real recipient delivery, fresh-device magic-link consumption and acceptance still need an approved recipient/user action; these paths passed local real-auth integration tests, not a live inbox test.

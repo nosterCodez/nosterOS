@@ -29,9 +29,12 @@ https://os.noepenaa.com; email sign-in, operator binding and two-workspace check
 are complete. M2 and M3 are merged into main. Service nosteros-web now auto-deploys
 main, with a private production NOSTEROS_MASTER_KEY and NOSTEROS_OPERATOR_FEATURES=0.
 Existing accounts and volume are unchanged. See M3-secure-connections.md for the
-verified deployment, recovery-key location, test results and remaining proxy-IP
-rate-limiting warning. OAuth/provider onboarding and scoped collectors remain future
-work; stored credentials are not yet active connections. Do not repeat setup below.
+recovery-key location and M5b-workspace-return-and-invites.md for the latest verified
+release: M4/M5 + M5b deployed at 88de372 on Oct 4 (local time), Railway deployment
+f726b44d-3b4d-4bf2-b294-eef42cfffe39. Connection screens/scoped collectors and
+returning-account/emailed-invitation flows are installed. Provider apps, credentials,
+consent and real sync remain unconfigured. No live invitation was sent in this release
+check. The proxy-IP shared rate-limit warning still needs review. Do not repeat setup below.
 
 ## Original setup checklist (historical)
 1. **Noe:** upgrade to Hobby; Usage limits: Compute email alert $8, hard

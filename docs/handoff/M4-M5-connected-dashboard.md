@@ -1,6 +1,6 @@
 # M4-M5: Workspace connections and collected dashboard data
 
-Status: implementation verified locally; deployment and live provider setup pending
+Status: deployed to private beta; live provider setup pending
 Review by Claude: no; Astra security self-review required
 
 ## Goal
@@ -27,6 +27,7 @@ workspace-scoped dashboard. Never use operator credentials or fabricated numbers
 - Typecheck, full tests (known Windows baseline noted), build, desktop/mobile checks; report exact remaining account setup blockers.
 
 ## Report
+- Deployment follow-up: Noe approved release; M4/M5 and M5b are on main and Railway SUCCESS at 88de372. Live existing-workspace dashboard and connection screens verified; no provider credentials or OAuth apps configured. See M5b's Deployment Report for exact checks and limitations.
 - Worked on 2026-10-04; branch codex/m4-m5-connected-dashboard, based on main a16ff0c. No merge or production deployment in this session.
 - Added source setup/authorization, opt-in collection, disconnect confirmation and scoped overview/Search/Money/Social dashboards; retained legacy host pages behind their operator gate.
 - Implemented Google Search Console/GA4/YouTube, Stripe charges, Facebook/Instagram/Meta Ads, TikTok, Etsy shop counts and TLS IMAP count adapters. No real account connections or app registrations were created.
