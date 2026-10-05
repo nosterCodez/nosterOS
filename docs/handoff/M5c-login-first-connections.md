@@ -34,3 +34,15 @@
 - No provider app, secret, purchase, real message, scope expansion or deployment was performed. Existing dev server was left untouched.
 - Platform OAuth registration/approval remains required; Stripe/email login and Meta/Etsy resource discovery are not implemented here.
 - Prepared on codex/m5c-login-first-connections for review; main/live release remains unchanged.
+
+## Approved deployment: October 4, 2026, 21:13 America/Chicago
+- Noe explicitly approved deployment in chat; no provider credential or permission changes were included.
+- Fast-forwarded main to d47e9c7 and pushed to the existing Railway auto-deploy source.
+- Railway deployment a6828b36-76c6-4a27-9508-fb5d37820eac reached SUCCESS on nosteros-web.
+- Re-ran the focused connection suite on the release: 18/18 tests passed.
+- Verified https://os.noepenaa.com/integrations in the existing signed-in nosterCodes browser session.
+- Live page shows Continue with provider buttons, collapsed Data and permissions, and collapsed Advanced connections.
+- Disconnected sources no longer display resource inputs and collection controls by default.
+- Provider sign-in remains disabled pending platform app setup; Stripe/email remain explicitly manual-only.
+- No workspace data, secrets, billing, account permissions, DNS or local dev-server processes were changed.
+- The earlier implementation-only report is superseded by this deployment record; real OAuth consent remains untested.
