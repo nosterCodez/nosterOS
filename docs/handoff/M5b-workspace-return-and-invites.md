@@ -1,6 +1,6 @@
 # M5b: Returning accounts and emailed team invitations
 
-Status: implemented and locally verified; deployment and real-inbox check pending approval
+Status: deployment approved by Noe; release verification in progress
 Review: Astra security self-review
 
 ## Request
@@ -8,6 +8,10 @@ Noe wants the same account on a new device to return to its existing workspace,
 and team invitation emails to open the shared workspace and its connections.
 
 ## Decisions
+- Noe approved deployment in chat after the implementation report. Release the
+  tested M4/M5 + M5b branch through main to the existing private Railway beta;
+  preserve accounts, volume, secrets and disabled/unconfigured providers.
+  A real invitation test to a named recipient remains separate from deployment.
 - Based on 40bea33, on codex/m5b-workspace-return-invites. No production deploy
   or real recipient test is authorized by this implementation request alone.
 - Persist last selected workspace by authenticated user ID in the control DB;
