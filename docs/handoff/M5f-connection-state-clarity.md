@@ -26,4 +26,11 @@ Noe wants a straightforward connector card, sign-in, and a saved account connect
 - Security/UI review: no auth, encryption, scopes or collection defaults changed;
   status wording separates authorization from data access, errors remain visible,
   native details and buttons retain keyboard access and responsive grid constraints.
-- Deployment and live layout verification pending this commit.
+- Code commit 3f518c3 deployed successfully in Railway deployment
+  14917db4-635e-4b0f-b8a6-6da5bcd5cefe; verified on os.noepenaa.com/integrations.
+- Live Google cards show Connected and retain authorization after deployment/reload.
+- Desktop 1920px and mobile 390px screenshots inspected; no horizontal overflow.
+- More connectors opens by keyboard and exposes unavailable Instagram honestly;
+  viewport restored afterward. No remaining exec test/build sessions.
+- Remaining blocker: Google APIs' service terms still need Noe's confirmation;
+  Meta/TikTok/Etsy platform apps are not configured. No claim that reporting works.
