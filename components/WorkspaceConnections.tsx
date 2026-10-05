@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyRound, Save, ShieldCheck, Unplug } from 'lucide-react';
 import type { ConnectionMetadata } from '@/lib/connection-fields';
+import { GmailSetupHelp } from '@/components/GmailSetupHelp';
 type Snapshot = { ready: boolean; connections: ConnectionMetadata[] };
 const statusLabel = { saved: 'Saved / unverified', revoked: 'Disconnected', not_configured: 'Not configured' };
 function ConnectionRow({ connection, ready, update }: { connection: ConnectionMetadata; ready: boolean; update: (method: string, body: object) => Promise<void> }) {
@@ -50,8 +51,9 @@ export function WorkspaceConnections({ initial, workspaceId }: { initial: Snapsh
     </div>
     {!snapshot.ready && <p role="alert" className="mb-6 border-l-2 border-os-warn pl-3 text-sm text-os-warn">The secure vault needs administrator setup before you can save credentials.</p>}
     <div className="grid min-w-0 gap-x-10 gap-y-8 md:grid-cols-2">
-      {providers.map(provider => <section key={provider} className="min-w-0" aria-labelledby={`provider-${provider}`}>
+      {providers.map(provider => <section key={provider} id={provider === 'email' ? 'email-credentials' : undefined} className="min-w-0 scroll-mt-24" aria-labelledby={`provider-${provider}`}>
         <h2 id={`provider-${provider}`} className="flex items-center gap-2 border-b border-os-border pb-3 text-sm font-semibold uppercase"><KeyRound size={16} className="text-os-accent" aria-hidden="true" />{provider}</h2>
+        {provider === 'email' && <GmailSetupHelp />}
         {snapshot.connections.filter(connection => connection.provider === provider).map(connection => <ConnectionRow key={connection.name} connection={connection} ready={snapshot.ready} update={update} />)}
       </section>)}
     </div>

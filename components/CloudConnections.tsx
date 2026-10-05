@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, Link2, RefreshCw, Save, Unplug } from 'lucide-react';
 import type { CloudSourceView } from '@/lib/cloud-sources';
 import type { ResourceDiscovery } from '@/lib/cloud-resources';
+import { GmailSetupHelp } from '@/components/GmailSetupHelp';
 
 export const SOURCE_STATUS: Record<string, string> = { planned: 'Coming later', vault_unavailable: 'Unavailable', not_connected: 'Not connected', needs_setup: 'Choose account', paused: 'Paused', error: 'Needs attention', stale: 'Data is stale', connected: 'Up to date', ready: 'Ready to sync' };
 const control = 'flex items-center justify-center gap-2 rounded border border-os-border px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent disabled:opacity-40';
@@ -18,6 +19,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
   const [discovery, setDiscovery] = useState<ResourceDiscovery | null>(null);
   const authorized = !['not_connected', 'vault_unavailable', 'planned'].includes(source.status);
   const picker = pickerNames[source.id];
+  const setupPending = source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
   useEffect(() => { setResource(source.resource); setEnabled(source.enabled); }, [source.resource, source.enabled]);
   useEffect(() => { if (!authorized) setDiscovery(null); }, [authorized]);
   async function run(body: object, discover = false) {
@@ -31,17 +33,17 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
     finally { setBusy(false); }
   }
   return <section aria-label={source.name} className="min-w-0 rounded border border-os-border p-5">
-    <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{SOURCE_STATUS[source.status]}</span></div>
+    <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{setupPending ? 'Setup pending' : SOURCE_STATUS[source.status]}</span></div>
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
     {!source.planned && <>
       {source.provider ? <div className="mt-4">
-        <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy || !source.appReady || source.status === 'vault_unavailable'} onClick={() => void run({ action: 'authorize', id: source.provider })}>
+        {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy} onClick={() => void run({ action: 'authorize', id: source.provider })}>
           <Link2 size={15} aria-hidden="true" />{authorized ? 'Reconnect' : 'Continue with'} {providers[source.provider] ?? source.name}<ArrowUpRight size={14} aria-hidden="true" />
-        </button>
-        {!source.appReady && <p className="mt-2 text-xs leading-5 text-os-muted">Sign-in is awaiting OmegaOS platform setup.</p>}
+        </button> : <p className="text-xs leading-5 text-os-muted">OmegaOS needs a one-time provider setup before account sign-in is available. This is not a problem with your account.</p>}
       </div> : <div className="mt-4 text-xs leading-5 text-os-muted">
         <p>Account sign-in is not available yet.</p>
-        <a href="#credentials" className="mt-2 inline-flex items-center gap-2 text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>Advanced setup<ArrowUpRight size={14} aria-hidden="true" /></a>
+        {source.id === 'email' && <GmailSetupHelp />}
+        <a href={source.id === 'email' ? '#email-credentials' : '#credentials'} className="mt-3 inline-flex items-center gap-2 text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>{source.id === 'email' ? 'Enter email settings' : 'Advanced setup'}<ArrowUpRight size={14} aria-hidden="true" /></a>
       </div>}
       {authorized && <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); void run({ action: 'configure', id: source.id, resource, enabled }); }}>
         {picker && <div className="space-y-3">

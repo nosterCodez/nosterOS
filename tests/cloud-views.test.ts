@@ -11,12 +11,22 @@ vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
 const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
 test('disconnected sources lead with honest provider sign-in rather than credential forms', () => {
   const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
-  expect(html).toContain('Sign-in is awaiting OmegaOS platform setup');
-  expect(html).toContain('Continue with');
+  expect(html).toContain('Setup pending');
+  expect(html).toContain('OmegaOS needs a one-time provider setup');
+  expect(html).not.toContain('Continue with');
+  expect(html).toContain('https://myaccount.google.com/apppasswords');
+  expect(html).toContain('href="#email-credentials"');
   expect(html).toContain('Account sign-in is not available yet');
   expect(html).not.toContain('<form');
   expect(html).not.toContain('checked=""');
   expect(html).toContain('lg:grid-cols-2');
+});
+test('configured providers keep login available but an unavailable vault blocks it', () => {
+  const ready = [{ ...sources[0], appReady: true }];
+  const html = renderToStaticMarkup(createElement(CloudConnections, { initial: ready, workspaceId: 'A'.repeat(32) }));
+  expect(html).toContain('Continue with'); expect(html).not.toContain('disabled=""');
+  const unavailable = renderToStaticMarkup(createElement(CloudConnections, { initial: [{ ...ready[0], status: 'vault_unavailable' }], workspaceId: 'A'.repeat(32) }));
+  expect(unavailable).not.toContain('Continue with'); expect(unavailable).toContain('Secure storage is unavailable');
 });
 test('authorized sources offer selection and leave collection opt-in unchecked', () => {
   const connected = sources.map(s => ({ ...s, status: s.planned ? 'planned' : 'paused', appReady: true }));
