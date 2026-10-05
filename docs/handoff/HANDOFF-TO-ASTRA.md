@@ -12,13 +12,21 @@ historical roadmap; old "in progress" and "next" labels below are not current.
 
 ## Current checkout and deployment
 
-- Oct 5, 14:34 CDT follow-up: M6f is complete; code `4ff3140`, report
-  `f409920`, feature branch pushed and merged locally. Main has NOT been
-  pushed or deployed; the older checkout snapshot below predates that work.
+- Oct 5, 14:53 CDT: Noe's deployment approval was relayed by Claude. Main
+  `cace87a` was pushed and Railway deployment
+  `e53678fc-fe48-423f-990d-da32117603e1` succeeded. M6b/M6e/M6f are live;
+  overview and Connections status pills / Verify controls checked in Chrome.
+  No Railway variables or secrets changed. See `M6h-commerce-deployment.md`.
+- Current work branch is `m7-sign-in-first`; M7 preflight is `2eeae1a`.
+  Its AI provider/budget decisions still need Claude. The older checkout and
+  deployment snapshot below is historical, not the current deployment state.
 - Etsy authorization now supersedes the old separate-app-only instruction:
   Noe approved the active Personal Access `nosterlogistics` app. Credential
   storage and the pending callback save are recorded in `M6g-etsy-existing-app.md`.
   Read its security note before using these credentials in production.
+- Meta legal prerequisite: `/privacy` and `/data-deletion` are absent (signed-in
+  404; unauthenticated 401 beta gate). No legal pages or public exceptions built;
+  Noe must approve legal copy before implementation/publication.
 
 - Product: **OmegaOS**, red/charcoal/white, powered by nosterCodes. nosterOS is
   the retained repo/folder and internal configuration name, not the public brand.

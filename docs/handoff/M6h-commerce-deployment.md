@@ -1,0 +1,15 @@
+# M6h: Approved commerce deployment - October 5, 2026, 14:53 CDT
+- Noe explicitly approved deployment through Claude; pushed local `main` to `origin/main`.
+- Deployed commit: `cace87a7d0a99a934e5ab595111f931bb24460d7`, including M6b, M6e and M6f.
+- Railway deployment `e53678fc-fe48-423f-990d-da32117603e1` reported SUCCESS at 19:52:18 UTC.
+- Service `cd008990-7a89-415f-82c8-e841db70a8ef`, project `86e6ef04-9180-49d2-b319-ef5d60cd9351`.
+- Signed-in Chrome reload of `https://os.noepenaa.com/` displayed Business overview.
+- Live `/integrations` Advanced connections displayed status pills, checked time, and four visible/enabled Verify buttons.
+- OpenAI displayed Verified / restricted key; other saved credentials displayed Saved, not checked yet.
+- Printify token setup and atomic email form visible. No keys entered, Verify clicks, or manual syncs performed during this check.
+- Both `/privacy` and `/data-deletion` return signed-in 404; unauthenticated requests return HTTP 401 beta gate.
+- No legal pages built or published; legal text approval and deliberate public-route handling are still required for Meta.
+- No Railway variables/secrets changed. No additional paid services, messages, or account authorization actions.
+- Existing M6f validation accepted by Claude: Linux 369 files / 3,837 tests passed; deployment build succeeded. No source changes this turn.
+- Etsy remains pending callback-save confirmation and secret rotation (M6g); edit tab left open. M7 still awaits its recorded AI architecture decisions.
+- Report committed on `m7-sign-in-first`; this branch's M7 spec is not merged/deployed. Shared local dev server left untouched.
