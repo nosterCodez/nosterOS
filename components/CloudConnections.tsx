@@ -91,7 +91,8 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
       </form>}
       {confirm && <div className="mt-4 border-t border-os-border pt-3 text-xs leading-5"><p>{source.provider ? 'Disconnect this provider from this workspace? Other sources using the same provider will also stop. Revoke access at the provider separately.' : 'Stop automatic collection? Your stored credentials stay in Advanced connections until removed.'}</p><div className="mt-2 flex gap-3"><button className="pressable underline" disabled={busy} onClick={() => void run({ action: 'disconnect', id: source.id })}>Confirm disconnect</button><button className="pressable underline" onClick={() => setConfirm(false)}>Keep</button></div></div>}
       {source.error && <p className="mt-3 text-xs text-os-warn">{source.error}</p>}
-      {source.lastError && <p className="mt-3 break-words text-xs text-os-muted">Provider diagnostic: {source.lastError.provider} HTTP {source.lastError.httpStatus} / {source.lastError.code}{source.lastError.message && <span className="mt-1 block [overflow-wrap:anywhere]">{source.lastError.message}</span>}</p>}
+      {source.id === 'etsy' && source.appReady && <button type="button" className={`pressable ${control} mt-3`} disabled={busy} onClick={() => void run({ action: 'etsy-key-ping', id: 'etsy' })}><RefreshCw size={15} aria-hidden="true" />Check Etsy app key</button>}
+      {source.lastError && <p className="mt-3 break-words text-xs text-os-muted">Provider diagnostic: {source.lastError.provider} HTTP {source.lastError.httpStatus} / {source.lastError.code}{source.lastError.message && <span className="mt-1 block [overflow-wrap:anywhere]">{source.lastError.message}</span>}{source.lastError.errorFields && <span className="mt-1 block">JSON error fields: {source.lastError.errorFields.join(', ') || 'neither'}</span>}</p>}
       <p role="status" aria-live="polite" className="mt-3 text-xs leading-5 text-os-muted">{busy ? 'Working...' : message}</p>
     </>}
   </section>;
@@ -111,6 +112,10 @@ export function CloudConnections({ initial, workspaceId, readOnly = false }: { i
     if (!response.ok) throw new Error(response.status === 409 ? 'Workspace changed. Reload before continuing.' : result.error ?? 'Connection update failed.');
     if (result.url) { window.location.assign(result.url); return { message: 'Opening account sign-in...' }; }
     if (result.resources) return { resources: result.resources, truncated: result.truncated };
+    if (result.keyPing) {
+      const ping = result.keyPing;
+      return { message: `Etsy key-only ping: HTTP ${ping.httpStatus}. JSON error fields: ${ping.errorFields === null ? 'unreadable or non-object body' : ping.errorFields.join(', ') || 'neither'}.${ping.diagnostic?.message ? ` ${ping.diagnostic.message}` : ''}` };
+    }
     return { message: result.outcome?.error ?? result.outcome?.skipped ?? (result.outcome?.ok ? 'Sync complete.' : 'Settings saved.') };
   }
   return <div className="min-w-0 max-w-6xl">

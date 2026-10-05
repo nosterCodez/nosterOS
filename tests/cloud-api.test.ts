@@ -26,6 +26,39 @@ beforeEach(() => {
 afterEach(() => { dbs.forEach(db => db.close()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 const configuration = { action: 'configure', id: 'ga4', resource: '12345', enabled: true };
 
+test('one-off Etsy key ping is admin/session/origin/workspace guarded and never reads user tokens or changes sources', async () => {
+  vi.stubEnv('OMEGA_ETSY_CLIENT_ID', 'fixture-key'); vi.stubEnv('OMEGA_ETSY_CLIENT_SECRET', 'fixture-secret');
+  const fetcher = vi.fn<typeof fetch>(async (input, init) => {
+    expect(String(input)).toBe('https://api.etsy.com/v3/application/openapi-ping');
+    expect([...new Headers(init?.headers)]).toEqual([['x-api-key', 'fixture-key:fixture-secret']]);
+    return Response.json({ error_description: 'Denied fixture-secret user@example.test 123456789' }, { status: 403 });
+  });
+  const logger = vi.spyOn(console, 'info').mockImplementation(() => {}); vi.stubGlobal('fetch', fetcher);
+  const action = { action: 'etsy-key-ping', id: 'etsy' };
+  try {
+    for (const role of ['viewer', 'member']) { identity(A, role); expect((await call('POST', action)).status).toBe(403); }
+    identity(); expect((await call('POST', action, { origin: 'https://evil.test' })).status).toBe(403);
+    expect((await call('POST', action, { 'x-omegaos-workspace': B })).status).toBe(409);
+    auth.session.mockResolvedValue(null); expect((await call('POST', action)).status).toBe(401);
+    identity(); expect((await call('POST', { ...action, id: 'google' })).status).toBe(400);
+    expect(fetcher).not.toHaveBeenCalled();
+    for (const role of ['owner', 'admin']) {
+      identity(A, role);
+      const response = await call('POST', action), result = await response.json();
+      expect(response.status).toBe(200); expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(result.keyPing).toMatchObject({ httpStatus: 403, errorFields: ['error_description'], diagnostic: { message: 'Denied [redacted] [email] [number]' } });
+      expect(logger).toHaveBeenLastCalledWith('[etsy-key-ping]', { workspaceId: A, ...result.keyPing });
+      expect(JSON.stringify(result)).not.toMatch(/fixture-|user@|123456789/);
+      expect(dbs.get(A)!.cloudSources.get('etsy')).toBeUndefined(); expect(dbs.get(A)!.connectionRecords.all()).toEqual([]);
+    }
+    logger.mockClear();
+    fetcher.mockImplementation(async () => { identity(A, 'member'); return Response.json({}); });
+    expect((await call('POST', action)).status).toBe(403); expect(logger).not.toHaveBeenCalled();
+    identity(); fetcher.mockImplementation(async () => { identity(B); return Response.json({}); });
+    expect((await call('POST', action)).status).toBe(400); expect(logger).not.toHaveBeenCalled();
+  } finally { vi.unstubAllGlobals(); logger.mockRestore(); }
+});
+
 test('commerce authorization requires role, origin and workspace and persists only encrypted provider tokens', async () => {
   vi.stubEnv('OMEGA_PRINTIFY_ENABLED', '1'); vi.stubEnv('OMEGA_PRINTIFY_APP_ID', 'printify-app');
   vi.stubEnv('OMEGA_SHOPIFY_ENABLED', '1'); vi.stubEnv('OMEGA_SHOPIFY_CLIENT_ID', 'shopify-app'); vi.stubEnv('OMEGA_SHOPIFY_CLIENT_SECRET', 'shopify-secret');
@@ -128,7 +161,7 @@ test('Etsy diagnostics require current admin access, persist safely and never le
     identity();
     const response = await call('POST', action); expect(response.status).toBe(400);
     const body = await response.json();
-    const detail = { provider: 'etsy', httpStatus: 403, code: 'invalid_token', message: 'invalid_token' };
+    const detail = { provider: 'etsy', httpStatus: 403, code: 'invalid_token', message: 'invalid_token', errorFields: ['error'] };
     expect(body.sources.find((s: { id: string }) => s.id === 'etsy').lastError).toEqual(detail);
     expect(JSON.stringify(body)).not.toContain('private-provider-text'); expect(JSON.stringify(body)).not.toContain('fixture-token');
     expect(warn).toHaveBeenCalledWith('[cloud-provider-error]', { workspaceId: A, source: 'etsy', ...detail });

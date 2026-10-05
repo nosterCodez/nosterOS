@@ -143,9 +143,11 @@ test('provider diagnostics render for administrators but not read-only members',
   const source = { ...sources.find(s => s.id === 'etsy')!, status: 'error', appReady: true, lastError: { provider: 'etsy' as const, httpStatus: 403, code: 'invalid_token' as const, message: 'Denied <script>alert(1)</script> [email]' } };
   const admin = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
   expect(admin).toContain('Provider diagnostic: etsy HTTP 403 / invalid_token');
+  expect(admin).toContain('Check Etsy app key');
   expect(admin).toContain('&lt;script&gt;'); expect(admin).not.toContain('<script>');
   const member = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32), readOnly: true }));
   expect(member).not.toContain('Provider diagnostic'); expect(member).not.toContain('invalid_token');
+  expect(member).not.toContain('Check Etsy app key');
   expect(member).not.toContain('[email]'); expect(member).not.toContain('alert(1)');
 });
 

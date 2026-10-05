@@ -1,4 +1,4 @@
-import { etsyDiagnostic, type ProviderDiagnostic } from '@/lib/cloud-diagnostics';
+import { etsyBodyDiagnostic, etsyErrorFields, type ProviderDiagnostic } from '@/lib/cloud-diagnostics';
 
 export class CloudError extends Error {
   constructor(public code: 'permission' | 'authentication' | 'api_disabled' | 'platform_approval' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider', public diagnostic?: ProviderDiagnostic) { super(code); }
@@ -12,6 +12,19 @@ async function boundedJson(response: Response, limit: number): Promise<unknown> 
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+export async function etsyKeyPing(appHeaders: Record<string, string>, fetcher: typeof fetch = fetch) {
+  const key = appHeaders['x-api-key']; if (!key) throw new CloudError('setup');
+  const signal = AbortSignal.timeout(8000);
+  try {
+    // Fixed key-only probe: never forward caller headers, cookies, or user tokens.
+    const response = await fetcher('https://api.etsy.com/v3/application/openapi-ping', { method: 'GET', headers: { 'x-api-key': key }, signal, redirect: 'error', cache: 'no-store' });
+    let body: unknown;
+    try { body = await boundedJson(response, 65_536); } catch { /* Preserve status, not unreadable/raw bodies. */ }
+    if (signal.aborted) throw new CloudError('timeout');
+    return { httpStatus: response.status, errorFields: etsyErrorFields(body) ?? null,
+      ...(response.status >= 400 && response.status <= 599 ? { diagnostic: etsyBodyDiagnostic(response.status, body, [key, ...key.split(':')]) } : {}) };
+  } catch (e) { if (e instanceof CloudError) throw e; throw new CloudError(signal.aborted ? 'timeout' : 'provider'); }
+}
 async function googleError(response: Response): Promise<CloudError['code'] | undefined> {
   // Only inspect typed reasons; provider messages/metadata must never reach the UI or logs.
   try {
@@ -44,13 +57,13 @@ export async function cloudJson(url: string, init: RequestInit = {}, fetcher: ty
     const response = await fetcher(target.toString(), { ...init, signal, redirect: 'error', cache: 'no-store' });
     if (!response.ok) {
       if (target.hostname === 'api.etsy.com' && response.status >= 400 && response.status <= 599) {
-        let error: unknown;
-        try { const body = await boundedJson(response, 65_536); if (record(body)) error = body.error; } catch { /* Unknown errors remain redacted. */ }
+        let errorBody: unknown;
+        try { errorBody = await boundedJson(response, 65_536); } catch { /* Unknown errors remain redacted. */ }
         if (signal.aborted) throw new CloudError('timeout');
         const headers = new Headers(init.headers), token = headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? '', key = headers.get('x-api-key') ?? '';
         const body = typeof init.body === 'string' ? new URLSearchParams(init.body) : undefined;
         const secrets = [token, token.replace(/^\d+\./, ''), key, ...key.split(':'), body?.get('refresh_token') ?? '', body?.get('code') ?? '', body?.get('code_verifier') ?? ''];
-        throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider', etsyDiagnostic(response.status, error, secrets));
+        throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider', etsyBodyDiagnostic(response.status, errorBody, secrets));
       }
       const metaCode = target.hostname === 'graph.facebook.com' ? await metaError(response) : undefined;
       if (metaCode) throw new CloudError(metaCode);

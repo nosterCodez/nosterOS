@@ -4,14 +4,14 @@ import { apiSessionError, requireWorkspace, withWorkspaceLease, SessionError } f
 import { limitedBody } from '@/lib/connection-api';
 import { configureSource, sourceViews, credentialVersion } from '@/lib/cloud-sources';
 import { syncSource } from '@/lib/cloud-jobs';
-import { beginAuthorization, completeAuthorization, disconnectOAuth } from '@/lib/cloud-oauth';
+import { beginAuthorization, completeAuthorization, disconnectOAuth, etsyAppHeaders } from '@/lib/cloud-oauth';
 import { revokeCredential } from '@/lib/creds';
 import { CLOUD_SOURCES, cloudSource, oauthId } from '@/lib/cloud-catalog';
-import { CloudError, CLOUD_ERROR_TEXT } from '@/lib/cloud-http';
+import { CloudError, CLOUD_ERROR_TEXT, etsyKeyPing } from '@/lib/cloud-http';
 import { discoverResources } from '@/lib/cloud-resources';
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const Configure = z.object({ action: z.literal('configure'), id: z.string().max(40), resource: z.string().max(500), enabled: z.boolean() }).strict();
-const Action = z.union([Configure, z.object({ action: z.literal('authorize'), id: z.string().max(40), shop: z.string().max(100).optional() }).strict(), z.object({ action: z.enum(['sync', 'disconnect', 'resources']), id: z.string().max(40) }).strict()]);
+const Action = z.union([Configure, z.object({ action: z.literal('etsy-key-ping'), id: z.literal('etsy') }).strict(), z.object({ action: z.literal('authorize'), id: z.string().max(40), shop: z.string().max(100).optional() }).strict(), z.object({ action: z.enum(['sync', 'disconnect', 'resources']), id: z.string().max(40) }).strict()]);
 export async function cloudRequest(request: Request) {
   const denied = await apiSessionError('/api/admin/sources', request.method, request); if (denied) return denied;
   try {
@@ -21,6 +21,13 @@ export async function cloudRequest(request: Request) {
     return await withWorkspaceLease(context, async db => {
       const ctx = { ...context, db };
       let outcome: unknown;
+      if (action?.action === 'etsy-key-ping') {
+        const result = await etsyKeyPing(etsyAppHeaders());
+        const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
+        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id) throw new CloudError('changed');
+        console.info('[etsy-key-ping]', { workspaceId: context.workspace.id, ...result });
+        return json({ keyPing: result });
+      }
       if (action?.action === 'resources') {
         const provider = cloudSource(action.id).provider;
         if (!provider) throw new CloudError('setup');

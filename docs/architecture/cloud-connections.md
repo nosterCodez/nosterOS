@@ -59,9 +59,13 @@ The business_management permission can permit management operations; OmegaOS
 uses it only for these reads. Noe must add it to the Meta configuration and
 reconnect. The app remains development-mode, not approved for public onboarding.
 Etsy failures retain HTTP status plus an allowlisted code; unknown codes use
-unrecognized_provider_error. M6j additionally retains only the JSON error string,
+unrecognized_provider_error. M6k retains only JSON error/error_description strings,
 masked for emails, digit runs over six and echoed request credentials, then limited
 to 160 characters with control characters removed. Other JSON fields are discarded.
+Field-name metadata distinguishes either approved field, neither, and unreadable bodies.
+An owner/admin-only Check Etsy app key action sends one fixed key-only GET to
+openapi-ping without user tokens; it returns/logs status and masked diagnostics only.
+It rechecks membership/workspace after I/O and never changes source or token state.
 Diagnostics are bound to
 the workspace credential generation and shown only to owners/admins. Server logs
 include the workspace ID and safe diagnostic, never headers/tokens/raw bodies.

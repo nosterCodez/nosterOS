@@ -22,7 +22,7 @@ test.each(['invalid_token', 'insufficient_scope', 'access_denied'])('Etsy HTTP e
   let failure: unknown;
   try { await cloudJson('https://api.etsy.com/v3/application/users/me', {}, fetcher); } catch (e) { failure = e; }
   expect(failure).toBeInstanceOf(CloudError);
-  expect((failure as CloudError).diagnostic).toEqual({ provider: 'etsy', httpStatus: 403, code, message: code });
+  expect((failure as CloudError).diagnostic).toEqual({ provider: 'etsy', httpStatus: 403, code, message: code, errorFields: ['error'] });
   expect(JSON.stringify(failure)).not.toContain('private-');
 });
 
