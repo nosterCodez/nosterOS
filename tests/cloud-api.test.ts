@@ -128,7 +128,7 @@ test('Etsy diagnostics require current admin access, persist safely and never le
     identity();
     const response = await call('POST', action); expect(response.status).toBe(400);
     const body = await response.json();
-    const detail = { provider: 'etsy', httpStatus: 403, code: 'invalid_token' };
+    const detail = { provider: 'etsy', httpStatus: 403, code: 'invalid_token', message: 'invalid_token' };
     expect(body.sources.find((s: { id: string }) => s.id === 'etsy').lastError).toEqual(detail);
     expect(JSON.stringify(body)).not.toContain('private-provider-text'); expect(JSON.stringify(body)).not.toContain('fixture-token');
     expect(warn).toHaveBeenCalledWith('[cloud-provider-error]', { workspaceId: A, source: 'etsy', ...detail });

@@ -47,7 +47,10 @@ export async function cloudJson(url: string, init: RequestInit = {}, fetcher: ty
         let error: unknown;
         try { const body = await boundedJson(response, 65_536); if (record(body)) error = body.error; } catch { /* Unknown errors remain redacted. */ }
         if (signal.aborted) throw new CloudError('timeout');
-        throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider', etsyDiagnostic(response.status, error));
+        const headers = new Headers(init.headers), token = headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? '', key = headers.get('x-api-key') ?? '';
+        const body = typeof init.body === 'string' ? new URLSearchParams(init.body) : undefined;
+        const secrets = [token, token.replace(/^\d+\./, ''), key, ...key.split(':'), body?.get('refresh_token') ?? '', body?.get('code') ?? '', body?.get('code_verifier') ?? ''];
+        throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider', etsyDiagnostic(response.status, error, secrets));
       }
       const metaCode = target.hostname === 'graph.facebook.com' ? await metaError(response) : undefined;
       if (metaCode) throw new CloudError(metaCode);

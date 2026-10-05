@@ -58,10 +58,19 @@ and 10 businesses, five response pages per edge, 100 requests and 15 seconds tot
 The business_management permission can permit management operations; OmegaOS
 uses it only for these reads. Noe must add it to the Meta configuration and
 reconnect. The app remains development-mode, not approved for public onboarding.
-Etsy failures retain HTTP status plus an allowlisted code only; unknown provider
-strings are replaced with unrecognized_provider_error. Diagnostics are bound to
+Etsy failures retain HTTP status plus an allowlisted code; unknown codes use
+unrecognized_provider_error. M6j additionally retains only the JSON error string,
+masked for emails, digit runs over six and echoed request credentials, then limited
+to 160 characters with control characters removed. Other JSON fields are discarded.
+Diagnostics are bound to
 the workspace credential generation and shown only to owners/admins. Server logs
 include the workspace ID and safe diagnostic, never headers/tokens/raw bodies.
+On an Etsy owner-lookup 403, discovery GETs users/me (shops_r required), verifies
+its user_id against the token prefix, then GETs shops/{shop_id} and validates both
+IDs before returning ID/name. At most three reads, same deadline/generation guards.
+Other errors are not retried; failed fallback reads retain their diagnostic.
+The app requests shops_r; saved token records do not retain returned scope, so
+requested scope must not be represented as independently confirmed live consent.
 M5j adds Etsy owner-shop discovery using the documented numeric token prefix,
 validates the returned owner, and strips everything except shop ID/name. It also
 adds Business Profile location discovery through accounts/-/locations, requesting

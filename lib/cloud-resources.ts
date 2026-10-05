@@ -20,6 +20,7 @@ const Channels = z.object({ items: z.array(z.object({ id: text, snippet: z.objec
 const Locations = z.object({ locations: z.array(z.object({ name: z.string().regex(/^locations\/\d{1,30}$/), title: text })).max(100).default([]), nextPageToken: pageToken });
 const etsyId = z.union([z.number().int().positive().safe(), z.string().regex(/^[1-9]\d{0,29}$/)]).transform(String);
 const EtsyShop = z.object({ shop_id: etsyId, user_id: etsyId, shop_name: text });
+const EtsySelf = z.object({ user_id: etsyId, shop_id: etsyId });
 
 export async function discoverResources(ctx: VaultContext, id: string, fetcher: typeof fetch = fetch): Promise<ResourceDiscovery> {
   if (!['search-console', 'ga4', 'youtube', 'google-business', 'google-ads', 'facebook', 'instagram', 'meta-ads', 'etsy', 'printify', 'shopify'].includes(id)) throw new CloudError('setup');
@@ -58,9 +59,22 @@ export async function discoverResources(ctx: VaultContext, id: string, fetcher: 
     // Etsy's documented token prefix is the consenting owner's ID, not a supplied shop ID.
     const owner = /^([1-9]\d{0,29})\.[^\s]+$/.exec(token)?.[1];
     if (!owner) throw new CloudError('invalid_data');
-    const raw = await cloudJson(`https://api.etsy.com/v3/application/users/${owner}/shops`, { headers: { Authorization: `Bearer ${token}`, ...etsyAppHeaders() }, signal }, fetcher);
+    const init = { headers: { Authorization: `Bearer ${token}`, ...etsyAppHeaders() }, signal };
+    const checkCurrent = () => { signal.throwIfAborted(); if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed'); };
+    let raw: unknown, expectedShop: string | undefined;
+    try { raw = await cloudJson(`https://api.etsy.com/v3/application/users/${owner}/shops`, init, fetcher); }
+    catch (error) {
+      checkCurrent();
+      if (!(error instanceof CloudError) || error.diagnostic?.provider !== 'etsy' || error.diagnostic.httpStatus !== 403) throw error;
+      // getMe requires shops_r and resolves the consenting user's shop without the owner lookup.
+      const self = EtsySelf.safeParse(await cloudJson('https://api.etsy.com/v3/application/users/me', init, fetcher));
+      checkCurrent();
+      if (!self.success || self.data.user_id !== owner) throw new CloudError('invalid_data');
+      expectedShop = self.data.shop_id;
+      raw = await cloudJson(`https://api.etsy.com/v3/application/shops/${expectedShop}`, init, fetcher);
+    }
     const shop = EtsyShop.safeParse(raw);
-    if (!shop.success || shop.data.user_id !== owner) throw new CloudError('invalid_data');
+    if (!shop.success || shop.data.user_id !== owner || (expectedShop && shop.data.shop_id !== expectedShop)) throw new CloudError('invalid_data');
     signal.throwIfAborted();
     if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
     return { resources: [{ id: shop.data.shop_id, label: shop.data.shop_name }], truncated: false };
