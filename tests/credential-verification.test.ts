@@ -84,3 +84,31 @@ test('legacy unsupported mailbox host becomes incomplete without blocking later 
   await verifyDueCredentials(ctx()); expect(verificationState(ctx(), 'OPENAI_API_KEY').status).toBe('verified');
   expect(imap.connect.mock.calls.length).toBe(before);
 });
+
+test.each(['stripe', 'printify', 'email'])('verified %s replacement preserves saved resource, auto-read and snapshot', async provider => {
+  const name = provider === 'stripe' ? 'STRIPE_SECRET_KEY' : provider === 'printify' ? 'PRINTIFY_API_TOKEN' : 'email';
+  if (provider === 'email') ['imap.gmail.com', 'fixture@example.test', 'old-secret'].forEach((value, i) => saveCredential(ctx(), EMAIL_FIELDS[i], value));
+  else saveCredential(ctx(), name, provider === 'stripe' ? 'rk_test_old' : 'old-fixture');
+  const resource = provider === 'printify' ? '123' : '';
+  configureSource(ctx(), provider, { resource, enabled: true });
+  const before = dbs[0].cloudSources.get(provider)!;
+  const snapshot = { at: new Date().toISOString(), period: 'Fixture', values: { fixture: 2 } };
+  dbs[0].cloudSources.claim(provider, before.revision, 'claim', 1000);
+  dbs[0].cloudSources.finish(provider, before.revision, 'claim', snapshot, 'old-error');
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })));
+  await verifyCredential(ctx(), name, provider === 'email' ? { email: { host: 'imap.gmail.com', account: 'replacement@example.test', password: 'new-secret' } } : { value: provider === 'stripe' ? 'rk_test_new' : 'new-fixture' });
+  const after = dbs[0].cloudSources.get(provider)!;
+  expect(after).toMatchObject({ resource, enabled: true, snapshot, error: null, credentialVersion: credentialVersion(ctx(), provider) });
+  expect(after.credentialVersion).not.toBe(before.credentialVersion); expect(after.revision).not.toBe(before.revision);
+  expect(sourceView(ctx(), provider).status).not.toBe('needs_setup');
+  expect(dbs[1].cloudSources.get(provider)).toBeUndefined();
+});
+
+test('saving a verified fallback Printify token does not revise the active OAuth source', async () => {
+  saveVaultValue(ctx(), 'oauth:printify:tokens', JSON.stringify({ access: 'oauth', generation: 'oauth-one', expires: Date.now() + 3600000 }));
+  configureSource(ctx(), 'printify', { resource: '123', enabled: true });
+  const before = dbs[0].cloudSources.get('printify');
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })));
+  await verifyCredential(ctx(), 'PRINTIFY_API_TOKEN', { value: 'fixture' });
+  expect(dbs[0].cloudSources.get('printify')).toEqual(before);
+});

@@ -31,7 +31,8 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
   const setupPending = source.id !== 'printify' && source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
   const accountSaved = Boolean(source.provider && authorized);
   const connectionLabel = setupPending ? 'Provider setup required' : accountSaved && !['error', 'stale'].includes(source.status) ? 'Connected' : SOURCE_STATUS[source.status];
-  useEffect(() => { setResource(source.resource); setEnabled(source.enabled); }, [source.resource, source.enabled]);
+  useEffect(() => { setResource(source.resource); }, [source.resource]);
+  useEffect(() => { setEnabled(source.enabled); }, [source.enabled]);
   useEffect(() => { if (!authorized) setDiscovery(null); }, [authorized]);
   async function run(body: object, discover = false) {
     setBusy(true); setMessage('');
@@ -39,9 +40,14 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
     try {
       const result = await act(body);
       if (discover && result.resources) setDiscovery({ resources: result.resources, truncated: Boolean(result.truncated) });
-      setMessage(result.message ?? ''); setConfirm(false);
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Unable to update connection.'); }
+      setMessage(result.message ?? ''); setConfirm(false); return true;
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Unable to update connection.'); return false; }
     finally { setBusy(false); }
+  }
+  async function toggleAutomatic(next: boolean) {
+    const previous = enabled;
+    setEnabled(next);
+    if (!await run({ action: 'configure', id: source.id, resource: source.resource, enabled: next })) setEnabled(previous);
   }
   return <section id={`source-${source.id}`} aria-label={source.name} className="min-w-0 scroll-mt-24 rounded border border-os-border p-5">
     <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{connectionLabel}</span></div>
@@ -62,7 +68,7 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
         <a href={source.id === 'email' ? '#email-credentials' : '#credentials'} className="mt-3 inline-flex items-center gap-2 text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>{source.id === 'email' ? 'Enter email settings' : 'Advanced setup'}<ArrowUpRight size={14} aria-hidden="true" /></a>
       </div>}
       {source.id === 'printify' && source.status !== 'vault_unavailable' && <a href="#printify-credentials" className="mt-3 inline-flex items-center gap-2 text-xs text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>Use a personal access token<ArrowUpRight size={14} aria-hidden="true" /></a>}
-      {authorized && <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); void run({ action: 'configure', id: source.id, resource, enabled }); }}>
+      {authorized && <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); if (!busy && resource !== source.resource) void run({ action: 'configure', id: source.id, resource, enabled: source.enabled }); }}>
         {picker && <div className="space-y-3">
           <button type="button" className={`pressable ${control}`} disabled={busy} onClick={() => void run({ action: 'resources', id: source.id }, true)}><RefreshCw size={15} aria-hidden="true" />{discovery ? 'Refresh accounts' : 'Find accounts'}</button>
           {discovery && <>
@@ -76,9 +82,9 @@ function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Ac
           {!discovery && resource && <p className="break-all text-xs text-os-muted">Selected: {resource}</p>}
         </div>}
         {source.resourceLabel && <details className="text-xs leading-5"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">{picker ? 'Advanced account selection' : 'Account settings'}</summary><label className="mt-2 block">{source.resourceLabel}<input value={resource} onChange={event => setResource(event.target.value)} maxLength={500} disabled={busy} className={field} /></label></details>}
-        <label className="flex items-start gap-2 text-xs leading-5"><input type="checkbox" className="mt-1" checked={enabled} onChange={event => setEnabled(event.target.checked)} disabled={busy} />Automatically read these account metrics every 15 minutes.</label>
+        <label className="flex items-start gap-2 text-xs leading-5"><input type="checkbox" className="mt-1" checked={enabled} onChange={event => void toggleAutomatic(event.target.checked)} disabled={busy} />Automatically read these account metrics every 15 minutes.</label>
         <div className="flex flex-wrap gap-2">
-          <button type="submit" className={`pressable ${control}`} disabled={busy || Boolean(source.resourceLabel && !resource)}><Save size={15} aria-hidden="true" />Save settings</button>
+          <button type="submit" className={`pressable ${control}`} disabled={busy || resource === source.resource || Boolean(source.resourceLabel && !resource)}><Save size={15} aria-hidden="true" />Save settings</button>
           <button type="button" className={`pressable ${control}`} disabled={busy || source.status === 'needs_setup' || resource !== source.resource || enabled !== source.enabled} onClick={() => void run({ action: 'sync', id: source.id })}><RefreshCw size={15} aria-hidden="true" />Sync now</button>
           <button type="button" title={`Disconnect ${source.name}`} aria-label={`Disconnect ${source.name}`} className={`pressable ${control}`} disabled={busy} onClick={() => setConfirm(!confirm)}><Unplug size={15} aria-hidden="true" /></button>
         </div>

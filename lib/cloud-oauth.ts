@@ -1,6 +1,6 @@
 import { createHmac, createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import { oauthId, type OAuthId } from '@/lib/cloud-catalog';
+import { CLOUD_SOURCES, oauthId, type OAuthId } from '@/lib/cloud-catalog';
 import { readVaultValue, saveVaultValue, revokeVaultValue, type VaultContext } from '@/lib/creds';
 import { cloudJson, CloudError } from '@/lib/cloud-http';
 import { challengeFor } from '@/lib/oauth/pkce';
@@ -133,8 +133,12 @@ export async function completeAuthorization(ctx: AuthContext, id: string, code: 
     if (!permissions.success || !p.scopes.every(scope => permissions.data.data.some(item => item.permission === scope && item.status === 'granted'))) throw new CloudError('permission');
   }
   await reauthorize();
-  if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
-  saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation: randomUUID(), ...(shop ? { shop } : {}) }));
+  ctx.db.connectionRecords.atomic(() => {
+    if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
+    const generation = randomUUID();
+    saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation, ...(shop ? { shop } : {}) }));
+    for (const source of CLOUD_SOURCES) if (source.provider === id) ctx.db.cloudSources.reauthorize(source.id, generation);
+  });
 }
 export function oauthGeneration(ctx: VaultContext, id: string) {
   const value = readVaultValue(ctx, slot(id)); return value ? TokensSchema.parse(JSON.parse(value)).generation : '';

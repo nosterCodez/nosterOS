@@ -4,6 +4,7 @@ import { probeEmail, probeKey } from '@/lib/credential-probes';
 import { EMAIL_FIELDS, IMAP_HOSTS, VERIFICATION_PAUSED, VERIFICATION_REJECTED, type EmailInput, type VerificationResult } from '@/lib/verification-types';
 import { verificationFields, verificationGeneration, verificationState } from '@/lib/verification-state';
 import { printifyCredential, PRINTIFY_TOKEN_REJECTED, PRINTIFY_UNREACHABLE } from '@/lib/printify-credentials';
+import { credentialVersion } from '@/lib/cloud-sources';
 
 export class VerificationError extends Error { constructor(message: string, readonly status = 400) { super(message); } }
 export function emailDefaults(ctx: VaultContext): Omit<EmailInput, 'password'> {
@@ -44,9 +45,16 @@ export async function verifyCredential(ctx: VaultContext, name: string, options:
     if (saving && name === 'PRINTIFY_API_TOKEN' && result.status !== 'verified') throw new VerificationError(result.status === 'rejected' ? PRINTIFY_TOKEN_REJECTED : PRINTIFY_UNREACHABLE);
     if (saving && result.status === 'rejected') throw new VerificationError(VERIFICATION_REJECTED);
     ctx.db.connectionRecords.atomic(() => {
+      if (before !== verificationGeneration(ctx, name) || !repo.owns(name, claim)) throw new VerificationError('Connection changed. Reload Connections before saving.', 409);
       if (saving) {
+        const source = name === 'email' ? 'email' : name === 'STRIPE_SECRET_KEY' ? 'stripe' : name === 'PRINTIFY_API_TOKEN' ? 'printify' : null;
+        const previousGeneration = source ? credentialVersion(ctx, source) : '';
         if (email) [email.host, email.account, email.password].forEach((part, i) => saveCredential(ctx, fields[i], part));
         else saveCredential(ctx, name, value!);
+        if (source && result.status === 'verified') {
+          const generation = credentialVersion(ctx, source);
+          if (generation !== previousGeneration) ctx.db.cloudSources.reauthorize(source, generation);
+        }
       }
       repo.finish(name, claim, verificationGeneration(ctx, name), result, now);
       if (result.status === 'rejected') pauseRejected(ctx, name);

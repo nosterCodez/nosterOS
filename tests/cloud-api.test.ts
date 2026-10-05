@@ -86,6 +86,20 @@ test('members/viewers/unauthenticated requests cannot configure or authorize', a
   for (const role of ['member', 'viewer']) { identity(A, role); expect((await call()).status).toBe(403); expect((await call('POST', configuration)).status).toBe(403); }
   auth.session.mockResolvedValue(null); expect((await call()).status).toBe(401); expect(auth.open).not.toHaveBeenCalled();
 });
+
+test('auto-read configure persists across fresh reads; viewer toggles fail without changing it', async () => {
+  await call('POST', { ...configuration, enabled: false });
+  expect((await call('POST', configuration)).status).toBe(200);
+  for (let reload = 0; reload < 2; reload++) {
+    expect((await (await call()).json()).sources.find((s: { id: string }) => s.id === 'ga4')).toMatchObject({ resource: '12345', enabled: true });
+  }
+  identity(A, 'viewer');
+  expect((await call('POST', { ...configuration, enabled: false })).status).toBe(403);
+  expect(dbs.get(A)!.cloudSources.get('ga4')?.enabled).toBe(true);
+  identity();
+  expect((await call('POST', { ...configuration, enabled: false })).status).toBe(200);
+  expect((await (await call()).json()).sources.find((s: { id: string }) => s.id === 'ga4').enabled).toBe(false);
+});
 test('cross origin, invalid resource, large body and disabled broad-scope providers are rejected', async () => {
   expect((await call('POST', configuration, { origin: 'https://attacker.example' })).status).toBe(403);
   expect((await call('POST', configuration, { origin: '' })).status).toBe(403);

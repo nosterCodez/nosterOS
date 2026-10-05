@@ -50,11 +50,12 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
     console.warn('[cloud-sync]', { source: source.id, stage, code: e instanceof CloudError ? e.code : e instanceof ZodError ? 'schema' : 'internal', ...(e instanceof ZodError ? { issues: e.issues.slice(0, 5).map(issue => ({ code: issue.code, path: issue.path.map(part => typeof part === 'number' ? 'item' : String(part).replace(/[^a-zA-Z]/g, '').slice(0, 30)).join('.').slice(0, 120) })) } : {}) });
     error = CLOUD_ERROR_TEXT[e instanceof CloudError ? e.code : signal.aborted ? 'timeout' : 'invalid_data'];
     const rejectedPersonalToken = id === 'printify' && generation.startsWith('personal:') && e instanceof CloudError && e.code === 'authentication';
+    const deniedOAuth = Boolean(source.provider && !generation.startsWith('personal:') && e instanceof CloudError && ['permission', 'authentication'].includes(e.code));
     if (rejectedPersonalToken) error = PRINTIFY_RECONNECT;
     // A delayed failure cannot disable a replacement token or a new OAuth grant.
     let unchanged = false;
     try { unchanged = credentialVersion(ctx, id) === generation; } catch { /* Vault unavailable. */ }
-    if (!rejectedPersonalToken || unchanged) ctx.db.cloudSources.finish(id, record.revision, claim, null, error, undefined, rejectedPersonalToken);
+    if ((!rejectedPersonalToken && !deniedOAuth) || unchanged) ctx.db.cloudSources.finish(id, record.revision, claim, null, error, undefined, rejectedPersonalToken || deniedOAuth);
   } finally { signal.removeEventListener('abort', onAbort); }
   ctx.db.collectorRuns.finish(runId, { ok: !error, pointsWritten, error });
   return { ok: !error, pointsWritten, error };
