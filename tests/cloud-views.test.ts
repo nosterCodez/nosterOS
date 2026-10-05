@@ -63,6 +63,19 @@ test('each Meta source offers its own account picker after shared authorization'
     if (id === 'instagram') expect(html).toContain('professional account linked to a Facebook Page');
   }
 });
+
+test('Business Profile and Etsy explain prerequisites and offer pickers only after authorization', () => {
+  for (const id of ['google-business', 'etsy']) {
+    const source = sources.find(s => s.id === id)!;
+    const pending = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+    expect(pending).not.toContain('Continue with'); expect(pending).not.toContain('<form');
+    expect(pending).toContain(id === 'etsy' ? 'Etsy must approve the separate OmegaOS app' : 'Google must approve API access');
+    const ready = renderToStaticMarkup(createElement(CloudConnections, { initial: [{ ...source, appReady: true, status: 'needs_setup' }], workspaceId: 'A'.repeat(32) }));
+    expect(ready).toContain('Find accounts'); expect(ready).not.toContain('checked=""');
+  }
+  const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
+  expect(html).toContain('Log in with PayPal identifies an account but does not grant transaction-reporting access');
+});
 test('dashboard renders real zero, unknown placeholders, source period, stale and test labels', async () => {
   const fixture = sources.map(s => s.id === 'stripe' ? { ...s, stale: true, status: 'stale', snapshot: { at: '2026-10-05T00:00:00Z', period: 'Fixture USD period', values: { gross: 0, refunded: null, net: 0, payments: 0 }, mode: 'test' as const } } : s);
   vi.mocked(sourceViews).mockReturnValue(fixture);

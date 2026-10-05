@@ -8,8 +8,13 @@ import { GmailSetupHelp } from '@/components/GmailSetupHelp';
 export const SOURCE_STATUS: Record<string, string> = { planned: 'Coming later', vault_unavailable: 'Unavailable', not_connected: 'Not connected', needs_setup: 'Choose account', paused: 'Paused', error: 'Needs attention', stale: 'Data is stale', connected: 'Up to date', ready: 'Ready to sync' };
 const control = 'flex items-center justify-center gap-2 rounded border border-os-border px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent disabled:opacity-40';
 const field = 'mt-2 w-full min-w-0 rounded border border-os-border bg-os-bg p-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent';
-const providers: Record<string, string> = { google: 'Google', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
-const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account' };
+const providers: Record<string, string> = { google: 'Google', 'google-business': 'Google Business Profile', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
+const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', 'google-business': 'Business location', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account', etsy: 'Etsy shop' };
+const setupHelp: Record<string, string> = {
+  'google-business': 'Google must approve API access before Business Profile reporting can connect. Enabling the API alone does not grant access.',
+  etsy: 'Etsy must approve the separate OmegaOS app and its callback must be configured before shop sign-in is available.',
+  tiktok: 'TikTok requires a developer app with Login Kit and approved account-statistics access before sign-in is available.',
+};
 type Result = Partial<ResourceDiscovery> & { message?: string };
 type Act = (body: object) => Promise<Result>;
 
@@ -43,7 +48,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
       {source.provider ? <div className="mt-4">
         {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy} onClick={() => void run({ action: 'authorize', id: source.provider })}>
           <Link2 size={15} aria-hidden="true" />{authorized ? 'Reconnect' : 'Continue with'} {providers[source.provider] ?? source.name}<ArrowUpRight size={14} aria-hidden="true" />
-        </button> : <p className="text-xs leading-5 text-os-muted">OmegaOS needs a one-time provider setup before account sign-in is available. This is not a problem with your account.</p>}
+        </button> : <p className="text-xs leading-5 text-os-muted">{setupHelp[source.id] ?? 'OmegaOS needs a one-time provider setup before account sign-in is available. This is not a problem with your account.'}</p>}
       </div> : <div className="mt-4 text-xs leading-5 text-os-muted">
         <p>Account sign-in is not available yet.</p>
         {source.id === 'email' && <GmailSetupHelp />}

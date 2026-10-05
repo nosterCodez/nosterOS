@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { cloudJson, CloudError } from '@/lib/cloud-http';
-import { accessFor } from '@/lib/cloud-oauth';
+import { accessFor, etsyAppHeaders } from '@/lib/cloud-oauth';
 import { resolveCred, type VaultContext } from '@/lib/creds';
 import { cloudSource } from '@/lib/cloud-catalog';
 import type { CloudSnapshot } from '@/lib/cloud-records';
@@ -36,12 +36,24 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
       const mappings = { CALL_CLICKS: 'calls', WEBSITE_CLICKS: 'website', BUSINESS_DIRECTION_REQUESTS: 'directions' };
       for (const key of Object.keys(mappings)) query.append('dailyMetrics', key);
       for (const [part, value] of [['startDate', from], ['endDate', to]]) { const [year, month, day] = value.split('-'); query.set(`dailyRange.${part}.year`, year); query.set(`dailyRange.${part}.month`, String(Number(month))); query.set(`dailyRange.${part}.day`, String(Number(day))); }
-      const daily = z.object({ dailyMetric: z.string(), timeSeries: z.object({ datedValues: z.array(z.object({ value: numeric.optional() })).optional() }) });
+      const calendarDate = z.object({ year: z.number().int(), month: z.number().int().min(1).max(12), day: z.number().int().min(1).max(31) });
+      const daily = z.object({ dailyMetric: z.string(), timeSeries: z.object({ datedValues: z.array(z.object({ date: calendarDate.optional(), value: numeric.optional() })).max(366).optional() }) });
       const result = z.object({ multiDailyMetricTimeSeries: z.array(z.object({ dailyMetricTimeSeries: z.array(daily) })).optional() }).parse(await read(`https://businessprofileperformance.googleapis.com/v1/locations/${resource}:fetchMultiDailyMetricsTimeSeries?${query}`));
       const values: CloudSnapshot['values'] = { calls: null, website: null, directions: null };
-      for (const series of result.multiDailyMetricTimeSeries ?? []) for (const item of series.dailyMetricTimeSeries) {
-        const key = mappings[item.dailyMetric as keyof typeof mappings], days = item.timeSeries.datedValues;
-        if (key && days?.length && days.every(d => d.value !== undefined)) values[key] = days.reduce((sum, d) => sum + d.value!, 0);
+      const expected = new Set(Array.from({ length: 28 }, (_, index) => date(30 - index, now)));
+      const series = (result.multiDailyMetricTimeSeries ?? []).flatMap(s => s.dailyMetricTimeSeries);
+      for (const [metric, key] of Object.entries(mappings)) {
+        const matching = series.filter(s => s.dailyMetric === metric);
+        if (matching.length !== 1) continue;
+        const days = matching[0].timeSeries.datedValues;
+        if (!days || days.length !== expected.size) continue;
+        const seen = new Set<string>(); let sum = 0, complete = true;
+        for (const d of days) {
+          const day = d.date && `${d.date.year}-${String(d.date.month).padStart(2, '0')}-${String(d.date.day).padStart(2, '0')}`;
+          if (!day || !expected.has(day) || seen.has(day) || d.value === undefined) { complete = false; break; }
+          seen.add(day); sum += d.value;
+        }
+        if (complete && Number.isSafeInteger(sum)) values[key] = sum;
       }
       return snapshot(values, `${from} to ${to} (location timezone)`);
     }
@@ -87,9 +99,7 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
       return snapshot({ followers: result.data.user.follower_count ?? null, likes: result.data.user.likes_count ?? null, videos: result.data.user.video_count ?? null }, 'Current authorized account totals');
     }
     case 'etsy': {
-      const clientId = process.env.OMEGA_ETSY_CLIENT_ID, secret = process.env.OMEGA_ETSY_CLIENT_SECRET;
-      if (!clientId || !secret) throw new CloudError('setup');
-      const result = z.object({ shop_id: numeric, transaction_sold_count: numeric.optional(), listing_active_count: numeric.optional() }).parse(await read(`https://api.etsy.com/v3/application/shops/${resource}`, undefined, { 'x-api-key': `${clientId}:${secret}` }));
+      const result = z.object({ shop_id: numeric, transaction_sold_count: numeric.optional(), listing_active_count: numeric.optional() }).parse(await read(`https://api.etsy.com/v3/application/shops/${resource}`, undefined, etsyAppHeaders()));
       if (String(result.shop_id) !== resource) throw new CloudError('invalid_data');
       return snapshot({ sales: result.transaction_sold_count ?? null, listings: result.listing_active_count ?? null }, 'Shop lifetime sales and current active listings');
     }

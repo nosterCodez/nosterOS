@@ -12,21 +12,24 @@ Store platform app secrets privately in Railway (local equivalents in ignored
 Google sign-in and Google data access use separate applications/configuration.
 
 Redirects are exactly `https://os.noepenaa.com/api/connections/oauth/PROVIDER/callback`
-where PROVIDER is `google`, `meta`, `tiktok`, or `etsy`. Local development uses
+where PROVIDER is `google`, `google-business`, `meta`, `tiktok`, or `etsy`. Local development uses
 the configured trusted `NOSTEROS_BASE_URL` origin, never the request Host header.
 
 | Provider | Private platform configuration | Current read scope / prerequisites |
 | --- | --- | --- |
 | Google | OMEGA_GOOGLE_CLIENT_ID / CLIENT_SECRET | webmasters.readonly, analytics.readonly, youtube.readonly; enable those APIs, configure consent/test users, verify application before wider use |
+| Google Business | Google data app plus OMEGA_GOOGLE_BUSINESS_ENABLED=1 only after access/callback verification | Separate business.manage authorization; OAuth permits edits, but OmegaOS only GETs locations and reports; Google project approval and nonzero quota required |
 | Meta | OMEGA_META_CLIENT_ID / CLIENT_SECRET / OMEGA_META_API_VERSION | pages_show_list, pages_read_engagement, instagram_basic, ads_read; approved app permissions, selected Page/professional Instagram/ad account; explicitly choose supported Graph version |
 | TikTok | OMEGA_TIKTOK_CLIENT_ID / CLIENT_SECRET | user.info.basic, user.info.stats; Login Kit and statistics permission approval |
 | Etsy | OMEGA_ETSY_CLIENT_ID / CLIENT_SECRET | shops_r; approved application, matching shop ID; API key:secret header and PKCE |
 | Stripe | No platform app | Workspace owner saves a restricted key with Charges read permission; collection is GET only; test/live labeled; no writes tested to infer key privileges |
 | Email | No platform app | Workspace host, username and app password; provider must permit TLS IMAP authentication; no Gmail API, messages, attachments or sending |
 
-GBP and LinkedIn are deliberately disabled awaiting Noe's decision on broader
-provider permissions (business.manage and organization management) and provider
-approval. Do not add their scopes merely because the adapter skeleton exists.
+Noe approved Business Profile's broader business.manage permission on Oct 5.
+The sign-in readiness flag remains off until Google's project API access is
+approved and its callback is registered. Never merge this scope into base Google.
+LinkedIn remains disabled pending developer sign-in, approved Community Management
+access and verification of read-only r_organization_admin reporting permissions.
 Google Ads, TikTok Ads, advanced Etsy revenue/ledger/CSV, product/CRM data and
 lead/action intelligence remain follow-up work, not functional integrations.
 Etsy here exposes lifetime sales count and active listings, not revenue.
@@ -48,7 +51,14 @@ M5i adds Facebook Page, linked Instagram professional account and Meta ad-accoun
 pickers using the same limits. Graph discovery follows only bounded cursors on
 the fixed Graph host; it never follows `paging.next` URLs or returns Page tokens.
 The Meta credential generation (not Google's) is rechecked after discovery.
-Etsy still requires a resource ID in Account settings after OAuth. TikTok
+M5j adds Etsy owner-shop discovery using the documented numeric token prefix,
+validates the returned owner, and strips everything except shop ID/name. It also
+adds Business Profile location discovery through accounts/-/locations, requesting
+name/title only, with the same five-page/500-result/15-second limits. These reads
+use the separate provider generation and the same session/admin revalidation.
+GBP totals remain null unless every requested day and value is present once.
+Etsy token exchange and refresh include the required API key:secret header.
+TikTok
 uses the authorized account directly. Stripe/email login is not implemented;
 their manual configuration remains available. No new provider apps have been
 registered by M5c, and unconfigured sign-in buttons remain disabled honestly.
@@ -95,6 +105,25 @@ Live consent, provider app review, permissions, quotas and first successful
 collection must still be verified per account after Noe approves setup.
 No customer email/password/token or production data is used in preview tests.
 
+## Provider setup checkpoint (Oct 5, 2026)
+
+- Google Business: Account Management, Business Information and Performance APIs
+  enabled in rational-diode-496800-s3 under Noe's approval. Account API quota is
+  zero, so Google must approve Basic API access. Do not set the readiness flag yet.
+- Etsy: Noe explicitly chose a separate app. Created omegaos on the existing Etsy
+  account; status Pending Personal Approval. Existing active/banned applications
+  unchanged. No new credentials installed or callback configured while pending.
+- TikTok and LinkedIn: developer portals require user sign-in. No apps or new
+  credentials configured. PayPal is signed into its sandbox dashboard; app
+  creation was blocked pending specific approval for persistent credentials.
+  Requested permission to prepare a separate reporting-only sandbox app.
+- Google Ads: activation page prepared; API terms/broad adwords consent approval
+  requested. As of September 9, 2026 developer tokens are sunset; use the OAuth
+  project's Cloud API access level. Test access alone cannot read production ads.
+- PayPal remains planned. Identity OAuth is not financial-reporting authorization;
+  verify the supported merchant/partner access model before adding a login flow.
+- No paid services, root mailbox changes, customer writes or deployment performed.
+
 ## Primary references
 
 - https://developers.google.com/identity/protocols/oauth2/web-server
@@ -105,4 +134,10 @@ No customer email/password/token or production data is used in preview tests.
 - https://developers.google.com/youtube/v3/docs/channels/list
 - https://developers.tiktok.com/doc/oauth-user-access-token-management
 - https://developers.etsy.com/documentation/essentials/authentication
+- https://developers.etsy.com/documentation/reference/#operation/getShopByOwnerUserId
+- https://developers.google.com/my-business/content/prereqs
+- https://developers.google.com/my-business/content/location-data
+- https://developers.google.com/google-ads/api/docs/api-policy/developer-token
+- https://developers.google.com/google-ads/api/docs/api-policy/access-levels
+- https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/organization-access-control-by-role
 - https://docs.stripe.com/api/charges/list

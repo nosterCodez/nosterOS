@@ -13,15 +13,15 @@ export function cloudProvider(input: string): Provider {
   const google = { authorize: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token', env: 'OMEGA_GOOGLE', pkce: true, refresh: true };
   switch (id) {
     case 'google': return { id, ...google, scopes: ['https://www.googleapis.com/auth/webmasters.readonly', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/youtube.readonly'] };
-    case 'google-business': throw new CloudError('setup'); // Broad provider scope awaits Noe's decision.
+    case 'google-business': return { id, ...google, scopes: ['https://www.googleapis.com/auth/business.manage'] };
     case 'meta': return { id, authorize: `https://www.facebook.com/${version ?? ''}/dialog/oauth`, token: `https://graph.facebook.com/${version ?? ''}/oauth/access_token`, env: 'OMEGA_META', scopes: ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read'], pkce: false, separator: ',', refresh: false };
     case 'tiktok': return { id, authorize: 'https://www.tiktok.com/v2/auth/authorize/', token: 'https://open.tiktokapis.com/v2/oauth/token/', env: 'OMEGA_TIKTOK', scopes: ['user.info.basic', 'user.info.stats'], pkce: false, separator: ',', clientName: 'client_key', refresh: true };
-    case 'linkedin': throw new CloudError('setup'); // Organization-management permission is not approved.
+    case 'linkedin': throw new CloudError('setup'); // Developer app and reporting product access are not approved.
     case 'etsy': return { id, authorize: 'https://www.etsy.com/oauth/connect', token: 'https://api.etsy.com/v3/public/oauth/token', env: 'OMEGA_ETSY', scopes: ['shops_r'], pkce: true, refresh: true };
   }
 }
 export function providerReady(id: string) {
-  if (id === 'google-business' || id === 'linkedin') return false;
+  if (id === 'linkedin' || (id === 'google-business' && process.env.OMEGA_GOOGLE_BUSINESS_ENABLED !== '1')) return false;
   const p = cloudProvider(id);
   return Boolean(process.env[`${p.env}_CLIENT_ID`] && process.env[`${p.env}_CLIENT_SECRET`] &&
     (id !== 'meta' || /^v\d+\.0$/.test(process.env.OMEGA_META_API_VERSION ?? '')) &&
@@ -74,11 +74,19 @@ function tokenBody(p: Provider) {
   if (p.id !== 'etsy') body.set('client_secret', process.env[`${p.env}_CLIENT_SECRET`] ?? '');
   return body;
 }
+export function etsyAppHeaders(): Record<string, string> {
+  const client = process.env.OMEGA_ETSY_CLIENT_ID, secret = process.env.OMEGA_ETSY_CLIENT_SECRET;
+  if (!client || !secret) throw new CloudError('setup');
+  return { 'x-api-key': `${client}:${secret}` };
+}
+function tokenHeaders(p: Provider): Record<string, string> {
+  return { 'Content-Type': 'application/x-www-form-urlencoded', ...(p.id === 'etsy' ? etsyAppHeaders() : {}) };
+}
 export async function completeAuthorization(ctx: AuthContext, id: string, code: string, state: string, fetcher: typeof fetch = fetch, reauthorize: () => Promise<void> = async () => {}) {
   if (!code || code.length > 4096 || !providerReady(id)) throw new CloudError('setup');
   const pending = consumeAuthorization(ctx, id, state), p = cloudProvider(id);
   const body = tokenBody(p); body.set('grant_type', 'authorization_code'); body.set('code', code); body.set('redirect_uri', callbackUrl(id)); if (p.pkce) body.set('code_verifier', pending.verifier);
-  const result = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() }, fetcher));
+  const result = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString() }, fetcher));
   await reauthorize();
   if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
   saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation: randomUUID() }));
@@ -97,7 +105,7 @@ export async function accessFor(ctx: VaultContext, id: string, signal: AbortSign
   const work = (async () => {
     const originalVersion = version(ctx, slot(id));
     const body = tokenBody(p); body.set('grant_type', 'refresh_token'); body.set('refresh_token', tokens.refresh!);
-    const next = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(), signal }, fetcher));
+    const next = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString(), signal }, fetcher));
     signal.throwIfAborted();
     if (version(ctx, slot(id)) !== originalVersion) throw new CloudError('changed');
     const updated = { ...tokens, access: next.access_token, refresh: next.refresh_token ?? tokens.refresh, expires: Date.now() + next.expires_in * 1000 };
