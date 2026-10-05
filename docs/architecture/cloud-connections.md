@@ -141,7 +141,21 @@ Live Ads consent and report collection have not been tested or deployed yet.
   verify the supported merchant/partner access model before adding a login flow.
 - No paid services, root mailbox changes, customer writes or deployment performed.
 
+## Printify and Shopify implementation (M6b/M6c)
+
+- Printify: platform registration/approval required before setting OMEGA_PRINTIFY_ENABLED=1 and OMEGA_PRINTIFY_APP_ID. Application scopes must be shops.read, products.read, orders.read only. Callback: https://os.noepenaa.com/api/connections/oauth/printify/callback. Uses provider absolute expiry and rotating refresh tokens; signed state is also carried in accept/decline URLs.
+- Shopify: OMEGA_SHOPIFY_CLIENT_ID, OMEGA_SHOPIFY_CLIENT_SECRET and OMEGA_SHOPIFY_ENABLED=1 only after app/distribution/access setup is approved. Callback: https://os.noepenaa.com/api/connections/oauth/shopify/callback. Standalone merchant authorization, read_products/read_orders, expiring offline tokens. API version 2026-10.
+- Each Shopify connection is pinned to its canonical myshopify.com domain. Callback HMAC/timestamp and single-use workspace/user/session state must all pass. Other domains, ports, redirects and arbitrary API paths are rejected.
+- Printify reports current product/all-status order/fulfilled order totals. Shopify reports current products and rolling 30-day orders, with unknown for non-exact counts. Neither is revenue, profit or balance; totals across providers must not be summed.
+- Only aggregate snapshots and shop ID/name discovery results reach clients. No customer fields, raw orders, order creation, publishing, payments or mutation GraphQL are retained/implemented.
+- Provider registrations, credentials, legal requirements and live merchant tests remain external work. No app approval, account access or deployment is implied by implementation.
+
 ## Primary references
+
+- https://developers.printify.com/
+- https://shopify.dev/docs/apps/build/authentication-authorization/authenticate-standalone-apps
+- https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens
+- https://shopify.dev/docs/api/admin-graphql/2026-10/queries/ordersCount
 
 - https://developers.google.com/identity/protocols/oauth2/web-server
 - https://developers.google.com/webmaster-tools/v1/searchanalytics/query

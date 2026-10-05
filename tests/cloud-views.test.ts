@@ -10,6 +10,20 @@ import { join } from 'node:path';
 vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
+
+test('commerce sign-in is honest before approval and Shopify requires a store domain', () => {
+  for (const id of ['printify', 'shopify']) {
+    const source = sources.find(s => s.id === id)!;
+    const pending = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+    expect(pending).toContain('Provider setup required'); expect(pending).not.toContain('Continue with');
+    const ready = renderToStaticMarkup(createElement(CloudConnections, { initial: [{ ...source, appReady: true }], workspaceId: 'A'.repeat(32) }));
+    expect(ready).toContain(`Continue with ${source.name}`);
+    if (id === 'shopify') { expect(ready).toContain('Shopify store domain'); expect(ready).toContain('disabled=""'); }
+    else expect(ready).not.toContain('disabled=""');
+    const connected = renderToStaticMarkup(createElement(CloudConnections, { initial: [{ ...source, appReady: true, status: 'needs_setup' }], workspaceId: 'A'.repeat(32) }));
+    expect(connected).toContain('Find accounts'); expect(connected).not.toContain('checked=""');
+  }
+});
 test('disconnected sources lead with honest provider sign-in rather than credential forms', () => {
   const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
   expect(html).not.toContain('Setup pending');

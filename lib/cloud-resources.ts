@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import type { VaultContext } from '@/lib/creds';
-import { accessFor, oauthGeneration, etsyAppHeaders } from '@/lib/cloud-oauth';
+import { accessFor, oauthGeneration, etsyAppHeaders, authorizedShop } from '@/lib/cloud-oauth';
 import { cloudJson, CloudError } from '@/lib/cloud-http';
 import { cloudSource } from '@/lib/cloud-catalog';
 import { discoverAdsResources } from '@/lib/cloud-google-ads';
+import { printifyShops } from '@/lib/cloud-printify';
+import { shopifyResource } from '@/lib/cloud-shopify';
 
 export type CloudResource = { id: string; label: string };
 export type ResourceDiscovery = { resources: CloudResource[]; truncated: boolean };
@@ -21,13 +23,26 @@ const MetaPages = z.object({ data: z.array(z.object({ id: metaId, name: text, in
 const MetaAds = z.object({ data: z.array(z.object({ account_id: metaId, name: text })).max(100), paging: MetaPaging });
 
 export async function discoverResources(ctx: VaultContext, id: string, fetcher: typeof fetch = fetch): Promise<ResourceDiscovery> {
-  if (!['search-console', 'ga4', 'youtube', 'google-business', 'google-ads', 'facebook', 'instagram', 'meta-ads', 'etsy'].includes(id)) throw new CloudError('setup');
+  if (!['search-console', 'ga4', 'youtube', 'google-business', 'google-ads', 'facebook', 'instagram', 'meta-ads', 'etsy', 'printify', 'shopify'].includes(id)) throw new CloudError('setup');
   const source = cloudSource(id), provider = source.provider!, generation = oauthGeneration(ctx, provider);
   if (!generation) throw new CloudError('permission');
   const meta = provider === 'meta', version = process.env.OMEGA_META_API_VERSION;
   if (meta && !/^v\d+\.0$/.test(version ?? '')) throw new CloudError('setup');
   const signal = AbortSignal.timeout(15000);
+  const shop = id === 'shopify' ? authorizedShop(ctx) : undefined;
   const token = await accessFor(ctx, provider, signal, fetcher);
+  if (id === 'shopify') {
+    const result = await shopifyResource(token, shop!, signal, fetcher);
+    signal.throwIfAborted();
+    if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
+    return result;
+  }
+  if (id === 'printify') {
+    const result = await printifyShops(token, signal, fetcher);
+    signal.throwIfAborted();
+    if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
+    return result;
+  }
   if (id === 'google-ads') {
     const result = await discoverAdsResources(token, signal, fetcher);
     signal.throwIfAborted();

@@ -4,6 +4,7 @@ import { oauthId, type OAuthId } from '@/lib/cloud-catalog';
 import { readVaultValue, saveVaultValue, revokeVaultValue, type VaultContext } from '@/lib/creds';
 import { cloudJson, CloudError } from '@/lib/cloud-http';
 import { challengeFor } from '@/lib/oauth/pkce';
+import { shopifyDomain, verifyShopifyCallback } from '@/lib/cloud-shopify';
 
 type AuthContext = VaultContext & { user: { id: string }; sessionBinding?: string };
 type Provider = { id: OAuthId; authorize: string; token: string; scopes: string[]; env: string; pkce: boolean; separator?: string; clientName?: string; refresh: boolean };
@@ -19,9 +20,13 @@ export function cloudProvider(input: string): Provider {
     case 'tiktok': return { id, authorize: 'https://www.tiktok.com/v2/auth/authorize/', token: 'https://open.tiktokapis.com/v2/oauth/token/', env: 'OMEGA_TIKTOK', scopes: ['user.info.basic', 'user.info.stats'], pkce: false, separator: ',', clientName: 'client_key', refresh: true };
     case 'linkedin': throw new CloudError('setup'); // Developer app and reporting product access are not approved.
     case 'etsy': return { id, authorize: 'https://www.etsy.com/oauth/connect', token: 'https://api.etsy.com/v3/public/oauth/token', env: 'OMEGA_ETSY', scopes: ['shops_r'], pkce: true, refresh: true };
+    case 'printify': return { id, authorize: 'https://printify.com/app/authorize', token: 'https://api.printify.com/v1/app/oauth/tokens', env: 'OMEGA_PRINTIFY', scopes: ['shops.read', 'products.read', 'orders.read'], pkce: false, refresh: true };
+    case 'shopify': return { id, authorize: '', token: '', env: 'OMEGA_SHOPIFY', scopes: ['read_products', 'read_orders'], separator: ',', pkce: false, refresh: true };
   }
 }
 export function providerReady(id: string) {
+  if (id === 'shopify' && process.env.OMEGA_SHOPIFY_ENABLED !== '1') return false;
+  if (id === 'printify') return process.env.OMEGA_PRINTIFY_ENABLED === '1' && Boolean(process.env.OMEGA_PRINTIFY_APP_ID);
   if (id === 'linkedin' || (id === 'google-business' && process.env.OMEGA_GOOGLE_BUSINESS_ENABLED !== '1')) return false;
   if (id === 'google-ads' && (process.env.OMEGA_GOOGLE_ADS_ENABLED !== '1' || process.env.OMEGA_GOOGLE_ADS_API_VERSION !== 'v25')) return false;
   const p = cloudProvider(id);
@@ -35,8 +40,8 @@ export function callbackUrl(id: string) {
   return new URL(`/api/connections/oauth/${oauthId(id)}/callback`, base.origin).toString();
 }
 const StateSchema = z.object({ provider: z.string(), workspace: z.string(), user: z.string(), session: z.string(), nonce: z.string(), issued: z.number() }).strict();
-const PendingSchema = z.object({ state: z.string(), verifier: z.string(), tokenVersion: z.string() }).strict();
-const TokensSchema = z.object({ access: z.string().min(1).max(16000), refresh: z.string().max(8000).optional(), expires: z.number(), generation: z.string() }).strict();
+const PendingSchema = z.object({ state: z.string(), verifier: z.string(), tokenVersion: z.string(), shop: z.string().optional() }).strict();
+const TokensSchema = z.object({ access: z.string().min(1).max(16000), refresh: z.string().max(8000).optional(), expires: z.number(), generation: z.string(), shop: z.string().optional() }).strict();
 const TokenResponse = z.object({ access_token: z.string().min(1).max(16000), refresh_token: z.string().max(8000).optional(), expires_in: z.coerce.number().positive().max(366 * 86400), scope: z.string().optional() });
 const slot = (id: string, kind = 'tokens') => `oauth:${oauthId(id)}:${kind}`;
 function sign(payload: string) {
@@ -45,13 +50,21 @@ function sign(payload: string) {
   return createHmac('sha256', Buffer.from(key, 'hex')).update('OmegaOS OAuth state v1\0').update(payload).digest('base64url');
 }
 function version(ctx: VaultContext, name: string) { const r = ctx.db.connectionRecords.get(name); return r ? createHash('sha256').update(JSON.stringify(r)).digest('hex') : ''; }
-export function beginAuthorization(ctx: AuthContext, id: string, now = Date.now()) {
+export function beginAuthorization(ctx: AuthContext, id: string, now = Date.now(), shopInput?: string) {
   if (!providerReady(id)) throw new CloudError('setup');
+  if (shopInput !== undefined && id !== 'shopify') throw new CloudError('setup');
+  const shop = id === 'shopify' ? shopifyDomain(shopInput ?? '') : undefined;
   const p = cloudProvider(id), verifier = randomBytes(48).toString('base64url');
   const payload = Buffer.from(JSON.stringify({ provider: id, workspace: ctx.workspace.id, user: ctx.user.id, session: ctx.sessionBinding ?? '', nonce: randomBytes(24).toString('base64url'), issued: now })).toString('base64url');
   const state = `${payload}.${sign(payload)}`;
-  saveVaultValue(ctx, slot(id, 'pending'), JSON.stringify({ state, verifier, tokenVersion: version(ctx, slot(id)) }));
-  const url = new URL(p.authorize);
+  saveVaultValue(ctx, slot(id, 'pending'), JSON.stringify({ state, verifier, tokenVersion: version(ctx, slot(id)), ...(shop ? { shop } : {}) }));
+  const url = new URL(shop ? `https://${shop}/admin/oauth/authorize` : p.authorize);
+  if (id === 'printify') {
+    const accept = new URL(callbackUrl(id)); accept.searchParams.set('state', state);
+    const decline = new URL(accept); decline.searchParams.set('error', 'access_denied');
+    url.search = new URLSearchParams({ app_id: process.env.OMEGA_PRINTIFY_APP_ID!, accept_url: accept.toString(), decline_url: decline.toString(), state }).toString();
+    return { url: url.toString() };
+  }
   url.search = new URLSearchParams({ [p.clientName ?? 'client_id']: process.env[`${p.env}_CLIENT_ID`]!, response_type: 'code', redirect_uri: callbackUrl(id), scope: p.scopes.join(p.separator ?? ' '), state }).toString();
   if (p.pkce) { url.searchParams.set('code_challenge', challengeFor(verifier)); url.searchParams.set('code_challenge_method', 'S256'); }
   if (id.startsWith('google')) { url.searchParams.set('access_type', 'offline'); url.searchParams.set('prompt', 'consent'); }
@@ -84,14 +97,34 @@ export function etsyAppHeaders(): Record<string, string> {
 function tokenHeaders(p: Provider): Record<string, string> {
   return { 'Content-Type': 'application/x-www-form-urlencoded', ...(p.id === 'etsy' ? etsyAppHeaders() : {}) };
 }
-export async function completeAuthorization(ctx: AuthContext, id: string, code: string, state: string, fetcher: typeof fetch = fetch, reauthorize: () => Promise<void> = async () => {}) {
+async function printifyTokens(parameters: Record<string, string>, refresh: boolean, fetcher: typeof fetch, signal?: AbortSignal) {
+  const raw = await cloudJson(`https://api.printify.com/v1/app/oauth/tokens${refresh ? '/refresh' : ''}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'User-Agent': 'OmegaOS' }, body: JSON.stringify({ app_id: process.env.OMEGA_PRINTIFY_APP_ID, ...parameters }), signal }, fetcher);
+  const result = z.object({ access_token: z.string().min(1).max(16000), refresh_token: z.string().min(1).max(8000), expire_at: z.string().regex(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/) }).parse(raw);
+  const expires = Date.parse(result.expire_at.replace(' ', 'T'));
+  if (!Number.isFinite(expires) || expires <= Date.now() || expires > Date.now() + 366 * 86400000) throw new CloudError('invalid_data');
+  return { ...result, expires_in: (expires - Date.now()) / 1000 };
+}
+function shopifyToken(result: z.infer<typeof TokenResponse>) {
+  if (!result.refresh_token || !['read_products', 'read_orders'].every(scope => result.scope?.split(',').includes(scope))) throw new CloudError('permission');
+  return result;
+}
+export function authorizedShop(ctx: VaultContext) {
+  const value = readVaultValue(ctx, slot('shopify'));
+  if (!value) throw new CloudError('permission');
+  return shopifyDomain(TokensSchema.parse(JSON.parse(value)).shop ?? '');
+}
+export async function completeAuthorization(ctx: AuthContext, id: string, code: string, state: string, fetcher: typeof fetch = fetch, reauthorize: () => Promise<void> = async () => {}, callbackParams?: URLSearchParams) {
   if (!code || code.length > 4096 || !providerReady(id)) throw new CloudError('setup');
   const pending = consumeAuthorization(ctx, id, state), p = cloudProvider(id);
+  const shop = id === 'shopify' ? shopifyDomain(pending.shop ?? '') : undefined;
+  if (shop && (!callbackParams || verifyShopifyCallback(callbackParams, process.env.OMEGA_SHOPIFY_CLIENT_SECRET) !== shop || callbackParams.get('code') !== code || callbackParams.get('state') !== state)) throw new CloudError('permission');
   const body = tokenBody(p); body.set('grant_type', 'authorization_code'); body.set('code', code); body.set('redirect_uri', callbackUrl(id)); if (p.pkce) body.set('code_verifier', pending.verifier);
-  const result = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString() }, fetcher));
+  if (shop) body.set('expiring', '1');
+  const result = id === 'printify' ? await printifyTokens({ code }, false, fetcher) : TokenResponse.parse(await cloudJson(shop ? `https://${shop}/admin/oauth/access_token` : p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString() }, fetcher));
+  if (shop) shopifyToken(result);
   await reauthorize();
   if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
-  saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation: randomUUID() }));
+  saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation: randomUUID(), ...(shop ? { shop } : {}) }));
 }
 export function oauthGeneration(ctx: VaultContext, id: string) {
   const value = readVaultValue(ctx, slot(id)); return value ? TokensSchema.parse(JSON.parse(value)).generation : '';
@@ -107,7 +140,9 @@ export async function accessFor(ctx: VaultContext, id: string, signal: AbortSign
   const work = (async () => {
     const originalVersion = version(ctx, slot(id));
     const body = tokenBody(p); body.set('grant_type', 'refresh_token'); body.set('refresh_token', tokens.refresh!);
-    const next = TokenResponse.parse(await cloudJson(p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString(), signal }, fetcher));
+    const endpoint = id === 'shopify' ? `https://${shopifyDomain(tokens.shop ?? '')}/admin/oauth/access_token` : p.token;
+    const next = id === 'printify' ? await printifyTokens({ refresh_token: tokens.refresh! }, true, fetcher, signal) : TokenResponse.parse(await cloudJson(endpoint, { method: 'POST', headers: tokenHeaders(p), body: body.toString(), signal }, fetcher));
+    if (id === 'shopify') shopifyToken(next);
     signal.throwIfAborted();
     if (version(ctx, slot(id)) !== originalVersion) throw new CloudError('changed');
     const updated = { ...tokens, access: next.access_token, refresh: next.refresh_token ?? tokens.refresh, expires: Date.now() + next.expires_in * 1000 };

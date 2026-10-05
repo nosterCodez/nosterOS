@@ -11,6 +11,8 @@ const field = 'mt-2 w-full min-w-0 rounded border border-os-border bg-os-bg p-2.
 const providers: Record<string, string> = { google: 'Google', 'google-business': 'Google Business Profile', 'google-ads': 'Google Ads', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
 const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', 'google-business': 'Business location', 'google-ads': 'Google Ads account', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account', etsy: 'Etsy shop' };
 const setupHelp: Record<string, string> = {
+  shopify: 'OmegaOS needs a registered Shopify app, approved distribution and read-only product/order access before store sign-in is available. No API key is needed from you once platform setup is complete.',
+  printify: 'Printify must approve the OmegaOS platform application before account sign-in is available. This connector only reads shop, product and order counts; it cannot publish products or place orders.',
   'google-business': 'Google must approve API access before Business Profile reporting can connect. Enabling the API alone does not grant access.',
   'google-ads': 'Google Ads requires its own API access and separate authorization. OmegaOS only reads reports; it cannot create campaigns or spend your ad budget.',
   etsy: 'Etsy must approve the separate OmegaOS app and its callback must be configured before shop sign-in is available.',
@@ -23,8 +25,9 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
   const [resource, setResource] = useState(source.resource), [enabled, setEnabled] = useState(source.enabled);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [confirm, setConfirm] = useState(false);
   const [discovery, setDiscovery] = useState<ResourceDiscovery | null>(null);
+  const [shop, setShop] = useState(source.id === 'shopify' ? source.resource : '');
   const authorized = !['not_connected', 'vault_unavailable', 'planned'].includes(source.status);
-  const picker = pickerNames[source.id];
+  const picker = source.id === 'printify' ? 'Printify shop' : source.id === 'shopify' ? 'Shopify store' : pickerNames[source.id];
   const setupPending = source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
   const accountSaved = Boolean(source.provider && authorized);
   const connectionLabel = setupPending ? 'Provider setup required' : accountSaved && !['error', 'stale'].includes(source.status) ? 'Connected' : SOURCE_STATUS[source.status];
@@ -47,7 +50,8 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
     {source.provider === 'meta' && <p className="mt-3 text-xs leading-5 text-os-muted">One Facebook sign-in connects Meta to this workspace. Choose each Page, Instagram account, or ad account separately. Read-only access; no posts or campaign changes.{source.id === 'instagram' && ' Instagram must be a professional account linked to a Facebook Page you can access.'}</p>}
     {!source.planned && <>
       {source.provider ? <div className="mt-4">
-        {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy} onClick={() => void run({ action: 'authorize', id: source.provider })}>
+        {source.id === 'shopify' && source.appReady && <label className="mb-3 block text-xs">Shopify store domain<input className={field} value={shop} onChange={event => setShop(event.target.value.trim().toLowerCase())} placeholder="your-store.myshopify.com" maxLength={100} autoComplete="off" spellCheck={false} disabled={busy} /></label>}
+        {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy || (source.id === 'shopify' && !new RegExp(source.resourcePattern!).test(shop))} onClick={() => void run({ action: 'authorize', id: source.provider, ...(source.id === 'shopify' ? { shop } : {}) })}>
           <Link2 size={15} aria-hidden="true" />{authorized ? 'Reconnect' : 'Continue with'} {providers[source.provider] ?? source.name}<ArrowUpRight size={14} aria-hidden="true" />
         </button> : <p className="text-xs leading-5 text-os-muted">{setupHelp[source.id] ?? 'OmegaOS needs a one-time provider setup before account sign-in is available. This is not a problem with your account.'}</p>}
       </div> : <div className="mt-4 text-xs leading-5 text-os-muted">

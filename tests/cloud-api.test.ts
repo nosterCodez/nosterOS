@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { randomBytes } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { openDb } from '@/lib/db';
 import { saveVaultValue } from '@/lib/creds';
 import { disconnectOAuth } from '@/lib/cloud-oauth';
@@ -25,6 +25,39 @@ beforeEach(() => {
 });
 afterEach(() => { dbs.forEach(db => db.close()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 const configuration = { action: 'configure', id: 'ga4', resource: '12345', enabled: true };
+
+test('commerce authorization requires role, origin and workspace and persists only encrypted provider tokens', async () => {
+  vi.stubEnv('OMEGA_PRINTIFY_ENABLED', '1'); vi.stubEnv('OMEGA_PRINTIFY_APP_ID', 'printify-app');
+  vi.stubEnv('OMEGA_SHOPIFY_ENABLED', '1'); vi.stubEnv('OMEGA_SHOPIFY_CLIENT_ID', 'shopify-app'); vi.stubEnv('OMEGA_SHOPIFY_CLIENT_SECRET', 'shopify-secret');
+  const fetcher = vi.fn(async () => Response.json({ access_token: 'commerce-private', refresh_token: 'refresh-private', expires_in: 3600, expire_at: new Date(Date.now() + 3600000).toISOString(), scope: 'read_products,read_orders' }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    for (const id of ['printify', 'shopify']) {
+      const action = { action: 'authorize', id, ...(id === 'shopify' ? { shop: 'fixture.myshopify.com' } : {}) };
+      identity(A, 'member'); expect((await call('POST', action)).status).toBe(403);
+      identity(); expect((await call('POST', action, { origin: 'https://evil.example' })).status).toBe(403);
+      expect((await call('POST', action, { 'x-omegaos-workspace': B })).status).toBe(409);
+      const start = await (await call('POST', action)).json();
+      const state = new URL(start.url).searchParams.get('state')!;
+      const callback = new URL(`http://localhost:4100/api/connections/oauth/${id}/callback`);
+      callback.searchParams.set('code', 'fixture-code'); callback.searchParams.set('state', state);
+      if (id === 'shopify') {
+        callback.searchParams.set('shop', 'fixture.myshopify.com'); callback.searchParams.set('timestamp', String(Math.floor(Date.now() / 1000)));
+        const message = [...callback.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('&');
+        callback.searchParams.set('hmac', createHmac('sha256', 'shopify-secret').update(message).digest('hex'));
+      }
+      const result = await cloudCallback(new Request(callback, { headers: { cookie: 'better-auth.session_token=test' } }), id);
+      expect(result.headers.get('location')).toContain('connection=authorized');
+      const body = await (await call()).json();
+      expect(body.sources.find((s: { id: string }) => s.id === id)).toMatchObject({ status: 'needs_setup', enabled: false });
+      expect(JSON.stringify(body)).not.toContain('commerce-private');
+      expect(JSON.stringify(dbs.get(A)!.connectionRecords.all())).not.toContain('commerce-private');
+      identity(B);
+      expect((await (await call()).json()).sources.find((s: { id: string }) => s.id === id).status).toBe('not_connected');
+      identity(A);
+    }
+  } finally { vi.unstubAllGlobals(); }
+});
 test('admin manual sync reads only its workspace and leaves recurring collection disabled', async () => {
   saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:google:tokens', JSON.stringify({ access: 'fixture-token', refresh: 'fixture-refresh', expires: Date.now() + 3600000, generation: 'fixture' }));
   await call('POST', { ...configuration, enabled: false });

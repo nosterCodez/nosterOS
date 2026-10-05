@@ -34,7 +34,8 @@ async function metaError(response: Response): Promise<CloudError['code'] | undef
 }
 export async function cloudJson(url: string, init: RequestInit = {}, fetcher: typeof fetch = fetch): Promise<unknown> {
   const target = new URL(url);
-  if (target.protocol !== 'https:' || !HOSTS.has(target.hostname) || target.port || target.username || target.password) throw new CloudError('setup');
+  const shopify = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.myshopify\.com$/.test(target.hostname) && ['/admin/oauth/access_token', '/admin/api/2026-10/graphql.json'].includes(target.pathname) && !target.search && !target.hash;
+  if (target.protocol !== 'https:' || !(HOSTS.has(target.hostname) || target.hostname === 'api.printify.com' || shopify) || target.port || target.username || target.password) throw new CloudError('setup');
   try {
     const timeout = AbortSignal.timeout(8000);
     const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;

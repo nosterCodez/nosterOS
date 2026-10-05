@@ -10,7 +10,7 @@ import { CloudError, CLOUD_ERROR_TEXT } from '@/lib/cloud-http';
 import { discoverResources } from '@/lib/cloud-resources';
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const Configure = z.object({ action: z.literal('configure'), id: z.string().max(40), resource: z.string().max(500), enabled: z.boolean() }).strict();
-const Action = z.union([Configure, z.object({ action: z.enum(['sync', 'disconnect', 'authorize', 'resources']), id: z.string().max(40) }).strict()]);
+const Action = z.union([Configure, z.object({ action: z.literal('authorize'), id: z.string().max(40), shop: z.string().max(100).optional() }).strict(), z.object({ action: z.enum(['sync', 'disconnect', 'resources']), id: z.string().max(40) }).strict()]);
 export async function cloudRequest(request: Request) {
   const denied = await apiSessionError('/api/admin/sources', request.method, request); if (denied) return denied;
   try {
@@ -31,7 +31,7 @@ export async function cloudRequest(request: Request) {
       }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);
       if (action?.action === 'sync') outcome = await syncSource(ctx, action.id, { manual: true });
-      if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id)));
+      if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id), Date.now(), action.shop));
       if (action?.action === 'disconnect') {
         const source = cloudSource(action.id);
         if (source.provider) { disconnectOAuth(ctx, source.provider); for (const s of CLOUD_SOURCES.filter(s => s.provider === source.provider)) db.cloudSources.invalidate(s.id); }
@@ -58,7 +58,7 @@ export async function cloudCallback(request: Request, provider: string) {
     await withWorkspaceLease(context, db => completeAuthorization({ ...context, db, sessionBinding: sessionBinding(request) }, oauthId(provider), url.searchParams.get('code') ?? '', url.searchParams.get('state') ?? '', fetch, async () => {
       const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
       if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id) throw new CloudError('changed');
-    }));
+    }, url.searchParams));
     destination.searchParams.set('connection', 'authorized');
   } catch { destination.searchParams.set('connection', 'failed'); }
   return new Response(null, { status: 303, headers: { Location: destination.toString(), 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' } });
