@@ -35,6 +35,20 @@ before public onboarding. No legal text was published in this change.
 
 ## Workspace flow
 
+M5c makes native provider sign-in the default entry point. Manual secrets are
+collapsed under Advanced connections, not removed or represented as OAuth.
+Google Search Console sites, GA4 properties and owned YouTube channels can be
+discovered after consent. Enable the Analytics Admin API as well as Data API
+for GA4 selection. Discovery uses existing read-only scopes, a 15-second total
+budget, at most five pages and 500 distinct results, with a visible truncation
+notice. It never enables scheduled reads or chooses an account automatically.
+Membership, active workspace and credential generation are rechecked before
+returning results; no tokens or arbitrary provider pagination URLs reach clients.
+Meta/Etsy still require resource IDs in Account settings after OAuth. TikTok
+uses the authorized account directly. Stripe/email login is not implemented;
+their manual configuration remains available. No new provider apps have been
+registered by M5c, and unconfigured sign-in buttons remain disabled honestly.
+
 An owner/admin authorizes a provider or saves a restricted credential, selects
 the resource and explicitly enables scheduled reads. Save settings after a
 reconnection to bind the new credential generation. A saved key alone does not
@@ -80,6 +94,8 @@ No customer email/password/token or production data is used in preview tests.
 
 - https://developers.google.com/identity/protocols/oauth2/web-server
 - https://developers.google.com/webmaster-tools/v1/searchanalytics/query
+- https://developers.google.com/webmaster-tools/v1/sites/list
+- https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/accountSummaries/list
 - https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport
 - https://developers.google.com/youtube/v3/docs/channels/list
 - https://developers.tiktok.com/doc/oauth-user-access-token-management

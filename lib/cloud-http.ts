@@ -1,7 +1,7 @@
 export class CloudError extends Error {
   constructor(public code: 'permission' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider') { super(code); }
 }
-const HOSTS = new Set(['oauth2.googleapis.com', 'www.googleapis.com', 'analyticsdata.googleapis.com', 'businessprofileperformance.googleapis.com', 'api.stripe.com', 'graph.facebook.com', 'open.tiktokapis.com', 'api.etsy.com', 'api.linkedin.com', 'www.linkedin.com']);
+const HOSTS = new Set(['oauth2.googleapis.com', 'www.googleapis.com', 'analyticsdata.googleapis.com', 'analyticsadmin.googleapis.com', 'businessprofileperformance.googleapis.com', 'api.stripe.com', 'graph.facebook.com', 'open.tiktokapis.com', 'api.etsy.com', 'api.linkedin.com', 'www.linkedin.com']);
 export async function cloudJson(url: string, init: RequestInit = {}, fetcher: typeof fetch = fetch): Promise<unknown> {
   const target = new URL(url);
   if (target.protocol !== 'https:' || !HOSTS.has(target.hostname) || target.port || target.username || target.password) throw new CloudError('setup');

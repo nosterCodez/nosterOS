@@ -4,12 +4,13 @@ import { apiSessionError, requireWorkspace, withWorkspaceLease, SessionError } f
 import { limitedBody } from '@/lib/connection-api';
 import { configureSource, sourceViews } from '@/lib/cloud-sources';
 import { syncSource } from '@/lib/cloud-jobs';
-import { beginAuthorization, completeAuthorization, disconnectOAuth } from '@/lib/cloud-oauth';
+import { beginAuthorization, completeAuthorization, disconnectOAuth, oauthGeneration } from '@/lib/cloud-oauth';
 import { CLOUD_SOURCES, cloudSource, oauthId } from '@/lib/cloud-catalog';
 import { CloudError, CLOUD_ERROR_TEXT } from '@/lib/cloud-http';
+import { discoverResources } from '@/lib/cloud-resources';
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const Configure = z.object({ action: z.literal('configure'), id: z.string().max(40), resource: z.string().max(500), enabled: z.boolean() }).strict();
-const Action = z.union([Configure, z.object({ action: z.enum(['sync', 'disconnect', 'authorize']), id: z.string().max(40) }).strict()]);
+const Action = z.union([Configure, z.object({ action: z.enum(['sync', 'disconnect', 'authorize', 'resources']), id: z.string().max(40) }).strict()]);
 export async function cloudRequest(request: Request) {
   const denied = await apiSessionError('/api/admin/sources', request.method, request); if (denied) return denied;
   try {
@@ -19,6 +20,13 @@ export async function cloudRequest(request: Request) {
     return await withWorkspaceLease(context, async db => {
       const ctx = { ...context, db };
       let outcome: unknown;
+      if (action?.action === 'resources') {
+        const generation = oauthGeneration(ctx, 'google');
+        const result = await discoverResources(ctx, action.id);
+        const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
+        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || oauthGeneration(ctx, 'google') !== generation) throw new CloudError('changed');
+        return json(result);
+      }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);
       if (action?.action === 'sync') outcome = await syncSource(ctx, action.id);
       if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id)));

@@ -9,13 +9,22 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
 const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
-test('connection controls have honest disabled states, names, and explicit collection opt-in', () => {
+test('disconnected sources lead with honest provider sign-in rather than credential forms', () => {
   const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
-  expect(html).toContain('Administrator setup required');
+  expect(html).toContain('Sign-in is awaiting OmegaOS platform setup');
+  expect(html).toContain('Continue with');
+  expect(html).toContain('Account sign-in is not available yet');
+  expect(html).not.toContain('<form');
+  expect(html).not.toContain('checked=""');
+  expect(html).toContain('lg:grid-cols-2');
+});
+test('authorized sources offer selection and leave collection opt-in unchecked', () => {
+  const connected = sources.map(s => ({ ...s, status: s.planned ? 'planned' : 'paused', appReady: true }));
+  const html = renderToStaticMarkup(createElement(CloudConnections, { initial: connected, workspaceId: 'A'.repeat(32) }));
+  expect(html).toContain('Find'); expect(html).toContain('Advanced account selection');
   expect(html).toContain('aria-label="Disconnect Stripe"');
   expect(html).toContain('Automatically read these account metrics');
   expect(html).not.toContain('checked=""');
-  expect(html).toContain('lg:grid-cols-2');
 });
 test('dashboard renders real zero, unknown placeholders, source period, stale and test labels', async () => {
   const fixture = sources.map(s => s.id === 'stripe' ? { ...s, stale: true, status: 'stale', snapshot: { at: '2026-10-05T00:00:00Z', period: 'Fixture USD period', values: { gross: 0, refunded: null, net: 0, payments: 0 }, mode: 'test' as const } } : s);

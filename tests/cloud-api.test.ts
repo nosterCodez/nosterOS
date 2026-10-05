@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { randomBytes } from 'node:crypto';
 import { openDb } from '@/lib/db';
+import { saveVaultValue } from '@/lib/creds';
 import { cloudRequest, cloudCallback } from '@/lib/cloud-api';
 vi.unmock('@/lib/session');
 const auth = vi.hoisted(() => ({ session: vi.fn(), member: vi.fn(), organization: vi.fn(), open: vi.fn() }));
@@ -60,5 +61,28 @@ test('callback fails closed without valid state or admin session and never calls
     identity(A, 'member'); expect((await cloudCallback(request(), 'google')).status).toBe(403);
     auth.session.mockResolvedValue(null); expect((await cloudCallback(request(), 'google')).status).toBe(401);
     expect(fetcher).not.toHaveBeenCalled();
+  } finally { vi.unstubAllGlobals(); }
+});
+test('resource discovery enforces origin, role, workspace and credential isolation', async () => {
+  saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:google:tokens', JSON.stringify({ access: 'private-account-token', expires: Date.now() + 3600000, generation: 'one' }));
+  const fetcher = vi.fn(async () => Response.json({ siteEntry: [{ siteUrl: 'https://example.com/', permissionLevel: 'siteOwner' }] }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const action = { action: 'resources', id: 'search-console' };
+    expect((await call('POST', action, { origin: 'https://other.test' })).status).toBe(403);
+    expect((await call('POST', action, { 'x-omegaos-workspace': B })).status).toBe(409);
+    identity(A, 'member'); expect((await call('POST', action)).status).toBe(403);
+    identity(B); expect((await call('POST', action)).status).toBe(400);
+    expect(fetcher).not.toHaveBeenCalled();
+    identity(A);
+    const result = await call('POST', action);
+    expect(result.headers.get('cache-control')).toBe('no-store');
+    const body = await result.text(); expect(body).toContain('https://example.com/'); expect(body).not.toContain('private-account-token');
+    fetcher.mockImplementation(async () => { identity(B); return Response.json({ siteEntry: [{ siteUrl: 'https://secret.test/', permissionLevel: 'siteOwner' }] }); });
+    const changed = await call('POST', action);
+    expect(changed.status).toBe(400); expect(await changed.text()).not.toContain('secret.test');
+    identity(A);
+    fetcher.mockImplementation(async () => { identity(A, 'member'); return Response.json({ siteEntry: [] }); });
+    expect((await call('POST', action)).status).toBe(403);
   } finally { vi.unstubAllGlobals(); }
 });
