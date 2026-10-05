@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { randomBytes } from 'node:crypto';
 import { openDb } from '@/lib/db';
 import { saveVaultValue } from '@/lib/creds';
+import { disconnectOAuth } from '@/lib/cloud-oauth';
 import { cloudRequest, cloudCallback } from '@/lib/cloud-api';
 vi.unmock('@/lib/session');
 const auth = vi.hoisted(() => ({ session: vi.fn(), member: vi.fn(), organization: vi.fn(), open: vi.fn() }));
@@ -125,5 +126,29 @@ test('resource discovery enforces origin, role, workspace and credential isolati
     identity(A);
     fetcher.mockImplementation(async () => { identity(A, 'member'); return Response.json({ siteEntry: [] }); });
     expect((await call('POST', action)).status).toBe(403);
+  } finally { vi.unstubAllGlobals(); }
+});
+
+test('Meta discovery works without Google credentials and discards changed workspace or Meta authorization', async () => {
+  vi.stubEnv('OMEGA_META_API_VERSION', 'v26.0');
+  const context = { workspace: { id: A }, db: dbs.get(A)! };
+  saveVaultValue(context, 'oauth:meta:tokens', JSON.stringify({ access: 'private-meta-token', expires: Date.now() + 3600000, generation: 'one' }));
+  const fetcher = vi.fn(async () => Response.json({ data: [{ id: '123', name: 'Business Page' }] }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const action = { action: 'resources', id: 'facebook' };
+    identity(B); expect((await call('POST', action)).status).toBe(400);
+    identity(A, 'member'); expect((await call('POST', action)).status).toBe(403);
+    identity(A); expect((await call('POST', action, { origin: 'https://other.test' })).status).toBe(403);
+    expect(fetcher).not.toHaveBeenCalled();
+    const body = await (await call('POST', action)).json();
+    expect(body.resources).toEqual([{ id: '123', label: 'Business Page' }]);
+    expect(JSON.stringify(body)).not.toContain('private-meta-token');
+    fetcher.mockImplementation(async () => { identity(B); return Response.json({ data: [{ id: '123', name: 'Secret Page' }] }); });
+    expect(await (await call('POST', action)).text()).not.toContain('Secret Page');
+    identity(A);
+    fetcher.mockImplementation(async () => { disconnectOAuth(context, 'meta'); return Response.json({ data: [{ id: '123', name: 'Secret Page' }] }); });
+    const changed = await call('POST', action);
+    expect(changed.status).toBe(400); expect(await changed.text()).not.toContain('Secret Page');
   } finally { vi.unstubAllGlobals(); }
 });

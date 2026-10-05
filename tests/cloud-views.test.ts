@@ -50,6 +50,19 @@ test('authorized sources offer selection and leave collection opt-in unchecked',
   expect(html).toContain('Automatically read these account metrics');
   expect(html).not.toContain('checked=""');
 });
+
+test('each Meta source offers its own account picker after shared authorization', () => {
+  for (const id of ['facebook', 'instagram', 'meta-ads']) {
+    const source = { ...sources.find(s => s.id === id)!, status: 'needs_setup', appReady: true };
+    const html = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+    expect(html).toContain('Find accounts');
+    expect(html).toContain('Advanced account selection');
+    expect(html).toContain('One Facebook sign-in connects Meta to this workspace');
+    expect(html).toContain('Read-only access; no posts or campaign changes');
+    expect(html).not.toContain('checked=""');
+    if (id === 'instagram') expect(html).toContain('professional account linked to a Facebook Page');
+  }
+});
 test('dashboard renders real zero, unknown placeholders, source period, stale and test labels', async () => {
   const fixture = sources.map(s => s.id === 'stripe' ? { ...s, stale: true, status: 'stale', snapshot: { at: '2026-10-05T00:00:00Z', period: 'Fixture USD period', values: { gross: 0, refunded: null, net: 0, payments: 0 }, mode: 'test' as const } } : s);
   vi.mocked(sourceViews).mockReturnValue(fixture);

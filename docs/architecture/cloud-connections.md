@@ -44,7 +44,11 @@ budget, at most five pages and 500 distinct results, with a visible truncation
 notice. It never enables scheduled reads or chooses an account automatically.
 Membership, active workspace and credential generation are rechecked before
 returning results; no tokens or arbitrary provider pagination URLs reach clients.
-Meta/Etsy still require resource IDs in Account settings after OAuth. TikTok
+M5i adds Facebook Page, linked Instagram professional account and Meta ad-account
+pickers using the same limits. Graph discovery follows only bounded cursors on
+the fixed Graph host; it never follows `paging.next` URLs or returns Page tokens.
+The Meta credential generation (not Google's) is rechecked after discovery.
+Etsy still requires a resource ID in Account settings after OAuth. TikTok
 uses the authorized account directly. Stripe/email login is not implemented;
 their manual configuration remains available. No new provider apps have been
 registered by M5c, and unconfigured sign-in buttons remain disabled honestly.
@@ -52,8 +56,9 @@ registered by M5c, and unconfigured sign-in buttons remain disabled honestly.
 An owner/admin authorizes a provider or saves a restricted credential, selects
 the resource and explicitly enables scheduled reads. Save settings after a
 reconnection to bind the new credential generation. A saved key alone does not
-mean connected, validated or collecting. `Sync now` obeys the same 15-minute
-cadence to prevent repeated account reads. A busy installation may delay reads.
+mean connected, validated or collecting. `Sync now` works without enabling
+scheduled reads, with a 15-minute successful-read cooldown and a 60-second
+failed-read retry delay. A busy installation may delay scheduled reads.
 
 The internal cron tick visits explicit workspace leases, rotates its starting
 workspace, runs at most one due source per workspace and stops after 16 seconds.

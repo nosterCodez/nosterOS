@@ -21,10 +21,12 @@ export async function cloudRequest(request: Request) {
       const ctx = { ...context, db };
       let outcome: unknown;
       if (action?.action === 'resources') {
-        const generation = oauthGeneration(ctx, 'google');
+        const provider = cloudSource(action.id).provider;
+        if (!provider) throw new CloudError('setup');
+        const generation = oauthGeneration(ctx, provider);
         const result = await discoverResources(ctx, action.id);
         const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
-        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || oauthGeneration(ctx, 'google') !== generation) throw new CloudError('changed');
+        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
         return json(result);
       }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);

@@ -9,7 +9,7 @@ export const SOURCE_STATUS: Record<string, string> = { planned: 'Coming later', 
 const control = 'flex items-center justify-center gap-2 rounded border border-os-border px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent disabled:opacity-40';
 const field = 'mt-2 w-full min-w-0 rounded border border-os-border bg-os-bg p-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent';
 const providers: Record<string, string> = { google: 'Google', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
-const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel' };
+const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account' };
 type Result = Partial<ResourceDiscovery> & { message?: string };
 type Act = (body: object) => Promise<Result>;
 
@@ -38,6 +38,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
     <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{connectionLabel}</span></div>
     {accountSaved && <p className="mt-3 text-xs leading-5 text-os-muted">Account connection saved to this workspace. Reporting: {SOURCE_STATUS[source.status]}.</p>}
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
+    {source.provider === 'meta' && <p className="mt-3 text-xs leading-5 text-os-muted">One Facebook sign-in connects Meta to this workspace. Choose each Page, Instagram account, or ad account separately. Read-only access; no posts or campaign changes.{source.id === 'instagram' && ' Instagram must be a professional account linked to a Facebook Page you can access.'}</p>}
     {!source.planned && <>
       {source.provider ? <div className="mt-4">
         {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy} onClick={() => void run({ action: 'authorize', id: source.provider })}>

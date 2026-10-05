@@ -18,6 +18,16 @@ async function googleApiDisabled(response: Response): Promise<boolean> {
     return body.error.details.some(detail => record(detail) && detail['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' && detail.domain === 'googleapis.com' && detail.reason === 'SERVICE_DISABLED');
   } catch { return false; }
 }
+async function metaError(response: Response): Promise<CloudError['code'] | undefined> {
+  try {
+    const body = await boundedJson(response, 65_536);
+    if (!record(body) || !record(body.error)) return;
+    const code = body.error.code;
+    if (code === 190) return 'authentication';
+    if (code === 10 || code === 200) return 'permission';
+    if (code === 4 || code === 17 || code === 32 || code === 613) return 'rate_limit';
+  } catch { /* Use the safe HTTP fallback for malformed provider errors. */ }
+}
 export async function cloudJson(url: string, init: RequestInit = {}, fetcher: typeof fetch = fetch): Promise<unknown> {
   const target = new URL(url);
   if (target.protocol !== 'https:' || !HOSTS.has(target.hostname) || target.port || target.username || target.password) throw new CloudError('setup');
@@ -26,6 +36,8 @@ export async function cloudJson(url: string, init: RequestInit = {}, fetcher: ty
     const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
     const response = await fetcher(target.toString(), { ...init, signal, redirect: 'error', cache: 'no-store' });
     if (!response.ok) {
+      const metaCode = target.hostname === 'graph.facebook.com' ? await metaError(response) : undefined;
+      if (metaCode) throw new CloudError(metaCode);
       if (response.status === 403 && target.hostname.endsWith('.googleapis.com') && await googleApiDisabled(response)) throw new CloudError('api_disabled');
       if (signal.aborted) throw new CloudError('timeout');
       throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider');

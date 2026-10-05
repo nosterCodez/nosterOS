@@ -32,3 +32,12 @@ test('malformed and oversized error bodies retain safe permission fallback', asy
   expect(cancel).toHaveBeenCalledOnce();
   await expect(cloudJson(url, {}, vi.fn<typeof fetch>().mockResolvedValue(new Response('<html>private-token</html>', { status: 403 })))).rejects.toMatchObject({ code: 'permission' });
 });
+
+test('Meta Graph error codes distinguish expired sign-in, permission and throttling without exposing messages', async () => {
+  const graph = 'https://graph.facebook.com/v26.0/me/accounts';
+  for (const [code, expected] of [[190, 'authentication'], [10, 'permission'], [200, 'permission'], [4, 'rate_limit'], [17, 'rate_limit'], [999, 'provider']] as const) {
+    await expect(cloudJson(graph, {}, fetcher({ error: { code, message: 'private-token' } }, 400))).rejects.toMatchObject({ code: expected, message: expected });
+  }
+  await expect(cloudJson(url, {}, fetcher({ error: { code: 190 } }, 400))).rejects.toMatchObject({ code: 'provider' });
+  await expect(cloudJson(graph, {}, fetcher({ error: { code: '190' } }, 400))).rejects.toMatchObject({ code: 'provider' });
+});
