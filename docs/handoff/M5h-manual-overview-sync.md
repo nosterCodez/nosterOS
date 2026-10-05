@@ -9,6 +9,7 @@ Overview renders but has no snapshots. GA4 is authorized and configured, yet pau
 ## Decisions
 - Only the existing authenticated admin sync action requests manual mode; scheduler remains opt-in and skips paused sources.
 - Manual reads preserve credential-generation checks, active claim exclusion, revision fencing, time budgets, and the existing 15-minute cooldown.
+- Follow-up: failed manual reads may retry after 60 seconds; successful reads and scheduled collection retain 15 minutes. This permits correcting setup without a 15-minute debugging lockout; tested explicitly.
 - Completion relies on the acquired claim and revision: configuration changes/disconnect invalidate both, including when a manual read started paused.
 - Manual sync does not change enabled state, request new permissions, or schedule future reads.
 - Show actionable source state and connection links on Overview; never substitute zero for missing data.
@@ -25,3 +26,4 @@ Tests cover paused manual success, scheduler skip, cooldown, concurrent disconne
 - Security review: no new endpoints/scopes, existing admin/origin/workspace checks preserved, credential generation and claim/revision fencing retained. Tests prove no stale writes after reconfiguration/disconnect and no cross-workspace reads.
 - React review: no new client data fetching or dependencies; server snapshot rendering stays scoped and unknown values remain unknown; actions retain keyboard/focus and live-status semantics.
 - Pending deployment and real GA4/Overview verification.
+- Deployment 5fb7348 succeeded; live one-time sync reached a validation/persistence failure. Added bounded stage/schema diagnostics without values, provider messages, credentials or account IDs to isolate it. Not claiming live metrics yet.

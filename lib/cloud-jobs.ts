@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { ZodError } from 'zod';
 import { CLOUD_SOURCES, cloudSource } from '@/lib/cloud-catalog';
 import { collectCloud } from '@/lib/cloud-adapters';
 import { credentialVersion } from '@/lib/cloud-sources';
@@ -16,15 +17,17 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
   let generation = '';
   try { generation = credentialVersion(ctx, id); } catch { return { ok: false, skipped: 'vault unavailable' }; }
   if (!generation || generation !== record.credentialVersion) return { ok: false, skipped: 'configure connection' };
-  if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now, options.manual)) return { ok: false, skipped: 'Already syncing or synced recently. Try again after 15 minutes.' };
+  if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now, options.manual)) return { ok: false, skipped: options.manual && record.error ? 'Already syncing or retried recently. Wait one minute before retrying.' : 'Already syncing or synced recently. Try again after 15 minutes.' };
   const runId = ctx.db.collectorRuns.start(`cloud.${id}`, now);
   const budget = AbortSignal.timeout(options.budgetMs ?? 11000);
   const signal = options.signal ? AbortSignal.any([budget, options.signal]) : budget;
   let pointsWritten = 0, error: string | null = null;
+  let stage = 'collect';
   let onAbort: () => void = () => {};
   try {
     const aborted = new Promise<never>((_, reject) => { onAbort = () => reject(new CloudError('timeout')); if (signal.aborted) onAbort(); else signal.addEventListener('abort', onAbort, { once: true }); });
     const result = await Promise.race([(options.collect ?? collectCloud)(ctx, id, record.resource, { now, signal }), aborted]);
+    stage = 'snapshot';
     signal.throwIfAborted();
     const snapshot = CloudSnapshotSchema.parse(result);
     if (credentialVersion(ctx, id) !== generation) throw new CloudError('changed');
@@ -33,9 +36,12 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
       if (!metric || !source.metrics.some(m => m.id === key)) throw new CloudError('invalid_data');
       return value === null ? [] : [{ metricId, businessId: 'workspace' as const, capturedAt: snapshot.at, value }];
     });
+    stage = 'persist';
     if (!ctx.db.cloudSources.finish(id, record.revision, claim, snapshot, null, () => ctx.db.metricPoints.upsert(points))) throw new CloudError('changed');
     pointsWritten = points.length;
   } catch (e) {
+    // Log only bounded schema paths/codes, never provider values, messages, tokens or account IDs.
+    console.warn('[cloud-sync]', { source: source.id, stage, code: e instanceof CloudError ? e.code : e instanceof ZodError ? 'schema' : 'internal', ...(e instanceof ZodError ? { issues: e.issues.slice(0, 5).map(issue => ({ code: issue.code, path: issue.path.map(part => typeof part === 'number' ? 'item' : String(part).replace(/[^a-zA-Z]/g, '').slice(0, 30)).join('.').slice(0, 120) })) } : {}) });
     error = CLOUD_ERROR_TEXT[e instanceof CloudError ? e.code : signal.aborted ? 'timeout' : 'invalid_data'];
     ctx.db.cloudSources.finish(id, record.revision, claim, null, error);
   } finally { signal.removeEventListener('abort', onAbort); }

@@ -41,6 +41,16 @@ test('paused manual sync cannot publish after a concurrent disconnect or reconfi
   expect(await syncSource(context(), 'ga4', { now: new Date(+now + 900001), collect, manual: true })).toMatchObject({ ok: false });
   expect(sourceView(context(), 'ga4').snapshot).toBeNull();
 });
+
+test('failed manual reads can retry after one minute without weakening successful-sync cooldown', async () => {
+  token(); configureSource(context(), 'ga4', { enabled: false, resource: '123' });
+  const collect = vi.fn<typeof collectCloud>().mockRejectedValueOnce(new CloudError('invalid_data')).mockResolvedValue({ at: now.toISOString(), period: 'Retry', values: { users: 1 } });
+  expect(await syncSource(context(), 'ga4', { now, collect, manual: true })).toMatchObject({ ok: false });
+  expect(await syncSource(context(), 'ga4', { now: new Date(+now + 59999), collect, manual: true })).toHaveProperty('skipped');
+  expect(await syncSource(context(), 'ga4', { now: new Date(+now + 60000), collect, manual: true })).toMatchObject({ ok: true });
+  expect(await syncSource(context(), 'ga4', { now: new Date(+now + 120000), collect, manual: true })).toHaveProperty('skipped');
+  expect(collect).toHaveBeenCalledTimes(2);
+});
 test('Stripe paginates, uses captured amounts, excludes other currency/failed charges and labels test mode', async () => {
   saveCredential(context(), 'STRIPE_SECRET_KEY', 'rk_test_fixture');
   const charge = { id: 'ch_1', amount: 2000, amount_captured: 1000, amount_refunded: 200, paid: true, captured: true, status: 'succeeded', currency: 'usd', livemode: false };

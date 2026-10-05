@@ -17,7 +17,8 @@ export function createCloudSources(db: Database.Database) {
       put({ id, resource, enabled, credentialVersion, revision: randomUUID(), lastAttempt: old?.lastAttempt ?? null, snapshot: sameSource ? old?.snapshot ?? null : null, error: null, claim: null, claimUntil: 0 });
     },
     claim(id: string, revision: string, claim: string, now: number, manual = false) {
-      return db.transaction(() => { const r = get(id); if (!r || (!r.enabled && !manual) || r.revision !== revision || r.claimUntil > now || (r.lastAttempt !== null && now - r.lastAttempt < 15 * 60_000)) return false;
+      return db.transaction(() => { const r = get(id); const cooldown = manual && r?.error ? 60_000 : 15 * 60_000;
+        if (!r || (!r.enabled && !manual) || r.revision !== revision || r.claimUntil > now || (r.lastAttempt !== null && now - r.lastAttempt < cooldown)) return false;
         put({ ...r, claim, claimUntil: now + 120_000, lastAttempt: now }); return true;
       }).immediate();
     },
