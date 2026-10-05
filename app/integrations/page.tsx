@@ -3,12 +3,15 @@ import { connectionMetadata, vaultReady } from '@/lib/creds';
 import { PageHeader } from '@/components/PageHeader';
 import { WorkspaceConnections } from '@/components/WorkspaceConnections';
 import { CloudConnections } from '@/components/CloudConnections';
-import { sourceViews } from '@/lib/cloud-sources';
+import { sourceView, sourceViews } from '@/lib/cloud-sources';
 
 export const dynamic = 'force-dynamic';
 export default async function IntegrationsPage({ searchParams }: { searchParams?: Promise<{ connection?: string }> } = {}) {
   const context = await requireWorkspace();
-  if (!['admin', 'owner'].includes(context.role)) return <><PageHeader title="Connections" /><p className="text-os-muted">A workspace administrator manages your connections.</p></>;
+  if (!['admin', 'owner'].includes(context.role)) {
+    const printify = await withWorkspaceLease(context, db => sourceView({ ...context, db }, 'printify'));
+    return <><PageHeader eyebrow={context.workspace.name} title="Connections" /><p className="mb-5 text-os-muted">A workspace administrator manages your connections.</p><CloudConnections workspaceId={context.workspace.id} initial={[printify]} readOnly /></>;
+  }
   const initial = await withWorkspaceLease(context, db => {
     const scoped = { ...context, db };
     return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped) };

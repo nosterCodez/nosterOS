@@ -6,6 +6,8 @@ import { cloudSource } from '@/lib/cloud-catalog';
 import { discoverAdsResources } from '@/lib/cloud-google-ads';
 import { printifyShops } from '@/lib/cloud-printify';
 import { shopifyResource } from '@/lib/cloud-shopify';
+import { printifyAccess } from '@/lib/printify-credentials';
+import { credentialVersion } from '@/lib/cloud-sources';
 
 export type CloudResource = { id: string; label: string };
 export type ResourceDiscovery = { resources: CloudResource[]; truncated: boolean };
@@ -24,13 +26,13 @@ const MetaAds = z.object({ data: z.array(z.object({ account_id: metaId, name: te
 
 export async function discoverResources(ctx: VaultContext, id: string, fetcher: typeof fetch = fetch): Promise<ResourceDiscovery> {
   if (!['search-console', 'ga4', 'youtube', 'google-business', 'google-ads', 'facebook', 'instagram', 'meta-ads', 'etsy', 'printify', 'shopify'].includes(id)) throw new CloudError('setup');
-  const source = cloudSource(id), provider = source.provider!, generation = oauthGeneration(ctx, provider);
+  const source = cloudSource(id), provider = source.provider!, generation = credentialVersion(ctx, id);
   if (!generation) throw new CloudError('permission');
   const meta = provider === 'meta', version = process.env.OMEGA_META_API_VERSION;
   if (meta && !/^v\d+\.0$/.test(version ?? '')) throw new CloudError('setup');
   const signal = AbortSignal.timeout(15000);
   const shop = id === 'shopify' ? authorizedShop(ctx) : undefined;
-  const token = await accessFor(ctx, provider, signal, fetcher);
+  const token = id === 'printify' ? await printifyAccess(ctx, signal, fetcher) : await accessFor(ctx, provider, signal, fetcher);
   if (id === 'shopify') {
     const result = await shopifyResource(token, shop!, signal, fetcher);
     signal.throwIfAborted();
@@ -40,7 +42,7 @@ export async function discoverResources(ctx: VaultContext, id: string, fetcher: 
   if (id === 'printify') {
     const result = await printifyShops(token, signal, fetcher);
     signal.throwIfAborted();
-    if (oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
+    if (credentialVersion(ctx, id) !== generation) throw new CloudError('changed');
     return result;
   }
   if (id === 'google-ads') {

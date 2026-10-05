@@ -94,7 +94,15 @@ export function readVaultValue(context: Context, name: string): string | undefin
   });
 }
 export function revokeCredential(context: Context, name: string): void {
-  connectionField(name); revokeVaultValue(context, name);
+  connectionField(name);
+  if (name === 'PRINTIFY_API_TOKEN') {
+    aad(context, name);
+    context.db.connectionRecords.atomic(() => {
+      context.db.connectionRecords.remove(name);
+      // Also supersedes validation/collection in flight, including a first save.
+      context.db.cloudSources.configure('printify', context.db.cloudSources.get('printify')?.resource ?? '', false, '');
+    });
+  } else revokeVaultValue(context, name);
 }
 export function revokeVaultValue(context: Context, name: string): void {
   privateField(name); aad(context, name);

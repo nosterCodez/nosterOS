@@ -7,6 +7,7 @@ import type { CloudSnapshot } from '@/lib/cloud-records';
 import { collectAds } from '@/lib/cloud-google-ads';
 import { collectPrintify } from '@/lib/cloud-printify';
 import { collectShopify } from '@/lib/cloud-shopify';
+import { printifyAccess } from '@/lib/printify-credentials';
 
 const numeric = z.union([z.number(), z.string().regex(/^\d+(\.\d+)?$/)]).transform(Number).pipe(z.number().finite().nonnegative());
 const obj = z.record(z.string(), z.unknown());
@@ -17,7 +18,7 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
   const source = cloudSource(id);
   if (source.planned || (source.resourcePattern && !new RegExp(source.resourcePattern).test(resource))) throw new CloudError('setup');
   if (id === 'shopify' && authorizedShop(ctx) !== resource) throw new CloudError('permission');
-  const token = source.provider ? await accessFor(ctx, source.provider, signal, fetcher) : id === 'stripe' ? resolveCred(ctx, 'STRIPE_SECRET_KEY') : undefined;
+  const token = id === 'printify' ? await printifyAccess(ctx, signal, fetcher) : source.provider ? await accessFor(ctx, source.provider, signal, fetcher) : id === 'stripe' ? resolveCred(ctx, 'STRIPE_SECRET_KEY') : undefined;
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
   const read = (url: string, body?: unknown, additional?: Record<string, string>) => cloudJson(url, { method: body ? 'POST' : 'GET', headers: { ...headers, ...(body ? { 'Content-Type': 'application/json' } : {}), ...additional }, ...(body ? { body: JSON.stringify(body) } : {}), signal }, fetcher);
   const snapshot = (values: CloudSnapshot['values'], period: string, mode?: 'test' | 'live'): CloudSnapshot => ({ values, period, at: now.toISOString(), ...(mode ? { mode } : {}) });

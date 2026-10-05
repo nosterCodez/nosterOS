@@ -2,9 +2,10 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { apiSessionError, requireWorkspace, withWorkspaceLease, SessionError } from '@/lib/session';
 import { limitedBody } from '@/lib/connection-api';
-import { configureSource, sourceViews } from '@/lib/cloud-sources';
+import { configureSource, sourceViews, credentialVersion } from '@/lib/cloud-sources';
 import { syncSource } from '@/lib/cloud-jobs';
-import { beginAuthorization, completeAuthorization, disconnectOAuth, oauthGeneration } from '@/lib/cloud-oauth';
+import { beginAuthorization, completeAuthorization, disconnectOAuth } from '@/lib/cloud-oauth';
+import { revokeCredential } from '@/lib/creds';
 import { CLOUD_SOURCES, cloudSource, oauthId } from '@/lib/cloud-catalog';
 import { CloudError, CLOUD_ERROR_TEXT } from '@/lib/cloud-http';
 import { discoverResources } from '@/lib/cloud-resources';
@@ -23,10 +24,10 @@ export async function cloudRequest(request: Request) {
       if (action?.action === 'resources') {
         const provider = cloudSource(action.id).provider;
         if (!provider) throw new CloudError('setup');
-        const generation = oauthGeneration(ctx, provider);
+        const generation = credentialVersion(ctx, action.id);
         const result = await discoverResources(ctx, action.id);
         const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
-        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || oauthGeneration(ctx, provider) !== generation) throw new CloudError('changed');
+        if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || credentialVersion(ctx, action.id) !== generation) throw new CloudError('changed');
         return json(result);
       }
       if (action?.action === 'configure') configureSource(ctx, action.id, action);
@@ -34,6 +35,7 @@ export async function cloudRequest(request: Request) {
       if (action?.action === 'authorize') return json(beginAuthorization({ ...ctx, sessionBinding: sessionBinding(request) }, oauthId(action.id), Date.now(), action.shop));
       if (action?.action === 'disconnect') {
         const source = cloudSource(action.id);
+        if (source.id === 'printify') revokeCredential(ctx, 'PRINTIFY_API_TOKEN');
         if (source.provider) { disconnectOAuth(ctx, source.provider); for (const s of CLOUD_SOURCES.filter(s => s.provider === source.provider)) db.cloudSources.invalidate(s.id); }
         else db.cloudSources.invalidate(source.id);
       }

@@ -9,7 +9,19 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
+const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null, connectionMethod: null }));
+
+test('Printify personal-token status is available without OAuth approval and members see no controls', () => {
+  const source = { ...sources.find(s => s.id === 'printify')!, status: 'needs_setup', connectionMethod: 'Personal token' as const };
+  const admin = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+  expect(admin).toContain('Active method: Personal token');
+  expect(admin).toContain('Find accounts'); expect(admin).toContain('href="#printify-credentials"');
+  expect(admin).not.toContain('More connectors'); expect(admin).not.toContain('Continue with');
+  const member = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32), readOnly: true }));
+  expect(member).toContain('Active method: Personal token');
+  for (const control of ['Find accounts', 'Save settings', 'Sync now', 'Use a personal access token', '<form', '<input']) expect(member).not.toContain(control);
+  expect(member).toContain('administrator manages this connection');
+});
 
 test('commerce sign-in is honest before approval and Shopify requires a store domain', () => {
   for (const id of ['printify', 'shopify']) {

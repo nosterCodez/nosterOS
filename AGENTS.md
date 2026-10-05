@@ -73,6 +73,8 @@ regressions, and don't fix them unless a spec asks:
 EPERM), `api` and `seed` (5s timeout), `interaction-layer`, `paths`,
 `skills-plugins`, `superset-dispatch` (path separators / Windows env).
 If a test outside this list fails, it's a real failure.
+`interaction-layer` failures on Linux are real regressions, not Windows
+baseline exceptions. Its missing-button press-layer assertion must pass.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

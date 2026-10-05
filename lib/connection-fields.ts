@@ -1,5 +1,6 @@
 // Public field definitions only. Platform authentication and mail keys are never editable here.
 export const CONNECTION_FIELDS = [
+  { name: 'PRINTIFY_API_TOKEN', provider: 'printify', label: 'Printify personal access token (read-only)' },
   { name: 'OPENAI_API_KEY', provider: 'openai', label: 'OpenAI API key' },
   { name: 'ANTHROPIC_API_KEY', provider: 'anthropic', label: 'Anthropic API key' },
   { name: 'STRIPE_SECRET_KEY', provider: 'stripe', label: 'Stripe restricted read-only key' },

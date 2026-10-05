@@ -9,6 +9,7 @@ import type { VaultContext } from '@/lib/creds';
 import { getMetric } from '@/lib/metrics/registry';
 import { listWorkspaces } from '@/lib/workspace-jobs';
 import { withWorkspaceDb } from '@/lib/workspace-storage';
+import { PRINTIFY_RECONNECT } from '@/lib/printify-credentials';
 
 export async function syncSource(ctx: VaultContext, id: string, options: { manual?: boolean; signal?: AbortSignal; collect?: typeof collectCloud; now?: Date; budgetMs?: number } = {}) {
   const source = cloudSource(id), record = ctx.db.cloudSources.get(id), now = options.now ?? new Date();
@@ -17,6 +18,7 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
   let generation = '';
   try { generation = credentialVersion(ctx, id); } catch { return { ok: false, skipped: 'vault unavailable' }; }
   if (!generation || generation !== record.credentialVersion) return { ok: false, skipped: 'configure connection' };
+  if (id === 'printify' && record.error === PRINTIFY_RECONNECT) return { ok: false, skipped: PRINTIFY_RECONNECT };
   if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now, options.manual)) return { ok: false, skipped: options.manual && record.error ? 'Already syncing or retried recently. Wait one minute before retrying.' : 'Already syncing or synced recently. Try again after 15 minutes.' };
   const runId = ctx.db.collectorRuns.start(`cloud.${id}`, now);
   const budget = AbortSignal.timeout(options.budgetMs ?? 11000);
@@ -43,7 +45,12 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
     // Log only bounded schema paths/codes, never provider values, messages, tokens or account IDs.
     console.warn('[cloud-sync]', { source: source.id, stage, code: e instanceof CloudError ? e.code : e instanceof ZodError ? 'schema' : 'internal', ...(e instanceof ZodError ? { issues: e.issues.slice(0, 5).map(issue => ({ code: issue.code, path: issue.path.map(part => typeof part === 'number' ? 'item' : String(part).replace(/[^a-zA-Z]/g, '').slice(0, 30)).join('.').slice(0, 120) })) } : {}) });
     error = CLOUD_ERROR_TEXT[e instanceof CloudError ? e.code : signal.aborted ? 'timeout' : 'invalid_data'];
-    ctx.db.cloudSources.finish(id, record.revision, claim, null, error);
+    const rejectedPersonalToken = id === 'printify' && generation.startsWith('personal:') && e instanceof CloudError && e.code === 'authentication';
+    if (rejectedPersonalToken) error = PRINTIFY_RECONNECT;
+    // A delayed failure cannot disable a replacement token or a new OAuth grant.
+    let unchanged = false;
+    try { unchanged = credentialVersion(ctx, id) === generation; } catch { /* Vault unavailable. */ }
+    if (!rejectedPersonalToken || unchanged) ctx.db.cloudSources.finish(id, record.revision, claim, null, error, undefined, rejectedPersonalToken);
   } finally { signal.removeEventListener('abort', onAbort); }
   ctx.db.collectorRuns.finish(runId, { ok: !error, pointsWritten, error });
   return { ok: !error, pointsWritten, error };

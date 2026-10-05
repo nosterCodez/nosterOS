@@ -12,7 +12,7 @@ const providers: Record<string, string> = { google: 'Google', 'google-business':
 const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', 'google-business': 'Business location', 'google-ads': 'Google Ads account', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account', etsy: 'Etsy shop' };
 const setupHelp: Record<string, string> = {
   shopify: 'OmegaOS needs a registered Shopify app, approved distribution and read-only product/order access before store sign-in is available. No API key is needed from you once platform setup is complete.',
-  printify: 'Printify must approve the OmegaOS platform application before account sign-in is available. This connector only reads shop, product and order counts; it cannot publish products or place orders.',
+  printify: 'Printify sign-in: Provider setup required. Printify must approve the OmegaOS platform application before account sign-in is available. You can use a personal token below for read-only shop, product and order counts.',
   'google-business': 'Google must approve API access before Business Profile reporting can connect. Enabling the API alone does not grant access.',
   'google-ads': 'Google Ads requires its own API access and separate authorization. OmegaOS only reads reports; it cannot create campaigns or spend your ad budget.',
   etsy: 'Etsy must approve the separate OmegaOS app and its callback must be configured before shop sign-in is available.',
@@ -21,14 +21,14 @@ const setupHelp: Record<string, string> = {
 type Result = Partial<ResourceDiscovery> & { message?: string };
 type Act = (body: object) => Promise<Result>;
 
-function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
+function SourceRow({ source, act, readOnly }: { source: CloudSourceView; act: Act; readOnly: boolean }) {
   const [resource, setResource] = useState(source.resource), [enabled, setEnabled] = useState(source.enabled);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [confirm, setConfirm] = useState(false);
   const [discovery, setDiscovery] = useState<ResourceDiscovery | null>(null);
   const [shop, setShop] = useState(source.id === 'shopify' ? source.resource : '');
   const authorized = !['not_connected', 'vault_unavailable', 'planned'].includes(source.status);
   const picker = source.id === 'printify' ? 'Printify shop' : source.id === 'shopify' ? 'Shopify store' : pickerNames[source.id];
-  const setupPending = source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
+  const setupPending = source.id !== 'printify' && source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
   const accountSaved = Boolean(source.provider && authorized);
   const connectionLabel = setupPending ? 'Provider setup required' : accountSaved && !['error', 'stale'].includes(source.status) ? 'Connected' : SOURCE_STATUS[source.status];
   useEffect(() => { setResource(source.resource); setEnabled(source.enabled); }, [source.resource, source.enabled]);
@@ -46,9 +46,11 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
   return <section id={`source-${source.id}`} aria-label={source.name} className="min-w-0 scroll-mt-24 rounded border border-os-border p-5">
     <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{connectionLabel}</span></div>
     {accountSaved && <p className="mt-3 text-xs leading-5 text-os-muted">Account connection saved to this workspace. Reporting: {SOURCE_STATUS[source.status]}.</p>}
+    {source.connectionMethod && <p className="mt-2 text-xs text-os-muted">Active method: {source.connectionMethod}</p>}
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
     {source.provider === 'meta' && <p className="mt-3 text-xs leading-5 text-os-muted">One Facebook sign-in connects Meta to this workspace. Choose each Page, Instagram account, or ad account separately. Read-only access; no posts or campaign changes.{source.id === 'instagram' && ' Instagram must be a professional account linked to a Facebook Page you can access.'}</p>}
-    {!source.planned && <>
+    {readOnly && <p className="mt-3 text-xs leading-5 text-os-muted">A workspace owner or administrator manages this connection.{source.error && ` ${source.error}`}</p>}
+    {!source.planned && !readOnly && <>
       {source.provider ? <div className="mt-4">
         {source.id === 'shopify' && source.appReady && <label className="mb-3 block text-xs">Shopify store domain<input className={field} value={shop} onChange={event => setShop(event.target.value.trim().toLowerCase())} placeholder="your-store.myshopify.com" maxLength={100} autoComplete="off" spellCheck={false} disabled={busy} /></label>}
         {source.status === 'vault_unavailable' ? <p className="text-xs leading-5 text-os-warn">Secure storage is unavailable. An OmegaOS administrator needs to restore it before connecting accounts.</p> : source.appReady ? <button type="button" className={`pressable ${control} text-os-accent`} disabled={busy || (source.id === 'shopify' && !new RegExp(source.resourcePattern!).test(shop))} onClick={() => void run({ action: 'authorize', id: source.provider, ...(source.id === 'shopify' ? { shop } : {}) })}>
@@ -59,6 +61,7 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
         {source.id === 'email' && <GmailSetupHelp />}
         <a href={source.id === 'email' ? '#email-credentials' : '#credentials'} className="mt-3 inline-flex items-center gap-2 text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>{source.id === 'email' ? 'Enter email settings' : 'Advanced setup'}<ArrowUpRight size={14} aria-hidden="true" /></a>
       </div>}
+      {source.id === 'printify' && source.status !== 'vault_unavailable' && <a href="#printify-credentials" className="mt-3 inline-flex items-center gap-2 text-xs text-os-accent underline" onClick={() => { const panel = document.getElementById('credentials'); if (panel instanceof HTMLDetailsElement) panel.open = true; }}>Use a personal access token<ArrowUpRight size={14} aria-hidden="true" /></a>}
       {authorized && <form className="mt-5 space-y-3" onSubmit={event => { event.preventDefault(); void run({ action: 'configure', id: source.id, resource, enabled }); }}>
         {picker && <div className="space-y-3">
           <button type="button" className={`pressable ${control}`} disabled={busy} onClick={() => void run({ action: 'resources', id: source.id }, true)}><RefreshCw size={15} aria-hidden="true" />{discovery ? 'Refresh accounts' : 'Find accounts'}</button>
@@ -87,11 +90,11 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
   </section>;
 }
 
-export function CloudConnections({ initial, workspaceId }: { initial: CloudSourceView[]; workspaceId: string }) {
+export function CloudConnections({ initial, workspaceId, readOnly = false }: { initial: CloudSourceView[]; workspaceId: string; readOnly?: boolean }) {
   const [sources, setSources] = useState(initial), [group, setGroup] = useState('All');
   useEffect(() => setSources(initial), [initial]);
   const filtered = sources.filter(s => group === 'All' || s.group === group);
-  const unavailable = (s: CloudSourceView) => s.planned || Boolean(s.provider && !s.appReady && s.status === 'not_connected');
+  const unavailable = (s: CloudSourceView) => s.planned || Boolean(s.id !== 'printify' && s.provider && !s.appReady && s.status === 'not_connected');
   const availableSources = filtered.filter(s => !unavailable(s));
   const upcomingSources = filtered.filter(unavailable);
   async function act(body: object): Promise<Result> {
@@ -108,12 +111,12 @@ export function CloudConnections({ initial, workspaceId }: { initial: CloudSourc
       <div role="group" aria-label="Filter connections" className="flex flex-wrap gap-2">{['All', 'Search', 'Money', 'Social', 'Email', 'Ads'].map(name => <button type="button" key={name} aria-pressed={group === name} onClick={() => setGroup(name)} className={`pressable ${control} ${group === name ? 'text-os-accent border-os-accent' : 'text-os-muted'}`}>{name}</button>)}</div>
       <button type="button" className={`pressable ${control}`} onClick={() => window.location.reload()}><RefreshCw size={15} aria-hidden="true" />Refresh status</button>
     </div>
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{availableSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} />)}</div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{availableSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} readOnly={readOnly} />)}</div>
     {!availableSources.length && <p className="text-sm text-os-muted">No connectors are ready in this category yet.</p>}
     {upcomingSources.length > 0 && <details className="mt-8 border-t border-os-border pt-5">
       <summary className="cursor-pointer text-sm focus-visible:outline focus-visible:outline-os-accent">More connectors ({upcomingSources.length})</summary>
       <p className="my-4 text-xs leading-5 text-os-muted">These providers need platform setup or are still in development. Account sign-in is not available for them yet.</p>
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">{upcomingSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} />)}</div>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">{upcomingSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} readOnly={readOnly} />)}</div>
     </details>}
   </div>;
 }

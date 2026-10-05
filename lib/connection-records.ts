@@ -15,6 +15,7 @@ export function createConnectionRecords(db: Database.Database) {
     createKey(key: z.infer<typeof KeySchema>) { db.prepare('INSERT INTO connection_key(id,payload) VALUES (1,?)').run(JSON.stringify(KeySchema.parse(key))); },
     get(name: string) { const row = db.prepare('SELECT payload FROM connections WHERE name=?').get(name) as { payload: string } | undefined; return row ? RecordSchema.parse(JSON.parse(row.payload)) : undefined; },
     all() { return (db.prepare('SELECT payload FROM connections ORDER BY name').all() as { payload: string }[]).map(row => RecordSchema.parse(JSON.parse(row.payload))); },
+    remove(name: string) { db.prepare('DELETE FROM connections WHERE name=?').run(name); },
     put(row: ConnectionRecord) { const record = RecordSchema.parse(row); db.prepare('INSERT INTO connections(name,payload) VALUES (?,?) ON CONFLICT(name) DO UPDATE SET payload=excluded.payload').run(record.name, JSON.stringify(record)); },
   };
 }
