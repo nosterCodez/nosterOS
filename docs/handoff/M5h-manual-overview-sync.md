@@ -1,6 +1,6 @@
 # M5h: Load Overview without requiring automatic collection
 
-Status: in progress
+Status: done (live report collection verified; Google returned an empty report)
 Review by Claude: no; Astra architect/builder
 
 ## Goal
@@ -29,3 +29,8 @@ Tests cover paused manual success, scheduler skip, cooldown, concurrent disconne
 - Deployment 5fb7348 succeeded; live one-time sync reached a validation/persistence failure. Added bounded stage/schema diagnostics without values, provider messages, credentials or account IDs to isolate it. Not claiming live metrics yet.
 - Diagnostics on cb08f7b identified collect/schema invalid_type at metricHeaders. Handle a recognized analyticsData#runReport with no rows/count as empty (null values), while rejecting unrecognized payloads and missing headers on populated reports. Show an explicit empty-period message; live verification pending.
 - Final predeploy checks: typecheck/build pass; 28 focused tests pass; full suite 3,718 passed/four failed assertions, seven failed files all documented Windows baseline. Google response contract checked against its official RunReportResponse reference.
+- Commits: 5fb7348 manual sync/UI; cb08f7b bounded diagnostics/retry; ae2595b empty-report handling. Final code deployment 1e297850-a7f2-41ca-8b23-7efb51d5998a reached SUCCESS.
+- Oct 4, 2026 23:18 Central: production GA4 Sync now completed for property 556188283; Overview changed from 0/10 to 1/10 sources reporting with a persisted collection timestamp.
+- Google returned a recognized empty report for 2026-09-07 through 2026-10-04; users/sessions/key events remain null, with explicit no-data messaging. No populated metric values or tracking setup verified; that requires a separate GA4/tag investigation.
+- Desktop 1920 and mobile 390 screenshots checked; no horizontal overflow, responsive stacking intact; viewport restored. Automatic updates remain off, no new permissions/accounts/costs, local dev server untouched.
+- Search Console/YouTube still need resource selections and provider API activation as applicable; other unconnected sources remain honest empty states. Do not describe all connectors as working.

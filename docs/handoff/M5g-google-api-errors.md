@@ -1,6 +1,6 @@
 # M5g: Analytics API activation and actionable errors
 
-Status: blocked (implementation deployed; live report sync awaits schedule opt-in)
+Status: done (live one-time sync verified under M5h; recurring collection remains off)
 Review by Claude: no; Astra owns implementation and security review.
 
 ## Goal
@@ -29,3 +29,4 @@ Live Analytics discovery and an authorized sync verified; error regression tests
 - Post-deploy browser reload and Find accounts succeeded; selected marketing property remained saved. No reconnect was needed.
 - Pending: real report sync. The current sync contract requires enabled collection; asked Noe to opt into 15-minute read-only updates and have not received that answer yet. Do not claim report metrics verified.
 - No costs, emails, extra scopes or new credentials. Local dev server left untouched. Other provider API activations remain outside this fix.
+- Follow-up Oct 4 23:18 Central: M5h decoupled one-time sync from recurring opt-in and fixed a recognized empty GA4 report response. Live sync now completes and Overview persists the empty report. No recurring opt-in required for a manual sync; schedule remains off.
