@@ -1,6 +1,6 @@
 # M5l: Provider activation checkpoint
 
-Status: Google Ads platform setup complete; rollout and other providers pending
+Status: Google Ads deployed and ready for user connection; other providers pending
 Review: Astra self-review
 
 ## Scope
@@ -24,3 +24,14 @@ the separate Google Ads Explorer-access application when requested.
 - No secrets generated/copied, Railway variables changed, purchases, real messages or deployment performed.
 - Code remains at tested 4327c0e with earlier M5i/M5j commits unpushed; explicit beta rollout approval requested.
 - Provider tabs retained for handoff; code unchanged, so prior typecheck/build and 3,745 passing tests remain the checkpoint.
+
+## Approved rollout (Oct 5, 2026)
+- Noe explicitly approved enabling and deploying the ready connectors.
+- Set OMEGA_GOOGLE_ADS_ENABLED=1 and OMEGA_GOOGLE_ADS_API_VERSION=v25 in Railway; no secrets changed.
+- Pushed main through afa3ade, including the tested M5i, M5j and M5k changes.
+- Railway deployment 6bf4d52a-bc31-4d7e-acb4-f798dc283f44 completed SUCCESS for afa3ade.
+- Verified the signed-in production Connections page shows an enabled Continue with Google Ads button.
+- Existing Google Search Console, Analytics and YouTube account connections still display Connected.
+- No Google Ads account consent, account selection or live report sync performed; Noe will test connection.
+- Other provider prerequisites above remain unresolved; their readiness gates were not bypassed.
+- No purchases, new credentials or payment capabilities enabled during rollout.
