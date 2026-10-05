@@ -11,6 +11,9 @@ import { accessToken } from '@/lib/legacy-env';
  * completely open. See lib/access-gate.ts for the decision logic + tests.
  */
 export function proxy(req: NextRequest) {
+  // TikTok must read this public ownership proof without a beta/session cookie.
+  if (req.nextUrl.pathname === '/tiktoklSWY4Ex56HH0QDQpspaNshAY0mtHg4MS.txt'
+    && (req.method === 'GET' || req.method === 'HEAD')) return NextResponse.next();
   const decision = gateDecision({
     token: accessToken(),
     cookie: req.cookies.get(GATE_COOKIE)?.value ?? null,
