@@ -12,6 +12,20 @@ historical roadmap; old "in progress" and "next" labels below are not current.
 
 ## Current checkout and deployment
 
+- Oct 5, 17:32 CDT: M6h + M6i accepted by Claude; Linux typecheck clean and
+  374 files / 3,893 tests passing (reported by Claude). Noe's deploy approval relayed.
+- Fast-forward pushed `origin/main` from `cace87a` to reviewed `f929838`;
+  `origin/m6h-m6i-review` retains the reviewed commit. No other working-tree edits included.
+- Railway production `nosteros-web` deployment `25a24330-f38f-4d62-acff-35fafd899f8e`
+  reports SUCCESS for `f929838268f8f8bb3459e7d4931952caecbbaa4c`, completed
+  October 5 at 22:32:05 UTC. No Railway variables/configuration changed.
+- Public `https://os.noepenaa.com` checked after deployment: expected HTTP 401
+  private-beta page, title `OmegaOS · Private`, with email sign-in link present.
+- This verifies deployment and the public gate, not a fresh authenticated provider sync.
+  Etsy's live cause remains unconfirmed; next diagnostic comes from owner/admin Find accounts.
+- This checkpoint is a local documentation-only commit; it is not pushed to trigger another deploy.
+  Older deployment/provider snapshots below are historical; M6h and M6i Reports contain implementation details.
+
 - Oct 5, 14:34 CDT follow-up: M6f is complete; code `4ff3140`, report
   `f409920`, feature branch pushed and merged locally. Main has NOT been
   pushed or deployed; the older checkout snapshot below predates that work.
