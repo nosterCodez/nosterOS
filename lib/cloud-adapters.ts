@@ -26,9 +26,9 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
     }
     case 'ga4': {
       const from = date(28, now), to = date(1, now);
-      const body = z.object({ metricHeaders: z.array(z.object({ name: z.string() })), rows: z.array(z.object({ metricValues: z.array(z.object({ value: numeric })) })).max(1).optional() }).parse(await read(`https://analyticsdata.googleapis.com/v1beta/properties/${resource}:runReport`, { dateRanges: [{ startDate: from, endDate: to }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'keyEvents' }] }));
+      const body = z.object({ kind: z.string().optional(), rowCount: z.number().int().nonnegative().optional(), metricHeaders: z.array(z.object({ name: z.string() })).optional(), rows: z.array(z.object({ metricValues: z.array(z.object({ value: numeric })) })).max(1).optional() }).refine(report => Boolean(report.metricHeaders?.length) || (report.kind === 'analyticsData#runReport' && !report.rows?.length && !report.rowCount), 'Unrecognized or incomplete Analytics report').parse(await read(`https://analyticsdata.googleapis.com/v1beta/properties/${resource}:runReport`, { dateRanges: [{ startDate: from, endDate: to }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'keyEvents' }] }));
       const values: CloudSnapshot['values'] = { users: null, sessions: null, keyEvents: null };
-      for (const [index, header] of body.metricHeaders.entries()) { const key = header.name === 'activeUsers' ? 'users' : header.name; if (key in values) values[key] = body.rows?.[0]?.metricValues[index]?.value ?? null; }
+      for (const [index, header] of (body.metricHeaders ?? []).entries()) { const key = header.name === 'activeUsers' ? 'users' : header.name; if (key in values) values[key] = body.rows?.[0]?.metricValues[index]?.value ?? null; }
       return snapshot(values, `${from} to ${to} (property timezone)`);
     }
     case 'google-business': {

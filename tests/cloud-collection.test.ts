@@ -78,6 +78,15 @@ test('GA4 maps response headers rather than assuming position; missing metrics r
   token(); const result = await collectCloud(context(), 'ga4', '123', options(mockFetch({ metricHeaders: [{ name: 'sessions' }, { name: 'activeUsers' }], rows: [{ metricValues: [{ value: '7' }, { value: '0' }] }] })));
   expect(result.values).toEqual({ users: 0, sessions: 7, keyEvents: null });
 });
+
+test('GA4 recognizes an empty report without headers but rejects unrecognized or incomplete responses', async () => {
+  token();
+  const result = await collectCloud(context(), 'ga4', '123', options(mockFetch({ kind: 'analyticsData#runReport', metadata: { timeZone: 'America/Chicago' } })));
+  expect(result.values).toEqual({ users: null, sessions: null, keyEvents: null });
+  for (const body of [{}, { kind: 'unrelated' }, { kind: 'analyticsData#runReport', rowCount: 1 }, { kind: 'analyticsData#runReport', rows: [{ metricValues: [{ value: '7' }] }] }]) {
+    await expect(collectCloud(context(), 'ga4', '123', options(mockFetch(body)))).rejects.toThrow();
+  }
+});
 test('YouTube hidden subscribers are not fabricated; Meta non-USD spend is unknown', async () => {
   token(); const channel = 'UC' + 'x'.repeat(22);
   expect((await collectCloud(context(), 'youtube', channel, options(mockFetch({ items: [{ id: channel, statistics: { hiddenSubscriberCount: true, subscriberCount: '99', viewCount: '0', videoCount: '3' } }] })))).values).toEqual({ subscribers: null, views: 0, videos: 3 });

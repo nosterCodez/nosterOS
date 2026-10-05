@@ -23,6 +23,7 @@ export async function WorkspaceDashboard({ group }: { group?: string } = {}) {
         return <div key={metric.id} className="min-w-0 border-l border-os-border pl-4"><p className="text-xs leading-5 text-os-muted">{metric.label}</p><p className="mt-2 break-words text-2xl font-semibold tabular-nums">{formatted}</p></div>;
       })}</div>
       <p className="mt-4 text-xs leading-5 text-os-muted">{source.snapshot?.period ?? source.note}</p>
+      {source.snapshot && source.metrics.every(metric => source.snapshot?.values[metric.id] == null) && <p className="mt-2 text-sm text-os-muted">No data returned for this reporting period.</p>}
       {source.snapshot && <p className="mt-1 text-xs text-os-dim">Collected <time dateTime={source.snapshot.at}>{new Date(source.snapshot.at).toLocaleString('en-US', { timeZone: 'UTC' })} UTC</time></p>}
       {source.error && <p className="mt-2 text-xs text-os-warn">{source.error}</p>}
     </section>)}</div>

@@ -27,3 +27,5 @@ Tests cover paused manual success, scheduler skip, cooldown, concurrent disconne
 - React review: no new client data fetching or dependencies; server snapshot rendering stays scoped and unknown values remain unknown; actions retain keyboard/focus and live-status semantics.
 - Pending deployment and real GA4/Overview verification.
 - Deployment 5fb7348 succeeded; live one-time sync reached a validation/persistence failure. Added bounded stage/schema diagnostics without values, provider messages, credentials or account IDs to isolate it. Not claiming live metrics yet.
+- Diagnostics on cb08f7b identified collect/schema invalid_type at metricHeaders. Handle a recognized analyticsData#runReport with no rows/count as empty (null values), while rejecting unrecognized payloads and missing headers on populated reports. Show an explicit empty-period message; live verification pending.
+- Final predeploy checks: typecheck/build pass; 28 focused tests pass; full suite 3,718 passed/four failed assertions, seven failed files all documented Windows baseline. Google response contract checked against its official RunReportResponse reference.
