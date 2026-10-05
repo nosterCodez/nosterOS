@@ -1,6 +1,6 @@
 # M5g: Analytics API activation and actionable errors
 
-Status: in progress
+Status: blocked (implementation deployed; live report sync awaits schedule opt-in)
 Review by Claude: no; Astra owns implementation and security review.
 
 ## Goal
@@ -25,4 +25,7 @@ Live Analytics discovery and an authorized sync verified; error regression tests
 - Typecheck and production build pass. Full suite: 3,712 passed, four assertions failed; seven failed files are the documented Windows baseline (three EPERM teardown failures plus interaction-layer, paths, skills-plugins, superset-dispatch).
 - Updated the pre-existing HTTP 401 assertion from permission to authentication to match the deliberate distinction.
 - Security self-review: fixed-host allowlist, redirects blocked, 8-second fetch timeout, bounded bodies, static errors only; credentials, permissions, encryption and workspace boundaries unchanged.
-- Pending: push/deployment verification and live report sync after schedule approval. No costs, emails, extra scopes or new credentials.
+- Commit 9acf8d5 pushed to main; Railway nosteros-web deployment f975df10-3f63-4332-8280-52c2a04377d1 reached SUCCESS on Oct 4, 2026 at 22:45 Central.
+- Post-deploy browser reload and Find accounts succeeded; selected marketing property remained saved. No reconnect was needed.
+- Pending: real report sync. The current sync contract requires enabled collection; asked Noe to opt into 15-minute read-only updates and have not received that answer yet. Do not claim report metrics verified.
+- No costs, emails, extra scopes or new credentials. Local dev server left untouched. Other provider API activations remain outside this fix.
