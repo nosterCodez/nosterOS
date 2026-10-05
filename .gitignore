@@ -29,6 +29,7 @@ dir-sidebar.jpeg
 .vercel
 
 # local run artifacts and caches, never source
+.local/
 agents/markets/journal/
 rosters/
 data/candles/

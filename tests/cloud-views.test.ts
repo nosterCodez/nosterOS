@@ -8,6 +8,7 @@ import { sourceViews } from '@/lib/cloud-sources';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
 test('disconnected sources lead with honest provider sign-in rather than credential forms', () => {
   const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
@@ -109,4 +110,15 @@ test('configured paused source allows manual sync and dashboard explains first c
   expect(overview).toContain('Ready for first sync');
   expect(overview).toContain('Automatic updates are optional');
   expect(overview).toContain('/integrations#source-ga4');
+});
+
+test('working Google reports lead the dashboard and retain resource, delay, no-data and refresh context', async () => {
+  const google = { ...sources.find(s => s.id === 'ga4')!, resource: '556188283', enabled: true, status: 'connected', snapshot: { at: '2026-10-05T00:00:00Z', period: 'September reporting period', values: {} } };
+  vi.mocked(sourceViews).mockReturnValue([...sources.filter(s => s.id !== 'ga4'), google]);
+  const html = renderToStaticMarkup(await WorkspaceDashboard());
+  expect(html.indexOf('Google Analytics 4')).toBeLessThan(html.indexOf('Other sources'));
+  expect(html).toContain('556188283'); expect(html).toContain('No data returned');
+  expect(html).toContain('Refresh dashboard'); expect(html).toContain('Sync now');
+  expect(html).toContain('1 sources with saved reports');
+  if (process.env.OMEGA_PREVIEW_DIR) writeFileSync(join(process.env.OMEGA_PREVIEW_DIR, 'google-dashboard.html'), html);
 });

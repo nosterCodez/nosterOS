@@ -2,6 +2,7 @@ import { UsageSnapshotSchema, type SeatUsage } from '@/lib/usage';
 import Database from 'better-sqlite3';
 import { createConnectionRecords } from '@/lib/connection-records';
 import { createCloudSources } from '@/lib/cloud-records';
+import { createFinancialImports } from '@/lib/financial-imports';
 import { randomUUID } from 'node:crypto';
 import { bucketStart, type Bucket } from '@/lib/metrics/buckets';
 import { MetricPointSchema, CollectorRunSchema, type MetricPoint, type CollectorRun } from '@/lib/schemas';
@@ -691,6 +692,7 @@ export function openDb(path: string) {
   db.exec(DDL);
   const connectionRecords = createConnectionRecords(db);
   const cloudSources = createCloudSources(db);
+  const financialImports = createFinancialImports(db);
   migrateAgentsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
@@ -2129,6 +2131,7 @@ export function openDb(path: string) {
     meta,
     connectionRecords,
     cloudSources,
+    financialImports,
     departments,
     agents,
     tools,

@@ -22,12 +22,13 @@ export type LedgerRow = ParsedRow & { category: string; card?: CardId };
 // Tokenize whole CSV text into records, honoring double-quoted fields that may
 // contain commas AND embedded newlines (e.g. Amex "Extended Details" wraps a
 // record across several physical lines). "" inside a quoted field → literal ".
-function tokenizeCsv(text: string): string[][] {
+export function tokenizeCsv(text: string, strict = false): string[][] {
   const records: string[][] = [];
   let field = '';
   let record: string[] = [];
   let inQ = false;
   let started = false; // has the current record any content yet?
+  let closed = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (inQ) {
@@ -35,14 +36,16 @@ function tokenizeCsv(text: string): string[][] {
         if (text[i + 1] === '"') {
           field += '"';
           i++;
-        } else inQ = false;
+        } else { inQ = false; closed = true; }
       } else field += c;
     } else if (c === '"') {
+      if (strict && (field !== '' || closed)) throw new Error('Malformed CSV quoting');
       inQ = true;
       started = true;
     } else if (c === ',') {
       record.push(field);
       field = '';
+      closed = false;
       started = true;
     } else if (c === '\n' || c === '\r') {
       if (c === '\r' && text[i + 1] === '\n') i++;
@@ -53,11 +56,14 @@ function tokenizeCsv(text: string): string[][] {
       field = '';
       record = [];
       started = false;
+      closed = false;
     } else {
+      if (strict && closed) throw new Error('Unexpected text after quoted CSV field');
       field += c;
       started = true;
     }
   }
+  if (strict && inQ) throw new Error('Unclosed CSV field');
   if (started || field !== '') {
     record.push(field);
     records.push(record);
