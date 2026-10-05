@@ -79,3 +79,42 @@ Noe's Railway values: `OMEGA_META_CLIENT_ID=4154010854733834`,
 - Meta Basic settings tab left open; no credential reveals, permissions, app publication or unrelated variables changed.
 - M6h code remains local at `d82f196`; no main push. Public deployment still lacks this config_id implementation.
 - Next: resolve credential handoff and Meta domain/callback setup, then one combined Railway Apply; separately obtain code deploy approval.
+
+## Claude addendum (Oct 5, evening): live findings from Noe's account
+Tested in production (Chrome, nosterCodes workspace) after Noe signed in:
+
+**Meta: Find accounts returns nothing for Facebook Page and Instagram**
+(`/api/admin/sources` 200, "No accessible accounts found") although the
+saved Page ID `1224585794082093` exists. The Page belongs to Noe's business
+portfolio `1496974291830894`. With Facebook Login for Business, Pages owned
+by a business portfolio do not appear in `/me/accounts` unless the user
+token also has `business_management`. Decisions:
+1. Add `business_management` to the requested permissions (scope list and
+   the documentation for the config). OmegaOS only ever reads with it: GET
+   `/me/businesses`, `/{business-id}/owned_pages` and `/client_pages`. Add a
+   test that no POST/DELETE is ever sent to Graph.
+2. Discovery for facebook/instagram: union of `/me/accounts` and each
+   business's `owned_pages` + `client_pages` (fields `id,name,
+   instagram_business_account{id,username}`), deduped, bounded (max 100
+   pages total, max 10 businesses). Same for ad accounts: union of
+   `/me/adaccounts` and `/{business-id}/owned_ad_accounts`.
+3. Noe will add `business_management` to the "OmegaOS reporting"
+   configuration in Meta, then reconnect.
+
+**Etsy: Find accounts says "provider denied access"** right after a
+successful reauthorization (the callback completes instantly because Etsy
+remembers consent, which is why Reconnect "does nothing" visibly). The
+Chrome profile that owns the nosterlogistics app also has an open shop
+(Shop Manager dashboard loads). Cause unknown from the outside. Please:
+1. Add a safe diagnostic to provider errors: record HTTP status and the
+   provider's error code/short error string (Etsy returns JSON `error`),
+   never tokens, headers or bodies beyond that field, in the source's
+   `lastError` detail visible only to owner/admin, and in server logs with
+   the workspace id.
+2. Reproduce against Etsy with Noe's connected token (read-only GET
+   `/v3/application/users/{id}/shops` and `/v3/application/users/me`) and
+   report the status/error. Check that the `x-api-key` header is
+   `keystring:shared_secret` (Etsy requires both since 2025) and that the
+   shop endpoint handles a user with exactly one shop.
+3. Reconnect should show "Reconnected" feedback instead of silently
+   reloading.
