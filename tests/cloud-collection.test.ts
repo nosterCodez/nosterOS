@@ -54,7 +54,7 @@ test('fixed HTTPS destinations only, bounded responses, no redirects, generic er
   const fetcher = mockFetch({});
   for (const url of ['http://api.stripe.com/v1/charges', 'https://127.0.0.1/', 'https://api.stripe.com.attacker.test/', 'https://user:secret@api.stripe.com/']) await expect(cloudJson(url, {}, fetcher)).rejects.toThrow('setup');
   expect(fetcher).not.toHaveBeenCalled();
-  await expect(cloudJson('https://api.stripe.com/v1/charges', {}, vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: 'private-token' }, { status: 401 })))).rejects.toThrow('permission');
+  await expect(cloudJson('https://api.stripe.com/v1/charges', {}, vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: 'private-token' }, { status: 401 })))).rejects.toThrow('authentication');
   await expect(cloudJson('https://api.stripe.com/v1/charges', {}, mockFetch({ data: 'x'.repeat(2_000_001) }))).rejects.toThrow('too_large');
 });
 test('successful points persist, failures preserve last-good snapshot, revocation blocks stale async writes', async () => {
