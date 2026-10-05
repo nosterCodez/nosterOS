@@ -25,6 +25,7 @@ export function cloudProvider(input: string): Provider {
   }
 }
 export function providerReady(id: string) {
+  if (id === 'meta' && process.env.OMEGA_META_CONFIG_ID && !/^\d+$/.test(process.env.OMEGA_META_CONFIG_ID)) return false;
   if (id === 'shopify' && process.env.OMEGA_SHOPIFY_ENABLED !== '1') return false;
   if (id === 'printify') return process.env.OMEGA_PRINTIFY_ENABLED === '1' && Boolean(process.env.OMEGA_PRINTIFY_APP_ID);
   if (id === 'linkedin' || (id === 'google-business' && process.env.OMEGA_GOOGLE_BUSINESS_ENABLED !== '1')) return false;
@@ -66,6 +67,10 @@ export function beginAuthorization(ctx: AuthContext, id: string, now = Date.now(
     return { url: url.toString() };
   }
   url.search = new URLSearchParams({ [p.clientName ?? 'client_id']: process.env[`${p.env}_CLIENT_ID`]!, response_type: 'code', redirect_uri: callbackUrl(id), scope: p.scopes.join(p.separator ?? ' '), state }).toString();
+  if (id === 'meta' && process.env.OMEGA_META_CONFIG_ID) {
+    url.searchParams.delete('scope');
+    url.searchParams.set('config_id', process.env.OMEGA_META_CONFIG_ID);
+  }
   if (p.pkce) { url.searchParams.set('code_challenge', challengeFor(verifier)); url.searchParams.set('code_challenge_method', 'S256'); }
   if (id.startsWith('google')) { url.searchParams.set('access_type', 'offline'); url.searchParams.set('prompt', 'consent'); }
   return { url: url.toString() };
@@ -122,6 +127,11 @@ export async function completeAuthorization(ctx: AuthContext, id: string, code: 
   if (shop) body.set('expiring', '1');
   const result = id === 'printify' ? await printifyTokens({ code }, false, fetcher) : TokenResponse.parse(await cloudJson(shop ? `https://${shop}/admin/oauth/access_token` : p.token, { method: 'POST', headers: tokenHeaders(p), body: body.toString() }, fetcher));
   if (shop) shopifyToken(result);
+  if (id === 'meta') {
+    const raw = await cloudJson(`https://graph.facebook.com/${process.env.OMEGA_META_API_VERSION}/me/permissions`, { headers: { Authorization: `Bearer ${result.access_token}` } }, fetcher);
+    const permissions = z.object({ data: z.array(z.object({ permission: z.string(), status: z.string() })).max(1000) }).safeParse(raw);
+    if (!permissions.success || !p.scopes.every(scope => permissions.data.data.some(item => item.permission === scope && item.status === 'granted'))) throw new CloudError('permission');
+  }
   await reauthorize();
   if (version(ctx, slot(id, 'pending')) !== pending.pendingVersion || version(ctx, slot(id)) !== pending.tokenVersion) throw new CloudError('changed');
   saveVaultValue(ctx, slot(id), JSON.stringify({ access: result.access_token, refresh: result.refresh_token, expires: Date.now() + result.expires_in * 1000, generation: randomUUID(), ...(shop ? { shop } : {}) }));
