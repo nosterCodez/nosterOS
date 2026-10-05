@@ -33,3 +33,14 @@
 - Browser file upload automation blocked by Chrome extension file-URL permission; full authenticated browser upload/confirm still needs verification. Real local /finances remains behind beta sign-in.
 - Local test artifacts ignored under .local; existing shared dev server on port 4100 left running. No real financial files imported.
 - Provider approvals remain separate; cannot promise flawless Google access or claim GBP/Ads connected. Deployment requires approval.
+
+## Approved deployment - October 5, 2026
+- Noe approved deployment in chat; main fast-forwarded and pushed to 7b491bd4dce8fd78f686975bc0251cfc2cd27e24.
+- Railway deployment 33e29547-a926-4690-80b6-968c832cdd4b reached SUCCESS at 16:43:05 UTC.
+- Authenticated production Overview and Money pages verified at os.noepenaa.com; Railway HTTP logs confirm 200 responses.
+- Overview shows three saved reports: Search Console, Analytics and YouTube, with account identifiers and freshness notes.
+- Analytics correctly shows no data returned for its period, not fabricated zero metrics; Ads still has no saved report.
+- Refresh dashboard and navigation exercised; Money import disclosure, standard/PayPal format selection and month control checked.
+- No production financial rows uploaded; full browser upload/confirmation remains unverified due to the previously recorded extension limitation.
+- Existing credentials, permissions and service plans unchanged; provider approval blockers remain separate.
+- Unrelated provider handoff edits preserved and shared development server left running.
