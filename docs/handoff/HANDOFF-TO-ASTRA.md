@@ -12,6 +12,19 @@ historical roadmap; old "in progress" and "next" labels below are not current.
 
 ## Current checkout and deployment
 
+- Oct 5, 18:07 CDT: M6k deployed with Noe's explicit approval; main/origin/main
+  code d4d4689. Railway 39b605ec-7023-41ba-a127-2e4de43e420e SUCCESS at 23:06:03 UTC.
+- Added owner/admin-only fixed Etsy key ping and masked error_description support.
+- Exactly one production key-only ping returned HTTP 200; JSON error fields: neither.
+- Etsy dashboard already showed shop 66739608 Up to date, 1 lifetime sale and 396
+  active listings collected at 23:00:18 UTC, before this deployment; not a new sync by us.
+- Prior 403 cause/body remain unconfirmed; current key is accepted for the ping endpoint.
+- Typecheck/build pass. Full Windows: 3,921 pass / 4 baseline assertion failures plus
+  three baseline EPERM suite cleanup failures. Focused rerun 51/51; see M6k Report.
+- No Railway variables, credentials or source settings changed; no user token in ping.
+- Production result remains visible in Chrome. Report checkpoint is local-only to avoid
+  another deployment; unrelated handoff edits and shared dev server remain untouched.
+
 - Oct 5, 17:52 CDT: Claude accepted M6j at `f24b60c`; reported Linux
   typecheck clean and 375 files / 3,912 tests passing; Noe approved deployment.
 - Local main fast-forwarded to `f24b60c00974f3641f038cbd34fa1f9c71bff113`;
