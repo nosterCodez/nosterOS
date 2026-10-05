@@ -23,7 +23,17 @@ Set up by Claude on Oct 3, 2026, with Noe's approval. Nothing is deployed yet.
 `RAILPACK_DEPLOY_APT_PACKAGES=poppler-utils`,
 `NODE_OPTIONS=--max-old-space-size=512`.
 
-## Still to do, in order
+## Current deployment (Oct 4, 2026)
+The checklist below is historical setup context. The private beta is live at
+https://os.noepenaa.com; email sign-in, operator binding and two-workspace checks
+are complete. M2 and M3 are merged into main. Service nosteros-web now auto-deploys
+main, with a private production NOSTEROS_MASTER_KEY and NOSTEROS_OPERATOR_FEATURES=0.
+Existing accounts and volume are unchanged. See M3-secure-connections.md for the
+verified deployment, recovery-key location, test results and remaining proxy-IP
+rate-limiting warning. OAuth/provider onboarding and scoped collectors remain future
+work; stored credentials are not yet active connections. Do not repeat setup below.
+
+## Original setup checklist (historical)
 1. **Noe:** upgrade to Hobby; Usage limits: Compute email alert $8, hard
    limit $10 (Railway's minimum).
 2. **Noe, in the Railway dashboard (Variables tab), never in chat or git:**

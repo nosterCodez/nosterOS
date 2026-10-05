@@ -1,6 +1,6 @@
 # M3: Encrypted workspace connections
 
-Status: in progress
+Status: complete (deployed and verified Oct 4, 2026 America/Chicago)
 Review by Claude: no; Astra security self-review required
 
 ## Scope and decisions
@@ -37,7 +37,7 @@ Local key generation is also approved. Keys must be backed up separately from da
 - https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html
 
 ## Report
-- Implementation complete; deployment/browser verification pending at this checkpoint.
+- Implementation 228ac38 merged into main at bc7b8df; M2 was merged at 9bca947.
 - Workspace databases now hold authenticated encrypted credential envelopes and one wrapped random data key.
 - Owners/admins can save, replace and soft-revoke approved fields; APIs return metadata only, never key fragments.
 - Strict bodies, 8 KB streaming body limit, origin/role checks and stale-workspace headers protect mutations.
@@ -49,8 +49,20 @@ Local key generation is also approved. Keys must be backed up separately from da
 - New tests cover role/origin denial, stale forms, independent workspaces, tampering, key loss/change, random IVs, revocation, and no secret response/fallback.
 - Security self-review: GCM tags/AAD bind workspace and field; transactions serialize key creation; no credential caches, logs, browser serialization or provider calls.
 - Legacy test assertions changed intentionally: retired endpoints must not mutate shared state; host layout tests follow their moved page; smoke covers the new routes.
-- Local master key generated privately in ignored .env.local. Production gets a different key; retain its backup separately from databases.
+- Separate local and production master keys generated privately; local key is in ignored .env.local, production key in Railway.
 - No user data removed, real messages sent, provider credentials connected, or paid services added. M4 OAuth and M5 collectors remain future work.
+
+## Deployment verification (Oct 4, 2026)
+- Railway nosteros-web (service ID cd008990-7a89-415f-82c8-e841db70a8ef) now deploys main with NOSTEROS_OPERATOR_FEATURES=0.
+- Deployment 6c22dcf5-135f-4fbd-b771-e4a2e4947fd4 succeeded at 2026-10-05 00:07 UTC with commit bc7b8df.
+- Existing accounts, auth configuration, operator binding and /data volume preserved. Anonymous / and /api/admin/connections return 401.
+- Live QA workspace: harmless non-provider value saved, remained Saved / unverified after reload, and was absent in nosterCodes.
+- Returning to QA preserved its value; soft-disconnect persisted after reload. No provider request made; only a revoked test record remains.
+- Restored nosterCodes active workspace and expanded sidebar. Desktop, 390px and 320px screenshots checked; no Connections horizontal overflow.
+- Production recovery copy: C:/Users/noster/AppData/Local/OmegaOS/secrets/railway-master-key-m3.dpapi, protected by Noe's Windows-user DPAPI; decrypted roundtrip matched the installed key before temporary files were removed.
+- Recovery file is Windows-account-bound, not a portable vault backup. Retain it and the Railway key; never regenerate to troubleshoot decryption.
+- Runtime logs contain no internal-tick 401 loop. Better Auth warns client IP is unresolved and rate limiting falls back to a shared per-path bucket; follow up on trusted Railway proxy headers in a separate spec, without blindly trusting client-supplied headers.
+- Local dev server remains running at localhost:4100 behind the beta gate. No marketing briefing applies to this separate repo; this spec is the handoff.
 
 ## Operations
 - NOSTEROS_MASTER_KEY is exactly 32 random bytes in hex, configured only server-side.
