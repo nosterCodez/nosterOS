@@ -29,3 +29,10 @@
 - Google warns the app is unverified; approved public privacy/terms and wider verification remain future work.
 - Security review: no master-key rotation, no unrelated credentials changed, secret not printed or saved to git.
 - No application-code changes, purchases or messages; typecheck/tests/build not rerun for this configuration-only checkpoint.
+
+## Follow-up (M5f)
+- Completed the requested account connection; Google authorization persists after reload.
+- A transient Railway error appeared on return during deployment, but the saved
+  workspace authorization was confirmed by a fresh Connections page request.
+- Search Console discovery returned access denied; API activation remains unverified/pending.
+- This is not a claim that reporting or scheduled collection is working yet.

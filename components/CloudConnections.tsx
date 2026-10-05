@@ -20,6 +20,8 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
   const authorized = !['not_connected', 'vault_unavailable', 'planned'].includes(source.status);
   const picker = pickerNames[source.id];
   const setupPending = source.provider && !source.planned && !source.appReady && source.status !== 'vault_unavailable';
+  const accountSaved = Boolean(source.provider && authorized);
+  const connectionLabel = setupPending ? 'Provider setup required' : accountSaved && !['error', 'stale'].includes(source.status) ? 'Connected' : SOURCE_STATUS[source.status];
   useEffect(() => { setResource(source.resource); setEnabled(source.enabled); }, [source.resource, source.enabled]);
   useEffect(() => { if (!authorized) setDiscovery(null); }, [authorized]);
   async function run(body: object, discover = false) {
@@ -33,7 +35,8 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
     finally { setBusy(false); }
   }
   return <section aria-label={source.name} className="min-w-0 rounded border border-os-border p-5">
-    <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{setupPending ? 'Setup pending' : SOURCE_STATUS[source.status]}</span></div>
+    <div className="flex flex-wrap items-start justify-between gap-2"><h2 className="text-base font-semibold">{source.name}</h2><span className={`text-xs ${setupPending || ['error', 'stale'].includes(source.status) ? 'text-os-warn' : 'text-os-muted'}`}>{connectionLabel}</span></div>
+    {accountSaved && <p className="mt-3 text-xs leading-5 text-os-muted">Account connection saved to this workspace. Reporting: {SOURCE_STATUS[source.status]}.</p>}
     <details className="mt-3 text-xs leading-6 text-os-muted"><summary className="cursor-pointer focus-visible:outline focus-visible:outline-os-accent">Data and permissions</summary><p className="mt-2">{source.note}</p></details>
     {!source.planned && <>
       {source.provider ? <div className="mt-4">
@@ -76,6 +79,10 @@ function SourceRow({ source, act }: { source: CloudSourceView; act: Act }) {
 export function CloudConnections({ initial, workspaceId }: { initial: CloudSourceView[]; workspaceId: string }) {
   const [sources, setSources] = useState(initial), [group, setGroup] = useState('All');
   useEffect(() => setSources(initial), [initial]);
+  const filtered = sources.filter(s => group === 'All' || s.group === group);
+  const unavailable = (s: CloudSourceView) => s.planned || Boolean(s.provider && !s.appReady && s.status === 'not_connected');
+  const availableSources = filtered.filter(s => !unavailable(s));
+  const upcomingSources = filtered.filter(unavailable);
   async function act(body: object): Promise<Result> {
     const response = await fetch('/api/admin/sources', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-omegaos-workspace': workspaceId }, body: JSON.stringify(body) });
     const result = await response.json();
@@ -86,7 +93,16 @@ export function CloudConnections({ initial, workspaceId }: { initial: CloudSourc
     return { message: result.outcome?.error ?? result.outcome?.skipped ?? (result.outcome?.ok ? 'Sync complete.' : 'Settings saved.') };
   }
   return <div className="min-w-0 max-w-6xl">
-    <div role="group" aria-label="Filter connections" className="mb-5 flex flex-wrap gap-2">{['All', 'Search', 'Money', 'Social', 'Email', 'Ads'].map(name => <button type="button" key={name} aria-pressed={group === name} onClick={() => setGroup(name)} className={`pressable ${control} ${group === name ? 'text-os-accent border-os-accent' : 'text-os-muted'}`}>{name}</button>)}</div>
-    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{sources.filter(s => group === 'All' || s.group === group).map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} />)}</div>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div role="group" aria-label="Filter connections" className="flex flex-wrap gap-2">{['All', 'Search', 'Money', 'Social', 'Email', 'Ads'].map(name => <button type="button" key={name} aria-pressed={group === name} onClick={() => setGroup(name)} className={`pressable ${control} ${group === name ? 'text-os-accent border-os-accent' : 'text-os-muted'}`}>{name}</button>)}</div>
+      <button type="button" className={`pressable ${control}`} onClick={() => window.location.reload()}><RefreshCw size={15} aria-hidden="true" />Refresh status</button>
+    </div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2">{availableSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} />)}</div>
+    {!availableSources.length && <p className="text-sm text-os-muted">No connectors are ready in this category yet.</p>}
+    {upcomingSources.length > 0 && <details className="mt-8 border-t border-os-border pt-5">
+      <summary className="cursor-pointer text-sm focus-visible:outline focus-visible:outline-os-accent">More connectors ({upcomingSources.length})</summary>
+      <p className="my-4 text-xs leading-5 text-os-muted">These providers need platform setup or are still in development. Account sign-in is not available for them yet.</p>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">{upcomingSources.map(source => <SourceRow key={`${workspaceId}:${source.id}`} source={source} act={act} />)}</div>
+    </details>}
   </div>;
 }

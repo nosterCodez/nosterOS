@@ -63,6 +63,31 @@ test('callback fails closed without valid state or admin session and never calls
     expect(fetcher).not.toHaveBeenCalled();
   } finally { vi.unstubAllGlobals(); }
 });
+
+test('successful sign-in persists encrypted authorization across reads without enabling collection', async () => {
+  vi.stubEnv('OMEGA_GOOGLE_CLIENT_ID', 'fixture-client'); vi.stubEnv('OMEGA_GOOGLE_CLIENT_SECRET', 'fixture-secret');
+  const start = await (await call('POST', { action: 'authorize', id: 'google' })).json();
+  const state = new URL(start.url).searchParams.get('state')!;
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ access_token: 'fixture-access', refresh_token: 'fixture-refresh', expires_in: 3600 })));
+  try {
+    const callback = new URL('http://localhost:4100/api/connections/oauth/google/callback');
+    callback.searchParams.set('code', 'fixture-code'); callback.searchParams.set('state', state);
+    const response = await cloudCallback(new Request(callback, { headers: { cookie: 'better-auth.session_token=test' } }), 'google');
+    expect(response.headers.get('location')).toBe('http://localhost:4100/integrations?connection=authorized');
+    for (let read = 0; read < 2; read++) {
+      const body = await (await call()).json();
+      const google = body.sources.filter((s: { provider?: string }) => s.provider === 'google');
+      expect(google).toHaveLength(3);
+      expect(google.every((s: { status: string; enabled: boolean }) => s.status === 'needs_setup' && !s.enabled)).toBe(true);
+      expect(JSON.stringify(body)).not.toContain('fixture-access');
+      expect(JSON.stringify(body)).not.toContain('fixture-refresh');
+    }
+    expect(JSON.stringify(dbs.get(A)!.connectionRecords.all())).not.toContain('fixture-access');
+    identity(B);
+    const other = await (await call()).json();
+    expect(other.sources.find((s: { id: string }) => s.id === 'search-console').status).toBe('not_connected');
+  } finally { vi.unstubAllGlobals(); }
+});
 test('resource discovery enforces origin, role, workspace and credential isolation', async () => {
   saveVaultValue({ workspace: { id: A }, db: dbs.get(A)! }, 'oauth:google:tokens', JSON.stringify({ access: 'private-account-token', expires: Date.now() + 3600000, generation: 'one' }));
   const fetcher = vi.fn(async () => Response.json({ siteEntry: [{ siteUrl: 'https://example.com/', permissionLevel: 'siteOwner' }] }));

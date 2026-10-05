@@ -11,8 +11,9 @@ vi.mock('@/lib/cloud-sources', () => ({ sourceViews: vi.fn() }));
 const sources = CLOUD_SOURCES.map(s => ({ ...s, resource: '', enabled: false, status: s.planned ? 'planned' : 'not_connected', stale: false, snapshot: null, error: null, appReady: false, lastAttempt: null }));
 test('disconnected sources lead with honest provider sign-in rather than credential forms', () => {
   const html = renderToStaticMarkup(createElement(CloudConnections, { initial: sources, workspaceId: 'A'.repeat(32) }));
-  expect(html).toContain('Setup pending');
-  expect(html).toContain('OmegaOS needs a one-time provider setup');
+  expect(html).not.toContain('Setup pending');
+  expect(html).toContain('More connectors');
+  expect(html).toContain('Provider setup required');
   expect(html).not.toContain('Continue with');
   expect(html).toContain('https://myaccount.google.com/apppasswords');
   expect(html).toContain('href="#email-credentials"');
@@ -20,6 +21,19 @@ test('disconnected sources lead with honest provider sign-in rather than credent
   expect(html).not.toContain('<form');
   expect(html).not.toContain('checked=""');
   expect(html).toContain('lg:grid-cols-2');
+});
+
+test('saved OAuth is connected before reporting is configured; unavailable apps stay separate', () => {
+  const connected = { ...sources[0], appReady: true, status: 'needs_setup' };
+  const pending = sources.find(s => s.id === 'instagram')!;
+  const html = renderToStaticMarkup(createElement(CloudConnections, { initial: [connected, pending], workspaceId: 'A'.repeat(32) }));
+  expect(html).toContain('Connected');
+  expect(html).toContain('Account connection saved to this workspace.');
+  expect(html).toContain('Choose account');
+  expect(html.indexOf('Google Search Console')).toBeLessThan(html.indexOf('More connectors'));
+  expect(html.indexOf('Instagram')).toBeGreaterThan(html.indexOf('More connectors'));
+  expect(html).not.toContain('Setup pending');
+  expect(html).toContain('Refresh status');
 });
 test('configured providers keep login available but an unavailable vault blocks it', () => {
   const ready = [{ ...sources[0], appReady: true }];
