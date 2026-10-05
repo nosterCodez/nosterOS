@@ -12,6 +12,21 @@ historical roadmap; old "in progress" and "next" labels below are not current.
 
 ## Current checkout and deployment
 
+- Oct 5, 17:52 CDT: Claude accepted M6j at `f24b60c`; reported Linux
+  typecheck clean and 375 files / 3,912 tests passing; Noe approved deployment.
+- Local main fast-forwarded to `f24b60c00974f3641f038cbd34fa1f9c71bff113`;
+  origin/main pushed from `f929838` to that exact reviewed commit.
+- Railway production `nosteros-web` deployment `8a67e84c-ee99-4af0-bdc7-ca04571a0f00`
+  reports SUCCESS for `f24b60c`, completed October 5 at 22:51:47 UTC.
+- Public `https://os.noepenaa.com` verified afterward: expected HTTP 401,
+  title `OmegaOS · Private`, and email sign-in link present.
+- No Railway variables/configuration or provider credentials changed.
+  Unrelated working-tree edits and the shared dev server were left untouched.
+- M6j masked Etsy diagnostics and the authenticated shop fallback are deployed;
+  authenticated Find accounts, actual granted scope, and root cause remain unverified here.
+- Deployment checkpoint recorded locally without another push/redeploy.
+  Next: owner/admin tests Etsy Find accounts and shares the sanitized result if it fails.
+
 - Oct 5, 17:32 CDT: M6h + M6i accepted by Claude; Linux typecheck clean and
   374 files / 3,893 tests passing (reported by Claude). Noe's deploy approval relayed.
 - Fast-forward pushed `origin/main` from `cace87a` to reviewed `f929838`;
