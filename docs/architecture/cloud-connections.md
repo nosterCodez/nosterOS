@@ -105,6 +105,23 @@ Live consent, provider app review, permissions, quotas and first successful
 collection must still be verified per account after Noe approves setup.
 No customer email/password/token or production data is used in preview tests.
 
+## Google Ads reporting (M5k)
+
+Separate `google-ads` OAuth authorization uses the required broad `adwords` scope;
+existing Google grants are not expanded. Only account-list and search requests
+are implemented. The data app must register its separate callback and receive
+Ads API access before `OMEGA_GOOGLE_ADS_ENABLED=1`; reviewed API version is `v25`.
+No developer token is used under Google's September 2026 onboarding change.
+
+Discovery reads at most five directly accessible account trees, caps output at
+500 customers and reports truncation. Manager/customer IDs are stored together
+in that workspace's source setting; direct access wins when duplicated. Reports
+read 28 completed account-local days. Currency is disclosed; only USD spend is
+shown. Missing metrics remain null, and test status is shown only if returned.
+Production-project approval errors are distinguished from expired user consent.
+All requests use fixed hosts, bounded bodies, no redirects and existing budgets.
+Live Ads consent and report collection have not been tested or deployed yet.
+
 ## Provider setup checkpoint (Oct 5, 2026)
 
 - Google Business: Account Management, Business Information and Performance APIs
@@ -139,5 +156,7 @@ No customer email/password/token or production data is used in preview tests.
 - https://developers.google.com/my-business/content/location-data
 - https://developers.google.com/google-ads/api/docs/api-policy/developer-token
 - https://developers.google.com/google-ads/api/docs/api-policy/access-levels
+- https://developers.google.com/google-ads/api/docs/account-management/get-account-hierarchy
+- https://developers.google.com/google-ads/api/rest/common/search
 - https://learn.microsoft.com/en-us/linkedin/marketing/community-management/organizations/organization-access-control-by-role
 - https://docs.stripe.com/api/charges/list

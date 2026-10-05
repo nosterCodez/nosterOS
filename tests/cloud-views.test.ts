@@ -89,6 +89,16 @@ test('dashboard renders real zero, unknown placeholders, source period, stale an
   }
 });
 
+test('Ads explains broad consent, remains unavailable before setup and offers authorized selection', () => {
+  const source = sources.find(s => s.id === 'google-ads')!;
+  const pending = renderToStaticMarkup(createElement(CloudConnections, { initial: [source], workspaceId: 'A'.repeat(32) }));
+  expect(pending).toContain('Google Ads requires its own API access');
+  expect(pending).not.toContain('Continue with'); expect(pending).not.toContain('<form');
+  const ready = renderToStaticMarkup(createElement(CloudConnections, { initial: [{ ...source, appReady: true, status: 'needs_setup' }], workspaceId: 'A'.repeat(32) }));
+  expect(ready).toContain('adwords permission, which permits edits');
+  expect(ready).toContain('Find accounts'); expect(ready).not.toContain('checked=""');
+});
+
 test('configured paused source allows manual sync and dashboard explains first collection', async () => {
   const paused = { ...sources.find(s => s.id === 'ga4')!, resource: '123', status: 'paused', appReady: true };
   const connection = renderToStaticMarkup(createElement(CloudConnections, { initial: [paused], workspaceId: 'A'.repeat(32) }));

@@ -14,6 +14,7 @@ export function cloudProvider(input: string): Provider {
   switch (id) {
     case 'google': return { id, ...google, scopes: ['https://www.googleapis.com/auth/webmasters.readonly', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/youtube.readonly'] };
     case 'google-business': return { id, ...google, scopes: ['https://www.googleapis.com/auth/business.manage'] };
+    case 'google-ads': return { id, ...google, scopes: ['https://www.googleapis.com/auth/adwords'] };
     case 'meta': return { id, authorize: `https://www.facebook.com/${version ?? ''}/dialog/oauth`, token: `https://graph.facebook.com/${version ?? ''}/oauth/access_token`, env: 'OMEGA_META', scopes: ['pages_show_list', 'pages_read_engagement', 'instagram_basic', 'ads_read'], pkce: false, separator: ',', refresh: false };
     case 'tiktok': return { id, authorize: 'https://www.tiktok.com/v2/auth/authorize/', token: 'https://open.tiktokapis.com/v2/oauth/token/', env: 'OMEGA_TIKTOK', scopes: ['user.info.basic', 'user.info.stats'], pkce: false, separator: ',', clientName: 'client_key', refresh: true };
     case 'linkedin': throw new CloudError('setup'); // Developer app and reporting product access are not approved.
@@ -22,6 +23,7 @@ export function cloudProvider(input: string): Provider {
 }
 export function providerReady(id: string) {
   if (id === 'linkedin' || (id === 'google-business' && process.env.OMEGA_GOOGLE_BUSINESS_ENABLED !== '1')) return false;
+  if (id === 'google-ads' && (process.env.OMEGA_GOOGLE_ADS_ENABLED !== '1' || process.env.OMEGA_GOOGLE_ADS_API_VERSION !== 'v25')) return false;
   const p = cloudProvider(id);
   return Boolean(process.env[`${p.env}_CLIENT_ID`] && process.env[`${p.env}_CLIENT_SECRET`] &&
     (id !== 'meta' || /^v\d+\.0$/.test(process.env.OMEGA_META_API_VERSION ?? '')) &&

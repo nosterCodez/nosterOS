@@ -152,3 +152,25 @@ test('Meta discovery works without Google credentials and discards changed works
     expect(changed.status).toBe(400); expect(await changed.text()).not.toContain('Secret Page');
   } finally { vi.unstubAllGlobals(); }
 });
+
+test('Ads discovery enforces workspace, role and origin and rechecks access after provider I/O', async () => {
+  vi.stubEnv('OMEGA_GOOGLE_ADS_API_VERSION', 'v25');
+  const context = { workspace: { id: A }, db: dbs.get(A)! };
+  saveVaultValue(context, 'oauth:google-ads:tokens', JSON.stringify({ access: 'private-ads-token', expires: Date.now() + 3600000, generation: 'ads' }));
+  const fetcher = vi.fn(async () => Response.json({ resourceNames: [] }));
+  vi.stubGlobal('fetch', fetcher);
+  try {
+    const action = { action: 'resources', id: 'google-ads' };
+    identity(B); expect((await call('POST', action)).status).toBe(400);
+    identity(A, 'member'); expect((await call('POST', action)).status).toBe(403);
+    identity(A); expect((await call('POST', action, { origin: 'https://other.test' })).status).toBe(403);
+    expect((await call('POST', action, { 'x-omegaos-workspace': B })).status).toBe(409);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect((await call('POST', action)).status).toBe(200);
+    fetcher.mockImplementation(async () => { identity(B); return Response.json({ resourceNames: [] }); });
+    expect((await call('POST', action)).status).toBe(400);
+    identity(A);
+    fetcher.mockImplementation(async () => { identity(A, 'member'); return Response.json({ resourceNames: [] }); });
+    expect((await call('POST', action)).status).toBe(403);
+  } finally { vi.unstubAllGlobals(); }
+});

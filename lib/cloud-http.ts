@@ -1,7 +1,7 @@
 export class CloudError extends Error {
-  constructor(public code: 'permission' | 'authentication' | 'api_disabled' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider') { super(code); }
+  constructor(public code: 'permission' | 'authentication' | 'api_disabled' | 'platform_approval' | 'rate_limit' | 'provider' | 'timeout' | 'invalid_data' | 'setup' | 'changed' | 'too_large' = 'provider') { super(code); }
 }
-const HOSTS = new Set(['oauth2.googleapis.com', 'www.googleapis.com', 'analyticsdata.googleapis.com', 'analyticsadmin.googleapis.com', 'mybusinessbusinessinformation.googleapis.com', 'businessprofileperformance.googleapis.com', 'api.stripe.com', 'graph.facebook.com', 'open.tiktokapis.com', 'api.etsy.com', 'api.linkedin.com', 'www.linkedin.com']);
+const HOSTS = new Set(['oauth2.googleapis.com', 'www.googleapis.com', 'analyticsdata.googleapis.com', 'analyticsadmin.googleapis.com', 'mybusinessbusinessinformation.googleapis.com', 'businessprofileperformance.googleapis.com', 'googleads.googleapis.com', 'api.stripe.com', 'graph.facebook.com', 'open.tiktokapis.com', 'api.etsy.com', 'api.linkedin.com', 'www.linkedin.com']);
 async function boundedJson(response: Response, limit: number): Promise<unknown> {
   const reader = response.body?.getReader(); if (!reader) throw new CloudError('invalid_data');
   let size = 0; const chunks: Uint8Array[] = [];
@@ -10,13 +10,17 @@ async function boundedJson(response: Response, limit: number): Promise<unknown> 
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
-async function googleApiDisabled(response: Response): Promise<boolean> {
+async function googleError(response: Response): Promise<CloudError['code'] | undefined> {
   // Only inspect typed reasons; provider messages/metadata must never reach the UI or logs.
   try {
     const body = await boundedJson(response, 65_536);
-    if (!record(body) || !record(body.error) || !Array.isArray(body.error.details)) return false;
-    return body.error.details.some(detail => record(detail) && detail['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' && detail.domain === 'googleapis.com' && detail.reason === 'SERVICE_DISABLED');
-  } catch { return false; }
+    if (!record(body) || !record(body.error) || !Array.isArray(body.error.details)) return;
+    for (const detail of body.error.details) {
+      if (!record(detail)) continue;
+      if (detail['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo' && detail.domain === 'googleapis.com' && detail.reason === 'SERVICE_DISABLED') return 'api_disabled';
+      if (typeof detail['@type'] === 'string' && /^type\.googleapis\.com\/google\.ads\.googleads\.v\d+\.errors\.GoogleAdsFailure$/.test(detail['@type']) && Array.isArray(detail.errors) && detail.errors.some(e => record(e) && record(e.errorCode) && e.errorCode.authorizationError === 'CLOUD_PROJECT_NOT_APPROVED_FOR_PRODUCTION')) return 'platform_approval';
+    }
+  } catch { /* Use safe HTTP fallback. */ }
 }
 async function metaError(response: Response): Promise<CloudError['code'] | undefined> {
   try {
@@ -38,7 +42,8 @@ export async function cloudJson(url: string, init: RequestInit = {}, fetcher: ty
     if (!response.ok) {
       const metaCode = target.hostname === 'graph.facebook.com' ? await metaError(response) : undefined;
       if (metaCode) throw new CloudError(metaCode);
-      if (response.status === 403 && target.hostname.endsWith('.googleapis.com') && await googleApiDisabled(response)) throw new CloudError('api_disabled');
+      const googleCode = response.status === 403 && target.hostname.endsWith('.googleapis.com') ? await googleError(response) : undefined;
+      if (googleCode) throw new CloudError(googleCode);
       if (signal.aborted) throw new CloudError('timeout');
       throw new CloudError(response.status === 429 ? 'rate_limit' : response.status === 401 ? 'authentication' : response.status === 403 ? 'permission' : 'provider');
     }
@@ -49,6 +54,7 @@ export const CLOUD_ERROR_TEXT: Record<CloudError['code'], string> = {
   permission: 'The provider denied access. Check that this account has permission to the selected resource and the requested data.',
   authentication: 'The provider did not accept the saved sign-in. Reconnect your account, then try again.',
   api_disabled: 'A required Google API is disabled in the OmegaOS Google project. An administrator must enable it, then retry. Reconnecting will not fix this.',
+  platform_approval: 'The OmegaOS Google project needs Google Ads production-access approval. Reconnecting your account will not resolve this.',
   rate_limit: 'Provider rate limit reached. The next scheduled sync will retry.',
   provider: 'Provider unavailable. Last successful data is retained.',
   timeout: 'Sync exceeded its time budget. Last successful data is retained.',

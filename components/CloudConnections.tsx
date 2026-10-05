@@ -8,10 +8,11 @@ import { GmailSetupHelp } from '@/components/GmailSetupHelp';
 export const SOURCE_STATUS: Record<string, string> = { planned: 'Coming later', vault_unavailable: 'Unavailable', not_connected: 'Not connected', needs_setup: 'Choose account', paused: 'Paused', error: 'Needs attention', stale: 'Data is stale', connected: 'Up to date', ready: 'Ready to sync' };
 const control = 'flex items-center justify-center gap-2 rounded border border-os-border px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent disabled:opacity-40';
 const field = 'mt-2 w-full min-w-0 rounded border border-os-border bg-os-bg p-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent';
-const providers: Record<string, string> = { google: 'Google', 'google-business': 'Google Business Profile', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
-const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', 'google-business': 'Business location', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account', etsy: 'Etsy shop' };
+const providers: Record<string, string> = { google: 'Google', 'google-business': 'Google Business Profile', 'google-ads': 'Google Ads', meta: 'Facebook', tiktok: 'TikTok', etsy: 'Etsy' };
+const pickerNames: Record<string, string> = { 'search-console': 'Website', ga4: 'Analytics property', youtube: 'YouTube channel', 'google-business': 'Business location', 'google-ads': 'Google Ads account', facebook: 'Facebook Page', instagram: 'Instagram professional account', 'meta-ads': 'Ad account', etsy: 'Etsy shop' };
 const setupHelp: Record<string, string> = {
   'google-business': 'Google must approve API access before Business Profile reporting can connect. Enabling the API alone does not grant access.',
+  'google-ads': 'Google Ads requires its own API access and separate authorization. OmegaOS only reads reports; it cannot create campaigns or spend your ad budget.',
   etsy: 'Etsy must approve the separate OmegaOS app and its callback must be configured before shop sign-in is available.',
   tiktok: 'TikTok requires a developer app with Login Kit and approved account-statistics access before sign-in is available.',
 };

@@ -4,6 +4,7 @@ import { accessFor, etsyAppHeaders } from '@/lib/cloud-oauth';
 import { resolveCred, type VaultContext } from '@/lib/creds';
 import { cloudSource } from '@/lib/cloud-catalog';
 import type { CloudSnapshot } from '@/lib/cloud-records';
+import { collectAds } from '@/lib/cloud-google-ads';
 
 const numeric = z.union([z.number(), z.string().regex(/^\d+(\.\d+)?$/)]).transform(Number).pipe(z.number().finite().nonnegative());
 const obj = z.record(z.string(), z.unknown());
@@ -18,6 +19,7 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
   const read = (url: string, body?: unknown, additional?: Record<string, string>) => cloudJson(url, { method: body ? 'POST' : 'GET', headers: { ...headers, ...(body ? { 'Content-Type': 'application/json' } : {}), ...additional }, ...(body ? { body: JSON.stringify(body) } : {}), signal }, fetcher);
   const snapshot = (values: CloudSnapshot['values'], period: string, mode?: 'test' | 'live'): CloudSnapshot => ({ values, period, at: now.toISOString(), ...(mode ? { mode } : {}) });
   switch (id) {
+    case 'google-ads': return collectAds(token!, resource, { now, signal, fetcher });
     case 'search-console': {
       const from = date(30, now), to = date(3, now);
       const body = z.object({ rows: z.array(z.object({ clicks: numeric, impressions: numeric, ctr: numeric, position: numeric })).max(1).optional() }).parse(await read(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(resource)}/searchAnalytics/query`, { startDate: from, endDate: to, dataState: 'final', aggregationType: 'byProperty' }));
