@@ -1,6 +1,17 @@
 # OmegaOS: how the agents work in this repo
 
-## Update, Oct 3 2026
+## Current agreement, Oct 5 2026
+
+Noe has returned lead architecture to Claude. Claude owns engineering plans,
+specs, architecture/security decisions, and review. Codex / Astra is the
+builder again and follows the handoff loop and stop rules below. Do not
+continue the roadmap autonomously under the older takeover authorization.
+Read the current-status section of `docs/handoff/HANDOFF-TO-ASTRA.md` first;
+its filename is retained for continuity. Noe still approves money, real
+messages, credentials, legal text, publishing, paid services, and deletion.
+This supersedes the Oct 3 architect-and-builder delegation below.
+
+## Historical update, Oct 3 2026 (superseded)
 
 Noe approved Astra taking over as architect and builder. Follow
 `docs/handoff/HANDOFF-TO-ASTRA.md`; it supersedes the engineering decision

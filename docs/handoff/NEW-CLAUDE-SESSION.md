@@ -1,4 +1,11 @@
-# Starting a fresh Claude session on nosterOS
+# Starting a fresh Claude session on OmegaOS
+
+## Current instruction - October 5, 2026
+Noe has restored Claude as lead architect; Codex / Astra is the builder.
+Read the October 5 current-status section at the top of
+`HANDOFF-TO-ASTRA.md` and the current agreement in `AGENTS.md` first.
+The historical October 3 status below is not a current backlog.
+The product is OmegaOS (red/charcoal/white); the repo folder remains nosterOS.
 
 Written Oct 3, 2026 so a new Claude chat can pick up without the old
 chat's history. Read this, then the files it points to.
@@ -23,20 +30,21 @@ chat's history. Read this, then the files it points to.
   ArtifactData tool, pinning `if_version`.
 
 ## Read first, in this order
-1. `AGENTS.md`: roles and rules. Astra (Codex in the ChatGPT desktop app)
-   is architect and builder; it asks Noe about money, real messages,
-   credentials, legal text, publishing and deleting data.
+1. `AGENTS.md`: roles and rules. Claude is lead architect; Astra (Codex in
+   the ChatGPT desktop app) implements reviewed specs and reports back.
+   Noe approves money, real messages, credentials, legal text, publishing
+   and deleting data.
 2. `docs/handoff/HANDOFF-TO-ASTRA.md`: full state, decisions, roadmap,
    invariants, open items for Noe.
 3. `docs/architecture/multi-tenant.md`, then
    `docs/architecture/dashboard.md`.
-4. `docs/architecture/reel-reference.md`: the look Noe wants (the
-   FounderOS reel: dark/green, the radial "brain", unified inbox, globe,
-   deal pipeline, workflow builder).
+4. `docs/handoff/BRAND-omegaos.md` and `docs/architecture/reel-reference.md`:
+   OmegaOS red/charcoal/white branding supersedes the historical dark/green
+   reference, while the radial brain and work-focused dashboard remain relevant.
 5. `docs/handoff/` specs. The Report section at the bottom of each shows
    what's done.
 
-## Status on Oct 3
+## Historical status on Oct 3 (see October 5 handoff for current status)
 Done: 001 (Next 16), 002 (deploy-safe), 003 (metric store), 003b
 (security: production audit 0). In progress: M1 (accounts and workspaces,
 Better Auth). Next: M2 (`docs/handoff/M2-workspace-data-isolation.md`,

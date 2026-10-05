@@ -1,7 +1,109 @@
-# Handoff: Astra takes over nosterOS (architect + builder)
+# OmegaOS handoff: Claude resumes lead architecture
+
+## Current authority - October 5, 2026
+
+Noe explicitly requested that Claude take over again as lead architect.
+Claude owns plans/specs, architecture, security decisions and review; Codex /
+Astra returns to implementation and reports. The Oct 3 autonomous takeover
+below is historical and no longer grants architect authority to Astra.
+`AGENTS.md` has been updated to match. Retain this filename so existing links
+and session instructions keep working. Read this current section before the
+historical roadmap; old "in progress" and "next" labels below are not current.
+
+## Current checkout and deployment
+
+- Product: **OmegaOS**, red/charcoal/white, powered by nosterCodes. nosterOS is
+  the retained repo/folder and internal configuration name, not the public brand.
+- PC: `C:/Users/noster/Documents/GitHub/nosterOS`; GitHub: `nosterCodez/nosterOS`.
+  This is separate from MAIN-portfolio-website and its marketing handoffs.
+- Current branch: `m6b-commerce-connectors`, code commit `99eece0`, pushed to
+  origin. Printify and Shopify code is on this branch, **not deployed**.
+- `main` / `origin/main`: `52c218a`; application change `7b491bd` added Google
+  dashboard clarity and financial CSV imports. Last verified production UI
+  includes this change at `https://os.noepenaa.com`.
+- Railway project `86e6ef04-9180-49d2-b319-ef5d60cd9351`, service
+  `cd008990-7a89-415f-82c8-e841db70a8ef` (`nosteros-web`), environment
+  `1794ea24-cbb7-4ea1-91bd-5ade95cb6b33`. Main pushes can auto-deploy; no new
+  deployment is authorized by this documentation handback.
+- Existing shared dev server was left on port 4100. Temporary browser-fixture
+  and local key-save servers were stopped. Recheck process health before use.
+
+## Implemented versus outstanding
+
+- M1 accounts/auth and M2 workspace isolation are complete and merged; see M2f.
+  Online-first bootstrap and real two-workspace checks replaced the requirement
+  for a local real-data migration. Do not migrate/delete Noe's legacy PC data.
+- M3 envelope-encrypted workspace credentials is deployed; see M3 report.
+  Customer credential resolution has no environment or cross-workspace fallback.
+  Preserve the deployed master key and its recovery copy; never regenerate it
+  to troubleshoot. Host/operator features remain explicitly gated and disabled
+  on hosted beta (`NOSTEROS_OPERATOR_FEATURES=0`).
+- M4/M5 connection screens, OAuth infrastructure, provider discovery, opt-in
+  collectors and workspace dashboards are implemented; provider access varies.
+  Returning-workspace and emailed team-invitation work is recorded in M5b.
+  This is not evidence that every planned integration is operational.
+- The original roadmap's M6 agency-links milestone is NOT the newer M6 Google/
+  CSV spec. Numbering diverged; audit actual code/reports before marking the
+  original intelligence, agency-link, backup, export or sharing roadmap done.
+- Google: Search Console, GA4 and YouTube were authorized, selected, synced and
+  persisted in nosterCodes. GA4 returned no rows, displayed honestly as no data.
+  See M5q for exact properties, periods and results. OAuth remains in testing.
+- Business Profile access application submitted; case `3-9666000042199`.
+  Approval is pending, quota was 0. Do not mark connected just because APIs are
+  enabled. Noe prioritizes GBP ahead of additional Google Ads work.
+- Google Ads remains permission-denied for account `9077054209`; automatic
+  collection is off. Its browser shows unfinished campaign setup. Do not
+  publish campaigns, alter budgets or add billing to resolve connector access.
+- Meta registration remains blocked; no verified real Facebook/Instagram/Ads
+  reporting. Etsy's separate `omegaos` app awaits Personal Approval; do not
+  reuse the old nosterlogistics app. LinkedIn is paused by Noe.
+- TikTok ownership file was deployed and Noe confirmed site verification;
+  verification is not app approval or successful reporting.
+- PayPal partner inquiry submitted for reusable merchant-consented reporting;
+  no live reporting integration/approval. Noe confirmed the business funds are
+  held in PayPal and wants the transaction CSV retrieved through Chrome.
+  CSV download was blocked by browser timeouts and has NOT been completed.
+  PayPal's email reply was reviewed and a reply drafted in chat, not sent.
+- M6 CSV imports are live: standard and PayPal formats, preview/confirm,
+  deduplication, workspace isolation, currency-separated net movement. They do
+  not represent account balance or accounting revenue. No real financial CSV
+  has been imported; full authenticated upload/confirm browser QA is pending.
+- M6b/M6c add Printify then Shopify OAuth, read-only counts, discovery and
+  scheduling. No live provider authorization/collection tested. Printify app
+  review and Shopify app/distribution setup remain external prerequisites.
+
+## Local credentials and next review
+
+- Noe requested dedicated provider keys for manual pasting into connectors.
+  The owner-only, Git-ignored `.env.connector-keys.local` now contains OpenAI,
+  Anthropic, Stripe and Printify. Never stage, paste, log or upload its contents.
+- Stripe is live Charges/Refunds read-only. Printify is shops.read,
+  products.read, orders.read. OpenAI is Responses-only; Anthropic is Default
+  workspace with no Admin API. Both AI keys expire **November 4, 2026**.
+- These new keys are local only, not installed in OmegaOS. Printify's current
+  connector is OAuth-only: a manual-token connection option still needs a spec
+  and implementation. No paid inference calls/credits were used to verify keys.
+- Review `M6b-printify-connector.md`, `M6c-shopify-connector.md`, then
+  `M6d-dedicated-connector-keys.md`. Decide the manual Printify token path before
+  promising Noe that he can paste that key into the current Connections UI.
+- Last commerce validation: typecheck and isolated build passed; 3,776 tests
+  passed, four known Windows assertion failures plus three known EPERM cleanup
+  failures. Desktop/mobile synthetic UI checks passed. This is not live-provider
+  end-to-end verification. See the specs for exact scope and security checks.
+- Unrelated local handoffs are deliberately preserved: modified M5l and M5n;
+  untracked M5m, M5o, M5p and M5q. Read them on the PC; do not overwrite or assume
+  a cloud checkout contains them. Re-stage immediately before editing shared docs.
+- No runtime edits or tests for this handback; documentation-only. No secrets
+  belong in this handoff. Further deployments, credentials, money, real messages
+  and legal changes still require Noe's approval under the working agreement.
+
+---
+
+## Historical October 3 takeover and original roadmap (superseded status)
 
 Written by Claude on Oct 3, 2026, at Noe's request, because Claude is near
-its usage limit. From now on Astra (Codex) is both architect and builder.
+its usage limit. At that time Astra (Codex) became architect and builder;
+this delegation was superseded by the October 5 agreement above.
 Read this whole file, then `AGENTS.md`, `CLAUDE.md`,
 `docs/architecture/multi-tenant.md` and `docs/architecture/dashboard.md`.
 Where those two architecture files conflict, `multi-tenant.md` wins.
