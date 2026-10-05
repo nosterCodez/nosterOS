@@ -64,3 +64,18 @@ Noe's Railway values: `OMEGA_META_CLIENT_ID=4154010854733834`,
   provider authorization remains untested. Tests use synthetic token responses.
 - Next: Claude reviews code and Linux suite, Noe completes the four-permission
   configuration, then Claude relays deployment approval. Do not push main yet.
+
+### Railway staging checkpoint - October 5, 2026, 16:23 CDT
+- Noe approved six named production variables and one combined Apply through Chrome; no code-push approval relayed.
+- Correct target confirmed in Chrome: project nosterOS, production, service nosteros-web.
+- Staged `OMEGA_META_CLIENT_ID`, `OMEGA_META_API_VERSION`, `OMEGA_META_CONFIG_ID` only.
+- Railway visibly reports Apply 3 changes; no Apply/Deploy clicked and no redeploy triggered.
+- Private-file transfer helper creation was rejected by the safety reviewer because of the earlier private-file restriction.
+- No alternative read, indirect transfer or credential-value output attempted after rejection.
+- Asked Noe to stage `OMEGA_META_CLIENT_SECRET`, `OMEGA_ETSY_CLIENT_ID`, `OMEGA_ETSY_CLIENT_SECRET` himself, without deploying yet.
+- Railway Variables tab remains open so all six can be applied together after the missing three are staged.
+- Meta Basic settings App domains field is empty; cannot confirm os.noepenaa.com is saved. No Meta fields edited.
+- Login Settings navigation did not change pages on two attempts; stopped under AGENTS.md. Redirect URI remains unverified.
+- Meta Basic settings tab left open; no credential reveals, permissions, app publication or unrelated variables changed.
+- M6h code remains local at `d82f196`; no main push. Public deployment still lacks this config_id implementation.
+- Next: resolve credential handoff and Meta domain/callback setup, then one combined Railway Apply; separately obtain code deploy approval.
