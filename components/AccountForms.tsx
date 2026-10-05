@@ -13,7 +13,7 @@ export function SignInForm({ next, google }: { next: string; google: boolean }) 
     const email = String(new FormData(e.currentTarget).get('email'));
     try {
       const result = await authClient.signIn.magicLink({ email, callbackURL: next }, { timeout: 20_000, retry: 0 });
-      setMessage(result.error ? 'We could not send a sign-in link. Please wait a moment and try again.' : 'Check your email for a sign-in link. If it is not there, check your spam folder.');
+      setMessage(result.error ? 'We could not send a sign-in link. Please wait a moment and try again.' : 'If this email belongs to an account or an approved invitation, a sign-in link is on its way. Check your inbox and spam folder.');
     } catch { setMessage('The request could not finish. Check your inbox before trying again.'); }
     finally { setBusy(false); }
   }}>
@@ -50,11 +50,20 @@ export function OnboardingForm() {
   </form>;
 }
 
-export function AcceptInvitation({ id, signedIn }: { id: string; signedIn: boolean }) {
+export function WorkspaceChooser({ workspaces }: { workspaces: { id: string; name: string }[] }) {
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  return <div className="space-y-3">{workspaces.map(workspace => <button key={workspace.id} type="button" disabled={busy} className={`pressable ${accountButton} w-full break-words text-left`} onClick={async () => {
+    setBusy(true); setError('');
+    try { const result = await authClient.organization.setActive({ organizationId: workspace.id }); if (result.error) throw new Error('This workspace is no longer available.'); window.location.assign('/'); }
+    catch { setError('Unable to open that workspace. Reload and try again.'); setBusy(false); }
+  }}>{workspace.name}</button>)}<p role="alert" className="text-sm text-os-muted">{error}</p></div>;
+}
+
+export function AcceptInvitation({ id, signedIn, email }: { id: string; signedIn: boolean; email?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   if (!signedIn) return <a className={`pressable ${accountButton}`} href={`/sign-in?next=${encodeURIComponent(`/accept-invitation?id=${encodeURIComponent(id)}`)}`}>Sign in to accept invitation</a>;
-  return <div className="space-y-4"><button className={`pressable ${accountButton}`} disabled={!id || busy} onClick={async () => {
+  return <div className="space-y-4"><p className="break-words text-sm text-os-muted">Signed in as {email}. Use the email address that received the invitation.</p><button className={`pressable ${accountButton}`} disabled={!id || busy} onClick={async () => {
     setBusy(true);
     try {
       const result = await authClient.organization.acceptInvitation({ invitationId: id });
@@ -63,5 +72,9 @@ export function AcceptInvitation({ id, signedIn }: { id: string; signedIn: boole
       if (active.error) throw new Error(active.error.message);
       window.location.assign('/');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Unable to accept invitation'); setBusy(false); }
-  }}>Accept workspace invitation</button><p role="alert">{message}</p></div>;
+  }}>Accept workspace invitation</button><button type="button" className={`pressable ${accountButton} block`} disabled={busy} onClick={async () => {
+    setBusy(true);
+    try { const result = await authClient.signOut(); if (result.error) throw new Error(); window.location.assign(`/sign-in?next=${encodeURIComponent(`/accept-invitation?id=${encodeURIComponent(id)}`)}`); }
+    catch { setMessage('Unable to switch accounts. Try again.'); setBusy(false); }
+  }}>Use another email</button><p role="alert">{message}</p></div>;
 }

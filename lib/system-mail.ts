@@ -17,7 +17,7 @@ export async function sendSystemMail(input: SystemMessage): Promise<void> {
   const invitation = data.template === 'workspace-invitation';
   const content = {
     subject: invitation ? 'Your OmegaOS workspace invitation' : 'Sign in to OmegaOS',
-    text: `${invitation ? `You have been invited to ${data.workspace}.` : 'Use this single-use link to sign in to OmegaOS.'}\n\n${data.url}\n\nIf you did not request this, you can ignore this message.`,
+    text: `${invitation ? `You have been invited to ${data.workspace}. Open this secure link, sign in with ${data.email}, and accept to join the shared workspace. Your assigned role controls access to its data and connections. No separate access code is needed.` : 'Use this single-use link to sign in to OmegaOS. Existing workspace memberships follow your account on every device.'}\n\n${data.url}\n\n${invitation ? 'This invitation expires in 48 hours unless canceled or replaced. Connector credentials are never included in this email.\n\n' : ''}If you did not request this, you can ignore this message.`,
   };
   if (process.env.RESEND_API_KEY?.trim()) {
     const from = process.env.SYSTEM_MAIL_FROM?.trim();

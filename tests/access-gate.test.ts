@@ -43,6 +43,7 @@ describe('challenge page', () => {
     expect(html).toContain('<form');
     expect(html).toContain('name="token"');
     expect(html).toContain('OmegaOS');
+    expect(html).toContain('href="/sign-in"');
   });
 });
 

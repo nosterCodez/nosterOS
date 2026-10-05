@@ -28,6 +28,7 @@ test('old beta cookie is reissued and expired without redirecting an internal PO
 });
 test('new cookie works after removing legacy variable, while stale tokens fail', () => {
   vi.stubEnv('NOSTEROS_ACCESS_TOKEN', 'new'); vi.stubEnv('FOUNDER_OS_ACCESS_TOKEN', undefined);
-  expect(proxy(new NextRequest('https://os.noepenaa.com/sign-in', { headers: { cookie: 'nosteros_access=new' } })).status).toBe(200);
-  expect(proxy(new NextRequest('https://os.noepenaa.com/sign-in', { headers: { cookie: 'founder_os_access=old' } })).status).toBe(401);
+  // Email sign-in is intentionally public in M5b; session APIs still need beta entry.
+  expect(proxy(new NextRequest('https://os.noepenaa.com/api/auth/get-session', { headers: { cookie: 'nosteros_access=new' } })).status).toBe(200);
+  expect(proxy(new NextRequest('https://os.noepenaa.com/api/auth/get-session', { headers: { cookie: 'founder_os_access=old' } })).status).toBe(401);
 });

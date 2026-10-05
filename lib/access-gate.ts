@@ -57,12 +57,15 @@ export function challengePage(): string {
   input:focus { border-color:#EF4444; }
   button { background:#EF4444; border:0; color:#fff; padding:10px 18px; font:inherit;
            font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
+  a { display:inline-block; color:#f5f5f5; margin:20px 0; font-size:14px; text-underline-offset:4px; }
+  a:focus-visible { outline:2px solid #EF4444; outline-offset:5px; }
 </style>
 </head>
 <body>
   <div class="card">
     <div class="mark"><b>Omega</b>OS</div>
-    <p>This OS is private. Enter your access token.</p>
+    <a href="/sign-in">Sign in with your email</a>
+    <p>Or enter your private beta access token.</p>
     <form method="GET" action="/">
       <input name="token" type="password" aria-label="Access token" placeholder="access token" autofocus>
       <button type="submit">Unlock</button>

@@ -20,6 +20,9 @@ export function connectorDependency(file: string, seen = new Set<string>()): str
   // Reviewed M4 boundary: platform OAuth app secrets only, encrypted workspace tokens.
   // Role/state/session/refresh isolation is exercised by cloud-api and cloud-collection.
   if (file === 'lib/cloud-oauth.ts' || file === 'lib/cloud-adapters.ts') return null;
+  // M5b: platform beta admission only after signed invitation/current DB state or
+  // freshly verified email session. No connector access; email-entry tests cover it.
+  if (file === 'lib/email-entry.ts') return null;
   seen.add(file);
   if (operatorData.has(file)) return file;
   const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);

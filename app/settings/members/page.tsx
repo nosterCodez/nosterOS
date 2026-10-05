@@ -14,5 +14,6 @@ export default async function Members() {
   const member = await auth.api.getActiveMember({ headers: h });
   if (!['owner', 'admin'].includes(member.role)) return <><PageHeader title="Members" /><p>Only workspace owners and admins can manage members.</p></>;
   const workspace = await auth.api.getFullOrganization({ headers: h });
-  return <><PageHeader eyebrow="Workspace settings" title="Members" /><WorkspaceMembers members={workspace?.members ?? []} invitations={workspace?.invitations ?? []} /></>;
+  if (!workspace) return <p>Workspace unavailable.</p>;
+  return <><PageHeader eyebrow="Workspace settings" title="Members" /><WorkspaceMembers workspaceId={workspace.id} members={workspace.members ?? []} invitations={workspace.invitations ?? []} /></>;
 }

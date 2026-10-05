@@ -9,7 +9,12 @@ export function internalAllowed(path: string, value: string | null, secret = pro
   return INTERNAL_PATHS.has(path) && equalSecret(value, secret?.trim());
 }
 export function publicAuthPath(path: string): boolean {
-  return path === '/sign-in' || path === '/accept-invitation' || path.startsWith('/api/auth/');
+  return path === '/sign-in' || path === '/join' || path === '/accept-invitation' || path.startsWith('/api/auth/');
+}
+/** Only these identity-entry endpoints may precede the private beta cookie. */
+export function emailEntryPath(path: string, method: string): boolean {
+  return method === 'GET' && ['/sign-in', '/join', '/api/auth/magic-link/verify'].includes(path)
+    || method === 'POST' && path === '/api/auth/sign-in/magic-link';
 }
 export function safeNext(value: string | null | undefined): string {
   return value && value.startsWith('/') && !value.startsWith('//') && !/[\\\r\n]/.test(value) ? value : '/';

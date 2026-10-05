@@ -11,7 +11,7 @@ export function WorkspaceSwitcher() {
       const result = await authClient.organization.setActive({ organizationId: e.target.value });
       if (result.error) setError(result.error.message ?? 'Cannot switch workspace'); else window.location.reload();
     }}><option value="" disabled>Workspace</option>{workspaces?.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
-    <a href="/onboarding" title="Create workspace" aria-label="Create workspace">+</a>
+    <a href="/onboarding?new=1" title="Create workspace" aria-label="Create workspace">+</a>
     <a href="/settings/members">Members</a>
     <button className="pressable" onClick={async () => { const result = await authClient.signOut(); if (result.error) setError('Sign-out failed'); else window.location.assign('/sign-in'); }}>Sign out</button>
     {error && <span role="alert">{error}</span>}

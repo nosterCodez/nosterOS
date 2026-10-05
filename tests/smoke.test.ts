@@ -18,6 +18,8 @@ vi.mock('@/lib/session', () => ({
 }));
 vi.mock('@/lib/auth', () => ({ getAuth: async () => ({ api: {
   getActiveMember: async () => ({ role: 'owner' }),
+  listOrganizations: async () => [{ id: 'S'.repeat(32), name: 'Smoke' }],
+  listUserInvitations: async () => [],
   getFullOrganization: async () => ({ members: [], invitations: [] }),
 } }) }));
 

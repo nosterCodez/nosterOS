@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { challengePage, gateDecision, GATE_COOKIE } from '@/lib/access-gate';
-import { internalAllowed, publicAuthPath } from '@/lib/auth-boundary';
+import { emailEntryPath, internalAllowed, publicAuthPath } from '@/lib/auth-boundary';
 import { getSessionCookie } from 'better-auth/cookies';
 import { LEGACY_GATE_COOKIE } from '@/lib/auth-constants';
 import { accessToken } from '@/lib/legacy-env';
@@ -47,6 +47,7 @@ export function proxy(req: NextRequest) {
       return res;
     }
     case 'challenge':
+      if (emailEntryPath(req.nextUrl.pathname, req.method)) break;
       if (req.nextUrl.pathname.startsWith('/api/')) return NextResponse.json({ error: 'Beta access required' }, { status: 401 });
       return new NextResponse(challengePage(), {
         status: 401,

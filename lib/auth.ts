@@ -2,39 +2,49 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { betterAuth } from 'better-auth';
-import { APIError } from 'better-auth/api';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { z } from 'zod';
 import { getMigrations } from 'better-auth/db/migration';
 import { magicLink, organization } from 'better-auth/plugins';
 import { controlDbPath } from '@/lib/paths';
 import { ac, roles } from '@/lib/auth-access';
 import { sendSystemMail, type SystemMessage } from '@/lib/system-mail';
-
-export function invitationIsCurrent(value: unknown, now = Date.now()): boolean {
-  const expiry = typeof value === 'number' ? value
-    : typeof value === 'string' && /^\d{13}$/.test(value) ? Number(value)
-    : typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(value) ? Date.parse(value)
-    : NaN;
-  return Number.isFinite(expiry) && expiry > now;
-}
+import { createAccountWorkspaces } from '@/lib/account-workspaces';
+import { invitationEntryURL } from '@/lib/invitation-entry';
+export { invitationIsCurrent } from '@/lib/account-workspaces';
 
 export function createAuth(database: Database.Database, options: {
   baseURL: string; secret: string; send?: (message: SystemMessage) => Promise<void>;
 }) {
   const send = options.send ?? sendSystemMail;
+  const workspaces = createAccountWorkspaces(database);
   return betterAuth({
     database, baseURL: options.baseURL, secret: options.secret,
     trustedOrigins: [new URL(options.baseURL).origin],
+    hooks: { after: createAuthMiddleware(async context => {
+      if (context.path !== '/organization/invite-member' || context.context.returned instanceof APIError) return;
+      const invitation = z.object({ id: z.string(), email: z.string().email(), organizationId: z.string(), expiresAt: z.date() }).parse(context.context.returned);
+      // Better Auth's invitation callback swallows delivery failures. Await in the
+      // endpoint hook instead so a failed send is visible and can be retried.
+      try {
+        const workspace = await context.context.adapter.findOne<{ name: string }>({ model: 'organization', where: [{ field: 'id', value: invitation.organizationId }] });
+        if (!workspace) throw new Error('Workspace unavailable');
+        await send({ template: 'workspace-invitation', email: invitation.email, workspace: workspace.name,
+          url: invitationEntryURL(options.baseURL, options.secret, invitation.id, invitation.expiresAt) });
+      } catch {
+        throw new APIError('SERVICE_UNAVAILABLE', { message: 'Invitation saved, but email delivery failed. Use Resend email in pending invitations.' });
+      }
+    }) },
     databaseHooks: { user: { create: { before: async user => {
-      const list = process.env.NOSTEROS_SIGNUP_ALLOWLIST;
-      if (!list?.trim() && process.env.NODE_ENV !== 'production') return;
-      const email = user.email.trim().toLowerCase();
-      const domain = email.slice(email.lastIndexOf('@'));
-      const allowed = (list ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
-      if (allowed.includes(email) || allowed.includes(domain)) return;
-      const pending = database.prepare("SELECT expiresAt FROM invitation WHERE lower(email)=? AND status='pending'").all(email) as { expiresAt: unknown }[];
-      const invited = pending.some(row => invitationIsCurrent(row.expiresAt));
-      if (!invited) throw new APIError('FORBIDDEN', { message: 'Registration requires an invitation.' });
-    } } } },
+      if (!workspaces.maySignIn(user.email)) throw new APIError('FORBIDDEN', { message: 'Registration requires an invitation.' });
+    } } }, session: {
+      create: { before: async session => ({ data: { ...session, activeOrganizationId: workspaces.initial(session.userId) } }) },
+      update: { after: async (session, context) => {
+        if (session && ['/organization/set-active', '/organization/create', '/organization/accept-invitation'].includes(context?.path ?? '')) {
+          workspaces.remember(session.userId, (session as typeof session & { activeOrganizationId?: string }).activeOrganizationId);
+        }
+      } },
+    } },
     session: { cookieCache: { enabled: false } },
     rateLimit: { enabled: true, storage: 'database', window: 60, max: 100,
       customRules: { '/sign-in/*': { window: 60, max: 5 } } },
@@ -44,12 +54,10 @@ export function createAuth(database: Database.Database, options: {
     } : {},
     plugins: [
       magicLink({ storeToken: 'hashed', rateLimit: { window: 60, max: 5 },
-        sendMagicLink: ({ email, url }) => send({ template: 'magic-link', email, url }) }),
-      organization({ ac, roles, creatorRole: 'owner',
-        sendInvitationEmail: ({ email, id, organization: workspace }) => send({
-          template: 'workspace-invitation', email, workspace: workspace.name,
-          url: `${options.baseURL}/accept-invitation?id=${encodeURIComponent(id)}`,
-        }),
+        sendMagicLink: async ({ email, url }) => {
+          if (workspaces.maySignIn(email)) await send({ template: 'magic-link', email, url });
+        } }),
+      organization({ ac, roles, creatorRole: 'owner', requireEmailVerificationOnInvitation: true, invitationExpiresIn: 48 * 60 * 60,
         organizationHooks: {
           beforeCreateOrganization: async ({ organization: workspace }) => {
             const metadata = typeof workspace.metadata === 'string' ? JSON.parse(workspace.metadata) : workspace.metadata;
