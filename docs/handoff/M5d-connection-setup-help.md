@@ -27,4 +27,13 @@
 - Chrome fixture checks pass at 390px and 1280px, including keyboard navigation, link placement and no overflow.
 - Preview used actual components with no credentials entered; temporary browser/server closed afterward.
 - No account registration, scope changes, secret generation, real email or costs; existing local dev server untouched.
-- Noe approved deployment of this small follow-up in chat; live verification pending below.
+- Noe approved deployment of this small follow-up in chat.
+
+## Live verification: October 4, 2026
+- Merged b763549 to main and deployed through the existing Railway service.
+- Deployment d13cad9b-40f6-4070-99d5-e6c15b8f7aa4 reached SUCCESS.
+- Verified the signed-in nosterCodes Connections page: Setup pending replaces unavailable login buttons.
+- Verified official Gmail app-password and help links in the Email inbox card.
+- Clicked Enter email settings: Advanced connections opened and navigated to email-credentials.
+- Verified the same Gmail links directly above the live email input fields; no values were entered or saved.
+- Provider registration remains outstanding; this is setup help, not activated OAuth or a Gmail MCP integration.
