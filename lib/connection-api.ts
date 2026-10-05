@@ -5,7 +5,7 @@ import { connectionMetadata, revokeCredential, saveCredential, vaultReady, Vault
 const NameSchema = z.object({ name: z.string().max(64) }).strict();
 const SaveSchema = NameSchema.extend({ value: z.string().min(1).max(4096) }).strict();
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
-async function limitedBody(request: Request) {
+export async function limitedBody(request: Request) {
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw new Error('Invalid request');
   const reader = request.body?.getReader();
   if (!reader) throw new Error('Invalid request');

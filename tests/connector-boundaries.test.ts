@@ -5,6 +5,14 @@ import { appEntries, connectorDependency } from './connector-audit-helper';
 import { apiOperatorWorkspace, operatorWorkspaceForPage } from '@/lib/session';
 
 const entries = appEntries().filter(file => connectorDependency(file));
+const scopedDashboards = new Set(['app/page.tsx', 'app/analytics/page.tsx', 'app/finances/page.tsx', 'app/social/page.tsx']);
+test('reviewed cloud adapters cannot fall back to operator credentials or host files', () => {
+  for (const file of ['lib/cloud-adapters.ts', 'lib/cloud-oauth.ts']) {
+    const source = fs.readFileSync(file, 'utf8');
+    expect(source).not.toMatch(/operator-creds|node:fs|node:child_process|process\.env\.(?:STRIPE|INBOX|GMAIL|META_ACCESS)/);
+    expect(source).toContain('VaultContext');
+  }
+});
 test('host and connector entry points deny access before business logic', () => {
   expect(entries.length).toBeGreaterThan(60);
   for (const file of entries) {
@@ -19,6 +27,13 @@ test('host and connector entry points deny access before business logic', () => 
         expect(body[2], file).toContain('await apiOperatorWorkspace(');
         expect(body[3], file).toContain('instanceof Response) return');
       } else {
+        if (scopedDashboards.has(file)) {
+          expect(body[0], file).toContain("process.env.NOSTEROS_OPERATOR_FEATURES !== '1'");
+          expect(body[0], file).toContain('return <WorkspaceDashboard');
+          expect(body[1], file).toContain('await operatorWorkspaceForPage(');
+          expect(body[2], file).toMatch(/if \(!\w+\) return <WorkspaceDashboard/);
+          continue;
+        }
         expect(body[0], file).toContain('await operatorWorkspaceForPage(');
         expect(body[1], file).toMatch(/if \(!\w+\) return <OperatorUnavailable/);
       }
@@ -50,6 +65,6 @@ test('connector pages return the empty state for another workspace', async () =>
   for (const file of entries.filter(file => file.endsWith('page.tsx'))) {
     const page = await import(/* @vite-ignore */ `../${file}`);
     const result = await page.default({ params: Promise.resolve({ platform: 'instagram' }), searchParams: Promise.resolve({}) });
-    expect(result.type.name, file).toBe('OperatorUnavailable');
+    expect(result.type.name, file).toBe(scopedDashboards.has(file) ? 'WorkspaceDashboard' : 'OperatorUnavailable');
   }
 });

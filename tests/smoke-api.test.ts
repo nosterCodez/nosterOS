@@ -76,6 +76,7 @@ const ROUTES: RouteEntry[] = [
   { route: 'lead-magnets', load: () => import('@/app/api/lead-magnets/route'), url: 'http://localhost/api/lead-magnets' },
   { route: 'admin/keys', load: () => import('@/app/api/admin/keys/route'), url: 'http://localhost/api/admin/keys', expectedStatus: 409 },
   { route: 'admin/connections', load: () => import('@/app/api/admin/connections/route'), url: 'http://localhost/api/admin/connections' },
+  { route: 'admin/sources', load: () => import('@/app/api/admin/sources/route'), url: 'http://localhost/api/admin/sources' },
   { route: 'life/map', load: () => import('@/app/api/life/map/route'), url: 'http://localhost/api/life/map' },
   { route: 'metrics', load: () => import('@/app/api/metrics/route'), url: 'http://localhost/api/metrics' },
   // No ?q= on purpose: the ambient brief must not touch the gbrain CLI at all.
@@ -127,7 +128,8 @@ describe('platform smoke — every GET API route answers 200 with JSON', () => {
    * named here rather than silently skipped, and the redirect suite in
    * tests/oauth-routes.test.ts is what actually covers them.
    */
-  const REDIRECT_ROUTES = ['oauth/[provider]/start', 'oauth/callback'];
+  // Workspace callback authentication and state failures are covered in cloud-api.test.ts.
+  const REDIRECT_ROUTES = ['oauth/[provider]/start', 'oauth/callback', 'connections/oauth/[provider]/callback'];
 
   test('the API smoke net covers every GET route under app/api (no route escapes)', () => {
     const discovered = discoverGetRoutes(path.join(process.cwd(), 'app', 'api'))

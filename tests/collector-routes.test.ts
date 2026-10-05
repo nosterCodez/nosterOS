@@ -36,7 +36,7 @@ test('series route validates inputs and rejects unsupported rollups', async () =
   expect((await points(query({ from: 'bad' }))).status).toBe(400);
   expect((await points(query({ from: '2027-01-01T00:00:00Z' }))).status).toBe(400);
   expect((await points(query({ business: 'unknown' }))).status).toBe(400);
-  METRICS[0].rollup = 'none';
+  METRICS.find(metric => metric.id === 'test.count')!.rollup = 'none';
   const res = await points(query());
   expect(res.status).toBe(400);
   expect((await res.json()).error).toMatch(/rollup/);

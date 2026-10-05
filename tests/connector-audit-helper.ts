@@ -17,6 +17,9 @@ export function connectorDependency(file: string, seen = new Set<string>()): str
   if (trusted.has(file) || seen.has(file)) return null;
   // Public login only exposes whether Google login is configured, never credentials.
   if (file === 'app/sign-in/page.tsx') return null;
+  // Reviewed M4 boundary: platform OAuth app secrets only, encrypted workspace tokens.
+  // Role/state/session/refresh isolation is exercised by cloud-api and cloud-collection.
+  if (file === 'lib/cloud-oauth.ts' || file === 'lib/cloud-adapters.ts') return null;
   seen.add(file);
   if (operatorData.has(file)) return file;
   const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);

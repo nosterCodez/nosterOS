@@ -1,4 +1,4 @@
-import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { WorkspaceDashboard } from '@/components/WorkspaceDashboard';
 import Link from 'next/link';
 import { operatorWorkspaceForPage, withWorkspaceLease } from '@/lib/session';
 import { allConnectorStatuses } from '@/lib/connectors';
@@ -136,8 +136,9 @@ function StatTile({
 type DoneItem = { key: string; time: number; head: string; headClass: string; body: string; when: string };
 
 export default async function HomePage() {
+  if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1') return <WorkspaceDashboard />;
   const workspace = await operatorWorkspaceForPage();
-  if (!workspace) return <OperatorUnavailable />;
+  if (!workspace) return <WorkspaceDashboard />;
 
   return withWorkspaceLease(workspace, async db => {
   const [connections, overview, feed, stripe] = await Promise.all([

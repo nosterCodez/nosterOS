@@ -1,4 +1,4 @@
-import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { WorkspaceDashboard } from '@/components/WorkspaceDashboard';
 import Link from 'next/link';
 import { Instagram, Linkedin, Music2, Youtube } from 'lucide-react';
 import { XLogo } from '@/components/XLogo';
@@ -74,8 +74,9 @@ function MetricTileCard({ tile, spark }: { tile: MetricTile; spark: number[] }) 
 }
 
 export default async function AnalyticsPage() {
+  if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1') return <WorkspaceDashboard group="Search" />;
   const workspace = await operatorWorkspaceForPage();
-  if (!workspace) return <OperatorUnavailable />;
+  if (!workspace) return <WorkspaceDashboard group="Search" />;
 
   return withWorkspaceLease(workspace, async db => {
   syncFromZernioConfig(db);

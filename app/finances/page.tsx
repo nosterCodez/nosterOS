@@ -1,4 +1,4 @@
-import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { WorkspaceDashboard } from '@/components/WorkspaceDashboard';
 import { ExternalLink, Send, Upload } from 'lucide-react';
 import { configuredProcessors, monthToDateIncome, stripeMtdForKey, stripeSnapshot, wiseOutgoing, paykitMonthToDateIncome } from '@/lib/connectors/payments';
 import {
@@ -36,8 +36,9 @@ function ago(unix: number): string {
 }
 
 export default async function FinancesPage() {
+  if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1') return <WorkspaceDashboard group="Money" />;
   const workspace = await operatorWorkspaceForPage();
-  if (!workspace) return <OperatorUnavailable />;
+  if (!workspace) return <WorkspaceDashboard group="Money" />;
   const stripeKeyed = configuredProcessors(process.env).some((p) => p.id === 'stripe' && p.configured);
 
   // Stripe is only "live" when the API actually answers  -  a present-but-invalid

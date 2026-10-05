@@ -55,8 +55,10 @@ way: new data = new repo method + Zod schema + seed entry + test.
 - `lib/agents/runtime.ts` + `real.ts` — the agent registry. Every seeded agent
   row maps 1:1 to a `RuntimeAgent` with a real `run()` (enforced by the seed
   tests). Runs persist to `agent_runs` via `POST /api/agents/[id]/run`.
-- `/integrations` manages encrypted workspace credentials. Saved does not mean
-  verified or syncing; OAuth/provider onboarding remains M4, collectors M5.
+- `/integrations` manages encrypted credentials and opt-in cloud sources. Saved
+  does not mean verified or syncing. M4-M5 adds connection/collection code;
+  platform approvals and real account consent remain external prerequisites.
+  See `docs/architecture/cloud-connections.md` for scope and setup limits.
 - Platform secrets go in `.env.local` / deployment secrets. Customer credentials
   stay encrypted in workspace databases. See `.env.example` and M3's spec.
 

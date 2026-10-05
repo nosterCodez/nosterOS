@@ -2,8 +2,14 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:
 import type { FounderDb } from '@/lib/db';
 import type { Envelope } from '@/lib/connection-records';
 import { CONNECTION_FIELDS, connectionField, type ConnectionMetadata } from '@/lib/connection-fields';
+import { OAUTH_IDS } from '@/lib/cloud-catalog';
 
-type Context = { workspace: { id: string }; db: FounderDb };
+export type VaultContext = { workspace: { id: string }; db: FounderDb };
+type Context = VaultContext;
+function privateField(name: string) {
+  if (OAUTH_IDS.some(id => name === `oauth:${id}:tokens` || name === `oauth:${id}:pending`)) return;
+  connectionField(name);
+}
 export class VaultError extends Error { constructor() { super('Connection vault unavailable'); } }
 function masterKey() {
   const value = process.env.NOSTEROS_MASTER_KEY;
@@ -60,6 +66,12 @@ export function saveCredential(context: Context, name: string, value: string): v
   connectionField(name);
   if (!value.trim() || value.length > 4096 || /[\r\n\0]/.test(value)) throw new Error('Invalid connection value');
   if (name === 'STRIPE_SECRET_KEY' && !/^rk_(test|live)_/.test(value)) throw new Error('Use a Stripe restricted key');
+  saveVaultValue(context, name, value.trim());
+}
+/** Server-only slots; public credential routes must continue using saveCredential. */
+export function saveVaultValue(context: Context, name: string, value: string): void {
+  privateField(name);
+  if (!value || value.length > 32768) throw new VaultError();
   context.db.connectionRecords.atomic(() => withDataKey(context, true, key => {
     const plaintext = Buffer.from(value.trim());
     try { context.db.connectionRecords.put({ name, envelope: encrypt(key!, plaintext, aad(context, name)), updatedAt: new Date().toISOString(), revokedAt: null }); }
@@ -69,6 +81,10 @@ export function saveCredential(context: Context, name: string, value: string): v
 /** No env/file fallback and no cache: replacement/revocation takes effect on the next read. */
 export function resolveCred(context: Context, name: string): string | undefined {
   connectionField(name);
+  return readVaultValue(context, name);
+}
+export function readVaultValue(context: Context, name: string): string | undefined {
+  privateField(name);
   const row = context.db.connectionRecords.get(name);
   if (!row || row.revokedAt) return undefined;
   return withDataKey(context, false, key => {
@@ -78,7 +94,10 @@ export function resolveCred(context: Context, name: string): string | undefined 
   });
 }
 export function revokeCredential(context: Context, name: string): void {
-  connectionField(name); aad(context, name);
+  connectionField(name); revokeVaultValue(context, name);
+}
+export function revokeVaultValue(context: Context, name: string): void {
+  privateField(name); aad(context, name);
   context.db.connectionRecords.atomic(() => {
     const row = context.db.connectionRecords.get(name);
     if (row && !row.revokedAt) context.db.connectionRecords.put({ ...row, revokedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });

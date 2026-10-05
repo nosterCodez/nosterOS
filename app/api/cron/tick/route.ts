@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto';
 import type { FounderDb } from '@/lib/db';
 import { apiWorkspace } from '@/lib/session';
 import { workspaceJob } from '@/lib/workspace-jobs';
+import { internalAllowed } from '@/lib/auth-boundary';
+import { runCloudTick } from '@/lib/cloud-jobs';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 import { COLLECTORS } from '@/lib/collectors';
@@ -59,10 +61,14 @@ export async function GET() {
   });
 }
 
-export async function POST() {
-  const authError = await apiSessionError('/api/cron/tick', 'POST');
+export async function POST(request?: Request) {
+  const authError = await apiSessionError('/api/cron/tick', 'POST', request);
   if (authError) return authError;
 
+  const requestHeaders = request?.headers ?? new Headers();
+  if (internalAllowed('/api/cron/tick', requestHeaders.get('x-nosteros-internal')) && process.env.NOSTEROS_OPERATOR_FEATURES !== '1') {
+    return NextResponse.json({ ran: [], cloud: await runCloudTick() });
+  }
   return workspaceJob('/api/cron/tick', async ({ db, workspace }) => {
     const now = new Date();
     const due = dueCrons(schedulable(db), now);

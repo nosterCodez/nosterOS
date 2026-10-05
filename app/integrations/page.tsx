@@ -2,14 +2,20 @@ import { requireWorkspace, withWorkspaceLease } from '@/lib/session';
 import { connectionMetadata, vaultReady } from '@/lib/creds';
 import { PageHeader } from '@/components/PageHeader';
 import { WorkspaceConnections } from '@/components/WorkspaceConnections';
+import { CloudConnections } from '@/components/CloudConnections';
+import { sourceViews } from '@/lib/cloud-sources';
 
 export const dynamic = 'force-dynamic';
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage({ searchParams }: { searchParams?: Promise<{ connection?: string }> } = {}) {
   const context = await requireWorkspace();
   if (!['admin', 'owner'].includes(context.role)) return <><PageHeader title="Connections" /><p className="text-os-muted">A workspace administrator manages your connections.</p></>;
   const initial = await withWorkspaceLease(context, db => {
     const scoped = { ...context, db };
-    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped) };
+    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped) };
   });
-  return <><PageHeader eyebrow={context.workspace.name} title="Connections" /><WorkspaceConnections key={context.workspace.id} workspaceId={context.workspace.id} initial={initial} /></>;
+  const result = (await searchParams)?.connection;
+  return <><PageHeader eyebrow={context.workspace.name} title="Connections" />
+    {result && <p role="status" className="mb-6 text-sm text-os-muted">{result === 'authorized' ? 'Account authorized. Select your resource and save settings to start collection.' : 'Authorization did not complete. Check the account, app permissions and active workspace, then try again.'}</p>}
+    <CloudConnections key={`sources:${context.workspace.id}`} workspaceId={context.workspace.id} initial={initial.sources} />
+    <section id="credentials" className="mt-12 scroll-mt-24"><h2 className="mb-5 text-lg font-semibold">Credentials</h2><WorkspaceConnections key={context.workspace.id} workspaceId={context.workspace.id} initial={initial} /></section></>;
 }

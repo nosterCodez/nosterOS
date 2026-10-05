@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { KeyRound, Save, ShieldCheck, Unplug } from 'lucide-react';
 import type { ConnectionMetadata } from '@/lib/connection-fields';
 type Snapshot = { ready: boolean; connections: ConnectionMetadata[] };
@@ -32,18 +33,20 @@ function ConnectionRow({ connection, ready, update }: { connection: ConnectionMe
   </form>;
 }
 export function WorkspaceConnections({ initial, workspaceId }: { initial: Snapshot; workspaceId: string }) {
+  const router = useRouter();
   const [snapshot, setSnapshot] = useState(initial);
   async function update(method: string, body: object) {
     const response = await fetch('/api/admin/connections', { method, headers: { 'Content-Type': 'application/json', 'x-omegaos-workspace': workspaceId }, body: JSON.stringify(body) });
     if (response.status === 409) throw new Error('Workspace changed. Reload Connections before saving.');
     if (!response.ok) throw new Error(response.status === 503 ? 'The vault is unavailable. Contact your administrator.' : 'Could not update this connection. Check your access and value.');
     setSnapshot(await response.json() as Snapshot);
+    router.refresh();
   }
   const providers = [...new Set(snapshot.connections.map(connection => connection.provider))];
   return <div className="min-w-0 max-w-5xl">
     <div className="mb-8 flex items-start gap-3 border-y border-os-border py-4">
       <ShieldCheck size={20} className="shrink-0 text-os-accent" aria-hidden="true" />
-      <div className="min-w-0 text-sm leading-relaxed"><p>Credentials are encrypted and private to this workspace.</p><p className="mt-1 text-os-muted">Saved credentials are not active connections yet. Provider authorization and syncing are coming next. Disconnecting here does not revoke a key at its provider.</p></div>
+      <div className="min-w-0 text-sm leading-relaxed"><p>Credentials are encrypted and private to this workspace.</p><p className="mt-1 text-os-muted">After saving a key, enable its source above. A saved key is not proof of provider access. Use a restricted read-only Stripe key with Charges read access. Removing a key here does not revoke it at the provider.</p></div>
     </div>
     {!snapshot.ready && <p role="alert" className="mb-6 border-l-2 border-os-warn pl-3 text-sm text-os-warn">The secure vault needs administrator setup before you can save credentials.</p>}
     <div className="grid min-w-0 gap-x-10 gap-y-8 md:grid-cols-2">

@@ -1,4 +1,4 @@
-import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { WorkspaceDashboard } from '@/components/WorkspaceDashboard';
 import type React from 'react';
 import Link from 'next/link';
 import { Instagram, Linkedin, Mail, Music2, Youtube } from 'lucide-react';
@@ -93,8 +93,9 @@ function agoFrom(iso: string | null): string {
 }
 
 export default async function SocialPage() {
+  if (process.env.NOSTEROS_OPERATOR_FEATURES !== '1') return <WorkspaceDashboard group="Social" />;
   const workspace = await operatorWorkspaceForPage();
-  if (!workspace) return <OperatorUnavailable />;
+  if (!workspace) return <WorkspaceDashboard group="Social" />;
 
   return withWorkspaceLease(workspace, async db => {
   // Live follower-count sync from Zernio/Late (falls back to static config when

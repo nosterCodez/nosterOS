@@ -1,4 +1,5 @@
 export const BUSINESSES = [
+  { id: 'workspace', name: 'This workspace' },
   { id: 'nostermarketing', name: 'nosterMarketing' },
   { id: 'nosterhealth', name: 'nosterHealth' },
   { id: 'autopilot-store', name: 'autopilot-store' },
