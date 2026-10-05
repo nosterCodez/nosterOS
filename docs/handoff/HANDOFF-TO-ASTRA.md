@@ -12,6 +12,14 @@ historical roadmap; old "in progress" and "next" labels below are not current.
 
 ## Current checkout and deployment
 
+- Oct 5, 14:34 CDT follow-up: M6f is complete; code `4ff3140`, report
+  `f409920`, feature branch pushed and merged locally. Main has NOT been
+  pushed or deployed; the older checkout snapshot below predates that work.
+- Etsy authorization now supersedes the old separate-app-only instruction:
+  Noe approved the active Personal Access `nosterlogistics` app. Credential
+  storage and the pending callback save are recorded in `M6g-etsy-existing-app.md`.
+  Read its security note before using these credentials in production.
+
 - Product: **OmegaOS**, red/charcoal/white, powered by nosterCodes. nosterOS is
   the retained repo/folder and internal configuration name, not the public brand.
 - PC: `C:/Users/noster/Documents/GitHub/nosterOS`; GitHub: `nosterCodez/nosterOS`.
@@ -55,8 +63,9 @@ historical roadmap; old "in progress" and "next" labels below are not current.
   collection is off. Its browser shows unfinished campaign setup. Do not
   publish campaigns, alter budgets or add billing to resolve connector access.
 - Meta registration remains blocked; no verified real Facebook/Instagram/Ads
-  reporting. Etsy's separate `omegaos` app awaits Personal Approval; do not
-  reuse the old nosterlogistics app. LinkedIn is paused by Noe.
+  reporting. Etsy's separate `omegaos` app is now shown as Banned. Noe approved
+  reusing the active Personal Access `nosterlogistics` app (not its banned
+  namesake); see M6g for the incomplete activation checkpoint. LinkedIn is paused.
 - TikTok ownership file was deployed and Noe confirmed site verification;
   verification is not app approval or successful reporting.
 - PayPal partner inquiry submitted for reusable merchant-consented reporting;
