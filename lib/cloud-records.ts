@@ -33,5 +33,6 @@ export function createCloudSources(db: Database.Database) {
       }).immediate();
     },
     invalidate(id: string) { const r = get(id); if (r) put({ ...r, enabled: false, revision: randomUUID(), claim: null, claimUntil: 0 }); },
+    pauseRejected(id: string, error: string) { const r = get(id); if (r) put({ ...r, enabled: false, error, revision: randomUUID(), claim: null, claimUntil: 0 }); },
   };
 }

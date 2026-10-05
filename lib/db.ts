@@ -1,6 +1,7 @@
 import { UsageSnapshotSchema, type SeatUsage } from '@/lib/usage';
 import Database from 'better-sqlite3';
 import { createConnectionRecords } from '@/lib/connection-records';
+import { createVerificationRecords } from '@/lib/verification-records';
 import { createCloudSources } from '@/lib/cloud-records';
 import { createFinancialImports } from '@/lib/financial-imports';
 import { randomUUID } from 'node:crypto';
@@ -691,6 +692,7 @@ export function openDb(path: string) {
   db.pragma('journal_mode = WAL');
   db.exec(DDL);
   const connectionRecords = createConnectionRecords(db);
+  const connectionVerifications = createVerificationRecords(db);
   const cloudSources = createCloudSources(db);
   const financialImports = createFinancialImports(db);
   migrateAgentsTable(db);
@@ -2130,6 +2132,7 @@ export function openDb(path: string) {
   return {
     meta,
     connectionRecords,
+    connectionVerifications,
     cloudSources,
     financialImports,
     departments,

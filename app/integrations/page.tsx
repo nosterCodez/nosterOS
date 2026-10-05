@@ -4,17 +4,18 @@ import { PageHeader } from '@/components/PageHeader';
 import { WorkspaceConnections } from '@/components/WorkspaceConnections';
 import { CloudConnections } from '@/components/CloudConnections';
 import { sourceView, sourceViews } from '@/lib/cloud-sources';
+import { emailDefaults } from '@/lib/credential-verification';
 
 export const dynamic = 'force-dynamic';
 export default async function IntegrationsPage({ searchParams }: { searchParams?: Promise<{ connection?: string }> } = {}) {
   const context = await requireWorkspace();
   if (!['admin', 'owner'].includes(context.role)) {
-    const printify = await withWorkspaceLease(context, db => sourceView({ ...context, db }, 'printify'));
-    return <><PageHeader eyebrow={context.workspace.name} title="Connections" /><p className="mb-5 text-os-muted">A workspace administrator manages your connections.</p><CloudConnections workspaceId={context.workspace.id} initial={[printify]} readOnly /></>;
+    const initial = await withWorkspaceLease(context, db => ({ printify: sourceView({ ...context, db }, 'printify'), connections: connectionMetadata({ ...context, db }) }));
+    return <><PageHeader eyebrow={context.workspace.name} title="Connections" /><p className="mb-5 text-os-muted">A workspace administrator manages your connections.</p><CloudConnections workspaceId={context.workspace.id} initial={[initial.printify]} readOnly /><WorkspaceConnections workspaceId={context.workspace.id} initial={{ ready: false, connections: initial.connections }} readOnly /></>;
   }
   const initial = await withWorkspaceLease(context, db => {
     const scoped = { ...context, db };
-    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped) };
+    return { ready: vaultReady(scoped), connections: connectionMetadata(scoped), sources: sourceViews(scoped), email: emailDefaults(scoped) };
   });
   const result = (await searchParams)?.connection;
   return <><PageHeader eyebrow={context.workspace.name} title="Connections" />

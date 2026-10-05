@@ -120,7 +120,8 @@ export async function collectCloud(ctx: VaultContext, id: string, resource: stri
     default: throw new CloudError('setup');
   }
 }
-export const IMAP_HOSTS = ['imap.gmail.com', 'outlook.office365.com', 'imap.mail.yahoo.com', 'imap.mail.me.com', 'imap.fastmail.com'];
+export { IMAP_HOSTS } from '@/lib/verification-types';
+import { IMAP_HOSTS } from '@/lib/verification-types';
 async function collectInbox(ctx: VaultContext, signal: AbortSignal, now: Date): Promise<CloudSnapshot> {
   const host = resolveCred(ctx, 'INBOX_1_HOST')?.toLowerCase(), user = resolveCred(ctx, 'INBOX_1_USER'), pass = resolveCred(ctx, 'INBOX_1_PASS');
   if (!host || !IMAP_HOSTS.includes(host) || !user || !pass) throw new CloudError('setup');

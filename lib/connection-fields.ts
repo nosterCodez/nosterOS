@@ -14,7 +14,7 @@ export const CONNECTION_FIELDS = [
   { name: 'INBOX_1_USER', provider: 'email', label: 'Email account' },
   { name: 'INBOX_1_PASS', provider: 'email', label: 'Email app password' },
 ] as const;
-export type ConnectionMetadata = typeof CONNECTION_FIELDS[number] & { status: 'not_configured' | 'saved' | 'revoked'; updatedAt: string | null };
+export type ConnectionMetadata = typeof CONNECTION_FIELDS[number] & { status: import('@/lib/verification-types').VerificationStatus; updatedAt: string | null; checkedAt: string | null; verifiedAt: string | null; note?: import('@/lib/verification-types').VerificationResult['note'] };
 export function connectionField(name: string) {
   const field = CONNECTION_FIELDS.find(field => field.name === name);
   if (!field) throw new Error('Unsupported connection field');

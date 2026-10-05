@@ -3,6 +3,7 @@ import type { FounderDb } from '@/lib/db';
 import type { Envelope } from '@/lib/connection-records';
 import { CONNECTION_FIELDS, connectionField, type ConnectionMetadata } from '@/lib/connection-fields';
 import { OAUTH_IDS } from '@/lib/cloud-catalog';
+import { verificationName, verificationState } from '@/lib/verification-state';
 
 export type VaultContext = { workspace: { id: string }; db: FounderDb };
 type Context = VaultContext;
@@ -59,14 +60,17 @@ export function connectionMetadata(context: Context): ConnectionMetadata[] {
   const rows = context.db.connectionRecords.all();
   return CONNECTION_FIELDS.map(field => {
     const row = rows.find(row => row.name === field.name);
-    return { ...field, status: !row ? 'not_configured' : row.revokedAt ? 'revoked' : 'saved', updatedAt: row?.updatedAt ?? null };
+    return { ...field, ...verificationState(context, verificationName(field.name)), updatedAt: row?.updatedAt ?? null };
   });
 }
 export function saveCredential(context: Context, name: string, value: string): void {
+  validateCredential(name, value);
+  saveVaultValue(context, name, value.trim());
+}
+export function validateCredential(name: string, value: string): void {
   connectionField(name);
   if (!value.trim() || value.length > 4096 || /[\r\n\0]/.test(value)) throw new Error('Invalid connection value');
   if (name === 'STRIPE_SECRET_KEY' && !/^rk_(test|live)_/.test(value)) throw new Error('Use a Stripe restricted key');
-  saveVaultValue(context, name, value.trim());
 }
 /** Server-only slots; public credential routes must continue using saveCredential. */
 export function saveVaultValue(context: Context, name: string, value: string): void {
@@ -95,6 +99,8 @@ export function readVaultValue(context: Context, name: string): string | undefin
 }
 export function revokeCredential(context: Context, name: string): void {
   connectionField(name);
+  aad(context, name);
+  context.db.connectionVerifications.invalidate(verificationName(name));
   if (name === 'PRINTIFY_API_TOKEN') {
     aad(context, name);
     context.db.connectionRecords.atomic(() => {

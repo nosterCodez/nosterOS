@@ -10,6 +10,9 @@ import { getMetric } from '@/lib/metrics/registry';
 import { listWorkspaces } from '@/lib/workspace-jobs';
 import { withWorkspaceDb } from '@/lib/workspace-storage';
 import { PRINTIFY_RECONNECT } from '@/lib/printify-credentials';
+import { verifyDueCredentials } from '@/lib/credential-verification';
+import { rejectedSource } from '@/lib/cloud-sources';
+import { VERIFICATION_PAUSED } from '@/lib/verification-types';
 
 export async function syncSource(ctx: VaultContext, id: string, options: { manual?: boolean; signal?: AbortSignal; collect?: typeof collectCloud; now?: Date; budgetMs?: number } = {}) {
   const source = cloudSource(id), record = ctx.db.cloudSources.get(id), now = options.now ?? new Date();
@@ -17,6 +20,7 @@ export async function syncSource(ctx: VaultContext, id: string, options: { manua
   if (source.planned || !record || (!record.enabled && !options.manual)) return { ok: false, skipped: 'paused' };
   let generation = '';
   try { generation = credentialVersion(ctx, id); } catch { return { ok: false, skipped: 'vault unavailable' }; }
+  if (rejectedSource(ctx, id)) return { ok: false, skipped: VERIFICATION_PAUSED };
   if (!generation || generation !== record.credentialVersion) return { ok: false, skipped: 'configure connection' };
   if (id === 'printify' && record.error === PRINTIFY_RECONNECT) return { ok: false, skipped: PRINTIFY_RECONNECT };
   if (!ctx.db.cloudSources.claim(id, record.revision, claim, +now, options.manual)) return { ok: false, skipped: options.manual && record.error ? 'Already syncing or retried recently. Wait one minute before retrying.' : 'Already syncing or synced recently. Try again after 15 minutes.' };
@@ -66,16 +70,19 @@ export async function runCloudTick() {
     const offset = Math.floor(Date.now() / 60000) % workspaces.length;
     const ordered = [...workspaces.slice(offset), ...workspaces.slice(0, offset)];
     const signal = AbortSignal.timeout(16000);
+    const deadline = Date.now() + 16000;
     let ran = 0;
     for (const workspace of ordered) {
       if (signal.aborted) break;
       try {
         await withWorkspaceDb(workspace.id, async db => {
+          await verifyDueCredentials({ workspace, db }, { signal });
           const candidates = CLOUD_SOURCES.filter(s => !s.planned).map(s => db.cloudSources.get(s.id)).filter(r => r?.enabled && (r.lastAttempt === null || Date.now() - r.lastAttempt >= 15 * 60_000)).sort((a, b) => (a!.lastAttempt ?? 0) - (b!.lastAttempt ?? 0));
           const ctx = { workspace, db };
           // Skip missing/stale credentials without preventing another due source from running.
           for (const record of candidates) {
-            if (signal.aborted) break;
+            // A slow verification must not turn a healthy collector into a budget timeout.
+            if (signal.aborted || deadline - Date.now() < 11000) break;
             const result = await syncSource(ctx, record!.id, { signal });
             if (!('skipped' in result)) { ran++; break; }
           }

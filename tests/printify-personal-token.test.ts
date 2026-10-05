@@ -53,7 +53,7 @@ test('save validates a fixed GET before encryption, discards body and never retu
   expect(resolveCred(ctx(), name)).toBe(token);
   const text = await response.text(), records = JSON.stringify(ctx().db.connectionRecords.all());
   for (const secret of [token, 'body-must-not-be-stored']) { expect(text).not.toContain(secret); expect(records).not.toContain(secret); expect(JSON.stringify([log.mock.calls, warn.mock.calls, error.mock.calls])).not.toContain(secret); }
-  expect(JSON.parse(text).connections.find((r: { name: string }) => r.name === name).status).toBe('saved');
+  expect(JSON.parse(text).connections.find((r: { name: string }) => r.name === name).status).toBe('verified');
   expect(sourceView(ctx(), 'printify')).toMatchObject({ connectionMethod: 'Personal token', status: 'needs_setup', appReady: false });
 });
 
@@ -149,7 +149,8 @@ test('401 stops scheduling and manual retries until token replaced; preserves la
   expect(await runCloudTick()).toEqual({ ran: 0 });
   expect(await syncSource(ctx(), 'printify', { manual: true, now: new Date(+failedAt + 3600000) })).toHaveProperty('skipped');
   expect(() => configureSource(ctx(), 'printify', { resource: '123', enabled: true })).toThrow('authentication');
-  expect(fetcher).toHaveBeenCalledOnce();
+  // One collector failure plus the new daily free verification, never a collector retry.
+  expect(fetcher).toHaveBeenCalledTimes(2);
   saveCredential(ctx(), name, 'replacement-fixture'); configureSource(ctx(), 'printify', { resource: '123', enabled: true });
   expect(sourceView(ctx(), 'printify')).toMatchObject({ status: 'ready', enabled: true, error: null, snapshot: null });
 });

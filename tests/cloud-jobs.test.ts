@@ -11,11 +11,12 @@ vi.mock('@/lib/cloud-adapters', () => ({ collectCloud: mocks.collect }));
 const A = 'A'.repeat(32), B = 'B'.repeat(32);
 let dbs: Map<string, ReturnType<typeof openDb>>;
 beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })));
   vi.stubEnv('NOSTEROS_MASTER_KEY', randomBytes(32).toString('hex'));
   dbs = new Map([[A, openDb(':memory:')], [B, openDb(':memory:')]]); mocks.open.mockImplementation(id => dbs.get(id)); mocks.list.mockResolvedValue([{ id: A, name: 'A', kind: 'client' }, { id: B, name: 'B', kind: 'client' }]);
   for (const [id, db] of dbs) { const ctx = { workspace: { id }, db }; saveCredential(ctx, 'STRIPE_SECRET_KEY', 'rk_test_fixture'); configureSource(ctx, 'stripe', { resource: '', enabled: true }); }
 });
-afterEach(() => { dbs.forEach(db => db.close()); vi.unstubAllEnvs(); vi.clearAllMocks(); });
+afterEach(() => { dbs.forEach(db => db.close()); vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 test('failed workspace does not stop the next; snapshots/points go to the correct database; due work is claimed once', async () => {
   mocks.collect.mockImplementation(async ctx => { if (ctx.workspace.id === A) throw new Error('private-token'); return { at: new Date().toISOString(), period: 'fixture', values: { gross: 19 } }; });
   expect(await runCloudTick()).toEqual({ ran: 2 });

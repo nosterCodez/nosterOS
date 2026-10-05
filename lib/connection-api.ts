@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { apiSessionError, requireWorkspace, SessionError, withWorkspaceLease } from '@/lib/session';
-import { connectionMetadata, revokeCredential, saveCredential, vaultReady, VaultError } from '@/lib/creds';
-import { PrintifyValidationError, validatePrintifyToken } from '@/lib/printify-credentials';
+import { connectionMetadata, revokeCredential, vaultReady, VaultError } from '@/lib/creds';
+import { emailDefaults, verifyCredential, VerificationError } from '@/lib/credential-verification';
+import { EMAIL_FIELDS } from '@/lib/verification-types';
 
 const NameSchema = z.object({ name: z.string().max(64) }).strict();
 const SaveSchema = NameSchema.extend({ value: z.string().min(1).max(4096) }).strict();
+const VerifySchema = NameSchema.extend({ action: z.literal('verify') }).strict();
+const EmailSchema = z.object({ name: z.literal('email'), email: z.object({ host: z.string().max(255), account: z.string().max(512), password: z.string().max(4096) }).strict() }).strict();
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 export async function limitedBody(request: Request, maxBytes = 8192) {
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw new Error('Invalid request');
@@ -31,25 +34,24 @@ export async function connectionRequest(request: Request) {
     return await withWorkspaceLease(context, async db => {
       const scoped = { ...context, db };
       if (request.method === 'POST') {
-        const parsed = SaveSchema.safeParse(body);
+        const parsed = z.union([SaveSchema, VerifySchema, EmailSchema]).safeParse(body);
         if (!parsed.success) return json({ error: 'Invalid connection request' }, 400);
-        if (parsed.data.name === 'PRINTIFY_API_TOKEN') {
-          if (!vaultReady(scoped)) throw new VaultError();
-          const before = JSON.stringify([db.connectionRecords.get(parsed.data.name), db.cloudSources.get('printify')?.revision]);
-          await validatePrintifyToken(parsed.data.value);
+        if (parsed.data.name === 'email' && 'value' in parsed.data) return json({ error: 'Invalid connection request' }, 400);
+        const reauthorize = async () => {
           const fresh = await requireWorkspace('admin', new Headers(request.headers), 'api');
-          if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id || before !== JSON.stringify([db.connectionRecords.get(parsed.data.name), db.cloudSources.get('printify')?.revision])) return json({ error: 'Connection changed. Reload Connections before saving.' }, 409);
-        }
-        saveCredential(scoped, parsed.data.name, parsed.data.value);
+          if (fresh.workspace.id !== context.workspace.id || fresh.user.id !== context.user.id) throw new VerificationError('Connection changed. Reload Connections before saving.', 409);
+        };
+        await verifyCredential(scoped, parsed.data.name, { ...('value' in parsed.data ? { value: parsed.data.value } : 'email' in parsed.data ? { email: parsed.data.email } : {}), reauthorize });
       } else if (request.method === 'DELETE') {
         const parsed = NameSchema.safeParse(body);
         if (!parsed.success) return json({ error: 'Invalid connection request' }, 400);
-        revokeCredential(scoped, parsed.data.name);
+        if ((EMAIL_FIELDS as readonly string[]).includes(parsed.data.name)) throw new VerificationError('Disconnect email as one connection.');
+        db.connectionRecords.atomic(() => (parsed.data.name === 'email' ? EMAIL_FIELDS : [parsed.data.name]).forEach(name => revokeCredential(scoped, name)));
       }
-      return json({ ready: vaultReady(scoped), connections: connectionMetadata(scoped) });
+      return json({ ready: vaultReady(scoped), connections: connectionMetadata(scoped), email: emailDefaults(scoped) });
     });
   } catch (error) {
-    if (error instanceof PrintifyValidationError) return json({ error: error.message }, 400);
+    if (error instanceof VerificationError) return json({ error: error.message }, error.status);
     if (error instanceof SessionError) return json({ error: error.message }, error.status);
     if (error instanceof VaultError) return json({ error: 'Connection vault unavailable. Contact your administrator.' }, 503);
     // Never serialize parser errors, credential values, provider errors or database contents.

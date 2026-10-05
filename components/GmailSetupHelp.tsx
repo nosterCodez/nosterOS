@@ -8,6 +8,6 @@ export function GmailSetupHelp() {
       <a href="https://support.google.com/accounts/answer/185839" target="_blank" rel="noopener noreferrer" className="text-os-accent underline focus-visible:outline focus-visible:outline-os-accent">Set up 2-Step Verification<span className="sr-only"> (opens in a new tab)</span></a>
       <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener noreferrer" className="text-os-accent underline focus-visible:outline focus-visible:outline-os-accent">App password help<span className="sr-only"> (opens in a new tab)</span></a>
     </div>
-    <p className="text-os-muted">Gmail host: <code>imap.gmail.com</code>. Account: your full Gmail address. Save the host, account and app password separately below.</p>
+    <p className="text-os-muted">Gmail host: <code>imap.gmail.com</code>. Account: your full Gmail address. Save the host, account and app password together below.</p>
   </div>;
 }

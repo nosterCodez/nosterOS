@@ -6,7 +6,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 test('Gmail setup links appear above the email credential fields with safe external links', () => {
   const html = renderToStaticMarkup(createElement(WorkspaceConnections, { workspaceId: 'A'.repeat(32), initial: { ready: true, connections: [
-    { name: 'INBOX_1_HOST', label: 'Email IMAP host', provider: 'email', status: 'not_configured', updatedAt: null },
+    { name: 'INBOX_1_HOST', label: 'Email IMAP host', provider: 'email', status: 'not_configured', updatedAt: null, checkedAt: null, verifiedAt: null },
   ] } }));
   expect(html).toContain('id="email-credentials"');
   expect(html).toContain('https://myaccount.google.com/apppasswords');
