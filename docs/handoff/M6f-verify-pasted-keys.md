@@ -1,6 +1,6 @@
 # M6f: Verify every pasted key
 
-Status: ready. Written by Claude (lead architect), Oct 5, 2026, at Noe's request.
+Status: implemented and merged locally; awaiting Claude review and Noe's deployment approval. Written by Claude (lead architect), Oct 5, 2026, at Noe's request.
 Branch: `m6b-commerce-connectors` (on top of `c0743a4`). Ships with the
 commerce merge, so one deploy covers both.
 Self-review required: yes (credential handling).
@@ -153,4 +153,5 @@ Go ahead with implementation.
 - New coverage includes provider success/rejection/403/timeout/redirect outcomes, Attio false/oversized bodies, credential non-disclosure, stable generations/configuration, workspace-local daily checks, email atomicity/partial migration, stale-result races, rate limits, viewer denial, OAuth priority, rejected-collector pausing and read-only UI.
 - M6e assertion updates are intentional spec changes: saved Printify status is now verified, and its scheduling test permits the added single daily verification request (not a collector retry). Existing API/job tests now mock the newly introduced free probes.
 - Synthetic browser QA used actual components with mocked responses at 1280, 390 and 320 px: no horizontal overflow; Verify and atomic email save work; password clears; keyboard Tab reaches Save; viewer has zero inputs/buttons. No browser warnings/errors observed. Temporary port 4197 preview stopped and viewport reset; shared port 4100 server remains listening on PID 59320.
-- Implementation is ready for the local merge. Main has not been pushed and no deployment is authorized. Unrelated M5 handoff edits remain untouched.
+- Implementation commit `4ff3140` was pushed only to `origin/m6b-commerce-connectors` and fast-forward merged into local `main`. Main has not been pushed and no deployment is authorized. Unrelated M5 handoff edits remain untouched.
+- Next session: Claude reviews M6f (including conservative unverifiable providers) and runs the Linux suite. Await explicit Noe deployment approval before any main push. Do not read `.env.connector-keys.local`; Noe enters real credentials himself.
