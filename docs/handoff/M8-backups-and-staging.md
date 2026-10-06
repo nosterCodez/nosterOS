@@ -287,3 +287,14 @@ before production.
 - Read-only Railway check confirms production follows main, no staged changes,
   and no OMEGA_BACKUP_* configuration. Backups will remain inactive after deploy.
 - Code verification is unchanged from the 20:14 report; deployment outcome pending.
+
+### Claude review notes, October 6, 2026 (relayed by Noe)
+- Make these the first two commits of Batch 3, with regression tests.
+- F1: back up root-level .db files and .db files anywhere under platform/;
+  skip shared/ entirely. Retain support for existing recognized paths and
+  refuse all other unexpected .db paths. Do not fail solely because a DB's
+  name is unfamiliar within an allowed location.
+- F2: in claim(), before checking running backups, mark running records older
+  than two hours failed with error "interrupted", so a crash cannot block
+  all future backups. Add a regression test.
+- These fixes have not been implemented at this authorization checkpoint.

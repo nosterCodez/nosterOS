@@ -2,6 +2,12 @@
 
 ## Current authority - October 5, 2026
 
+Update October 6: Noe delegated lead-gen production approval to Claude for
+specific commits explicitly marked "approved for production". After approved
+deployment and live verification, start the next batch; fix/re-review changes
+Claude requests. Money, Railway settings/keys, DNS, legal text, first real
+emails, deletions and spending caps remain Noe's decisions. See AGENTS.md.
+
 Noe explicitly requested that Claude take over again as lead architect.
 Claude owns plans/specs, architecture, security decisions and review; Codex /
 Astra returns to implementation and reports. The Oct 3 autonomous takeover
@@ -19,8 +25,8 @@ known gaps and the specific review or decision needed. Use the existing
 "nosterOS architect handoff" conversation after verifying its current state.
 Do not interrupt an ongoing response or send duplicate review requests.
 Follow computer-use confirmation requirements before submitting messages.
-This changes the review transport only: it does not authorize production
-deployments, purchases, credentials, legal changes or real customer messages.
+The later October 6 production delegation above governs reviewed releases;
+the review transport itself grants no additional spending or account access.
 Claude's response must be checked against the current specs and Noe's approvals.
 
 ## NEXT QUEUE - lead-gen program (Claude, Oct 5 evening, approved by Noe)

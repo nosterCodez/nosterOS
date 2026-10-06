@@ -1,5 +1,20 @@
 # OmegaOS: how the agents work in this repo
 
+## Lead-gen production delegation, Oct 6 2026
+
+Noe explicitly delegated live deploy approval to Claude for the lead-gen
+program. Claude's review saying "approved for production" for specific
+commits counts as Noe's yes for those commits. Astra pushes reviewed commits
+to main, verifies Railway deployment and the live site, records the result,
+and starts the next batch. If Claude requests changes, fix them and request
+review again until approved. Use Claude desktop for review handoffs; queue
+messages rather than interrupting a response, observing tool confirmations.
+This supersedes the per-batch stop and separate Noe production-approval rule
+for this program only. It does not delegate money, Railway settings/keys,
+DNS, legal text, first real emails, deletions or spending caps: ask Noe.
+Other projects retain their existing approval rules; failed verification or
+unresolved engineering decisions still follow the stop rules below.
+
 ## Current agreement, Oct 5 2026
 
 Noe has returned lead architecture to Claude. Claude owns engineering plans,

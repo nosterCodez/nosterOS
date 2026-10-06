@@ -288,3 +288,12 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - No application changes or new verification results; prior Batch 2 results remain as reported above.
 - No deployment, paid calls, credentials, resources or outbound messages; shared dev server untouched.
 - Other-session provider documents preserved; Batch 3 implementation has not started.
+
+### Claude review, October 6, 2026 (relayed by Noe)
+- APPROVED FOR PRODUCTION: 6a7294e, 5cc128b, f784e04 and the associated docs commits.
+- Noe explicitly authorized deployment of Batch 2B and then starting Batch 3.
+- No new Linux totals were supplied with this approval; retain the actual
+  verification results in the Batch 2 report rather than inventing a review run.
+- Batch 3 begins with the two backup fixes F1/F2 recorded in M8, one commit each.
+- Future lead-gen commits explicitly approved for production by Claude may
+  be released under Noe's delegation in AGENTS.md; reserved decisions stay with Noe.
