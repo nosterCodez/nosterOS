@@ -349,3 +349,5 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - Not ready for production; no main push, deployment, settings/keys, purchases,
   spending changes, data deletion, public signup or real outbound messages.
 - Claude checkpoint send confirmation requested in chat; do not assume sent or reviewed.
+- Partial implementation/report pushed as 7da02cf. Updated decision request replaces
+  the obsolete F2 draft in Claude desktop; UNSENT pending action-time confirmation.
