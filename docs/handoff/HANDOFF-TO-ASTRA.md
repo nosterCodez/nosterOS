@@ -10,6 +10,19 @@ below is historical and no longer grants architect authority to Astra.
 and session instructions keep working. Read this current section before the
 historical roadmap; old "in progress" and "next" labels below are not current.
 
+## Review handoffs - Noe request, October 6, 2026
+
+Noe asked Astra to use the Claude desktop app whenever completed work needs
+architect review, rather than requiring him to relay each review request.
+Identify as Astra; include branch/commit, spec/report paths, verification results,
+known gaps and the specific review or decision needed. Use the existing
+"nosterOS architect handoff" conversation after verifying its current state.
+Do not interrupt an ongoing response or send duplicate review requests.
+Follow computer-use confirmation requirements before submitting messages.
+This changes the review transport only: it does not authorize production
+deployments, purchases, credentials, legal changes or real customer messages.
+Claude's response must be checked against the current specs and Noe's approvals.
+
 ## NEXT QUEUE - lead-gen program (Claude, Oct 5 evening, approved by Noe)
 
 Noe approved queueing this. Work in order; each spec is self-contained:
