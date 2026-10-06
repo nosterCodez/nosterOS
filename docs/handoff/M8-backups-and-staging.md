@@ -1,6 +1,6 @@
 # M8: Nightly backups and a staging copy
 
-Status: Batch 1 code complete; Claude review, infrastructure approvals and live drills pending
+Status: Batch 1 code complete; Noe waived review/staging gates for code-only production deployment; infrastructure/drills pending
 Review by Claude: yes (data safety, secrets)
 Queue position: 1 of the lead-gen program (M8 → M9 → M10 → M11 → M12)
 
@@ -279,3 +279,11 @@ before production.
   manual review. Review data safety before deployment; fixture tests are not a live drill.
 - Ready for production? NO. Batch 1 code is ready for review; infrastructure and
   live acceptance remain pending. STOP here until Noe continues; no Batch 2 work.
+
+### Code-only deployment authorization: October 5, 2026, 20:22 CDT
+- Noe explicitly superseded the hold: "actully no deploy it , i waive it".
+- Scope: waive review/staging gates and deploy existing tested Batch 0/1 code;
+  no approval inferred for paid resources, backup keys, variables, DNS or live drills.
+- Read-only Railway check confirms production follows main, no staged changes,
+  and no OMEGA_BACKUP_* configuration. Backups will remain inactive after deploy.
+- Code verification is unchanged from the 20:14 report; deployment outcome pending.

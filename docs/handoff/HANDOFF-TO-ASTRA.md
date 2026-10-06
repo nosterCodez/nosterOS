@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 20:22 CDT: Noe superseded the deployment hold: "actully no deploy it , i waive it".
+- This explicitly waives Claude review/staging checks for the Batch 1 code-only production deployment.
+- Deploy Batch 0/1 through a fast-forward main push; no resource, variable, secret, DNS or paid-service changes authorized.
+- Railway inspected read-only: main auto-deploy, no staged changes; no OMEGA_BACKUP_* variables configured, so backups remain inactive.
+- Existing Batch 1 verification remains applicable (code unchanged); runtime/public smoke and deployment result will be recorded after release.
+- Batch 2 global spending-coordination decision is still open; do not interpret this waiver as an architecture decision or spend approval.
+
 - Oct 5, 20:20 CDT: Noe requested Batch 1 deployment + Batch 2, then chose to wait for Claude review and staging checks.
 - Deployment HOLD: no main push/merge, resource, secret or production change; Batch 1 code/report checkpoint `bd994a8`.
 - Batch 2 preflight only: M9 requires M8 code merged; no Batch 2 branch or implementation started.
