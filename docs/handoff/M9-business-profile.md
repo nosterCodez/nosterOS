@@ -217,3 +217,12 @@ headless Chrome denies `navigator.clipboard.writeText` unless permission is gran
   lead-magnets-route, roadmap-mock-5h. No Linux verification claimed.
 - Noe approved 2A deployment on acceptance pass; promoting 2A only. 2B remains
   unimplemented at this release point. Railway deployment result follows.
+
+### Batch 2A deployment result: October 6, 2026, 02:24 CDT
+- Main/origin/main fast-forwarded to `72cb179bf96a1963e1f1c2a2ff531276e53f7fcb`.
+- Railway production deployment `ada4ecca-d6be-4fef-844c-ccd9b6302601` SUCCESS
+  at 07:08:08 UTC; service nosteros-web, existing production environment.
+- Public GET https://os.noepenaa.com returned HTTP 401, title OmegaOS / Private,
+  as expected for the beta wall. Authenticated acceptance was local, not live-user testing.
+- No Railway settings, variables, secrets, resources, or real messages changed.
+  Batch 2B is on lg/b2-business-profile only and has NOT been deployed.

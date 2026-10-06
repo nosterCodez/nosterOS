@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 02:24 CDT: Batch 2 complete for review; 2A passed browser acceptance and is LIVE at main/origin/main 72cb179.
+- Railway ada4ecca-d6be-4fef-844c-ccd9b6302601 SUCCESS; public os.noepenaa.com HTTP 401 / OmegaOS Private confirmed.
+- 2B on lg/b2-business-profile ONLY: 6a7294e single spending authority/recovery, 5cc128b metered structured AI/catalog; not deployed.
+- Typecheck/build PASS; all 24 new 2B tests pass; full Windows 4,011 pass / 4 baseline assertions, 389/396 files pass (three baseline EPERM suites).
+- M9/M10 reports contain deployment, sources, tests and limits; no paid AI calls, M7 merge, platform enablement, credentials or Railway changes.
+- STOP after Batch 2; Claude review/2B release approval and staging infrastructure still pending. No Batch 3 work; preserve unrelated provider docs and server 4100.
+
 - Oct 6, 02:05 CDT: 2A fresh browser acceptance passed per Claude's Oct 6 decision.
 - Clipboard fallback added; 25 focused tests pass, typecheck/build pass; full Windows 3,987 pass / 4 baseline failures.
 - Browser paste/save/edit/restore/upload/secret guard/viewer checks passed; 390x844 inspected; clipboard browser assertion skipped as approved.

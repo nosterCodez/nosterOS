@@ -215,3 +215,65 @@ never exceeds the cap (run with two DB connections); expiry sweep counts
 estimates; release only on known-unbilled; alerts unique per threshold; BYO spend
 ignored by global totals; `price_unknown` refusal; free-quota units cap; workspace
 isolation of ledger reads; spend.db included in backup snapshot.
+
+### Batch 2 report: October 6, 2026, 02:24 CDT
+- Steps: 2A Business Profile = DONE and deployed (M9 report); 2B AI/spend foundation
+  = DONE for review. M10's plan/questions/UI remain Batch 3 work, not implemented.
+- Branch `lg/b2-business-profile`; implementation commits `6a7294e` ledger/recovery,
+  `5cc128b` structured AI/catalog. Report commit follows. Main remains 2A `72cb179`.
+- Typecheck PASS; isolated build PASS (.next-lg-b2b). Full Windows: 396 files,
+  389 passed / 7 baseline failures; 4,015 tests, 4,011 passed / 4 baseline failures.
+  Baseline assertions: interaction-layer BrainCore path, paths, skills-plugins,
+  superset-dispatch; EPERM cleanup: lead-magnet-actions, lead-magnets-route,
+  roadmap-mock-5h. All 24 new 2B tests pass. No Linux verification claimed.
+- Red tests preceded ledger, backup, AI/catalog and runtime wiring. Added safety
+  coverage for unknown billing, revoked credentials before dispatch and zero-cost
+  paid reservations. Corrected new test numeric sort, not its expected thresholds.
+- Single platform/spend.db authority; no workspace/control ledger copy. WAL,
+  5-second timeout, immediate reservation transactions, UTC months, integer-microdollar
+  comparisons, workspace-bound settlement/read methods, owner/admin cap writes.
+  Explicit pool column preserves the approved pool distinction on every record.
+- BYO AI defaults to $5/month (editable 0-100); other paid workspace caps default
+  zero. Platform env caps fail closed. BYO excluded from platform sums. Free quotas
+  enforce units per provider; current Google Places env cap is closed if absent.
+  Free-quota payer records the account source, with zero dollars, not a charge.
+- Expiry conservatively commits the estimate as expired; no deletion. Ambiguous
+  provider failures stay reserved until expiry. Only request_not_sent can release;
+  no provider-error code is yet asserted unbilled. Threshold records are unique.
+- Tests include a genuine two-worker/two-connection platform-cap race; only one
+  reservation succeeds. Cross-workspace reads/settlements, expiry, month rollover,
+  cap roles, defaults, free units and idempotent settlement covered.
+- M8 inventory recursively finds the ledger; expanded archive allowlist only for
+  platform/spend.db. Snapshot plus pack/unpack test passes. DEPLOY-railway documents
+  single replica/volume requirement and shared-DB prerequisite for horizontal scaling.
+- Internal authenticated tick sweeps expiry only when the DB exists. Existing
+  /api/usage gains leadSpend metadata bound to active session workspace. Its existing
+  operator gate remains; no new UI/hidden endpoint or client workspace-id input.
+  Tokens are recorded as aggregate units per call; reserved units are estimates.
+  The dedicated usage UI and wider exposure remain the later batch's work.
+- AI order: verified vault OpenAI -> Anthropic -> null platform stub -> no provider.
+  No environment credential fallback or M7 merge. Re-check credentials after reserve.
+  JSON-schema requests + Zod validation; one separately reserved validation retry;
+  null output for rules fallback. Retry feedback includes codes only, not raw output.
+  Fixed HTTPS endpoints, redirect refusal, 30-second timeout, 256 KiB response cap.
+  No prompt, output, credential or email in spending DB/logs. Unknown billing is null.
+- Models/prices verified Oct 6 via official sources (standard text rates per 1M):
+  OpenAI gpt-6-luna: $0.10 input / $0.50 output,
+  https://developers.openai.com/api/docs/models/gpt-6-luna .
+  Anthropic claude-haiku-4-5-20251001: $1 input / $5 output,
+  https://platform.claude.com/docs/en/models/haiku-4-5/overview .
+  These are current small models; older OpenAI nano pages are marked deprecated.
+  Unknown model price refuses. No paid provider request or live model test performed.
+- Estimates use UTF-8 byte count plus overhead rather than chars/3, conservatively
+  allowing for non-ASCII and schema overhead. Costs are usage-based estimates, not
+  provider invoices; no tools, regional pricing, caching configuration or paid data
+  SKU enabled. Future priced SKUs/models require verified table entries.
+- Static 16-signal catalog has explicit detector inputs; missing evidence never
+  counts as a negative observation. No searching, scraping, lead data or sending.
+- Self-review: auth/origin/operator boundaries unchanged; no raw SQL in routes,
+  no secret logs, no dependency, credential, cap/flag deployment or purchase.
+- Staging: NOT deployed; no staging infrastructure provisioned. 2B not production.
+  Claude review of AI/cost handling and separate 2B release approval remain pending.
+- Noe actions now: none to keep this checkpoint. Say continue after review for
+  Batch 3; infrastructure/cost decisions in M8/STAGING.md remain separate.
+- STOP after Batch 2. Shared dev server 4100 and unrelated provider docs untouched.
