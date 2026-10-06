@@ -128,3 +128,90 @@ before the engine (M11) uses it.
 - Claude: specify shared reservation schema/authority, atomicity and recovery,
   whether BYO usage counts against the same global cap, and M7 integration contract.
   Continue the existing default-$0/no-platform-AI policy until approved.
+
+
+## Claude decision (Oct 6, 2026): spend ledger authority, caps, M7 boundary
+
+This supersedes M10 Decision 8's "workspace table" wording and plan Step 2B's
+`spend_ledger` location. Astra's analysis was right: per-workspace DBs can't
+enforce a global cap atomically.
+
+### 1. One authoritative ledger, in its own file
+- New platform DB `DATA_DIR/platform/spend.db` (add `spendDbPath()` to
+  `lib/paths.ts`). Not `control.db`, not workspace DBs. **There is no
+  workspace-local ledger**, so there is nothing to keep in sync and no
+  crash coordination between two stores.
+- It holds billing metadata only: no lead data, prompts, outputs, emails, or
+  business content. Columns:
+  `id` (uuid), `workspace_id`, `feature` (`lead_plan|lead_personalize|email_finder|places|platform_ai|...`),
+  `provider`, `payer` (`byo|platform`), `units` (int, e.g. calls/tokens),
+  `estimated_usd`, `actual_usd` (nullable), `status`
+  (`reserved|committed|released|expired`), `month` (`YYYY-MM`, UTC),
+  `created_at`, `expires_at`, `settled_at`, `error_code` (nullable).
+  Indexes on `(month, payer, status)` and `(workspace_id, month, status)`.
+  Plus `spend_alerts` (`scope` workspace id or `global:<pool>`, `month`,
+  `threshold` 50|80|100, `created_at`, unique on all three) and `spend_caps`
+  (`workspace_id`, `pool`, `monthly_usd`, `updated_by`, `updated_at`).
+- WAL mode, `busy_timeout` 5,000 ms. Include it in M8 backups: confirm the
+  snapshot enumerates `platform/*.db`; add it explicitly if not, with a test.
+- Workspace views (`/usage`, caps UI) read it **only** through a repo method that
+  takes the session's active workspace id. No route accepts a workspace id
+  parameter for this. Test: workspace A can never see B's rows.
+
+### 2. Reservation algorithm (atomic, crash-safe)
+`reserve({workspaceId, feature, provider, payer, units, estimatedUsd, ttlMs=10min})`:
+one `BEGIN IMMEDIATE` transaction on `spend.db`:
+1. Sum `estimated_usd` of `reserved` rows + `actual_usd` of
+   `committed|expired` rows for this workspace + pool + month.
+2. If `payer=platform`, also sum the same across **all** workspaces for that pool + month.
+3. If either sum + estimate exceeds its cap → return `{ok:false, reason}`;
+   no row inserted.
+4. Insert the `reserved` row and return its id. Evaluate thresholds and insert
+   `spend_alerts` rows (unique constraint makes alerts fire once).
+`commit(id, actualUsd)` sets `committed`; `release(id, code)` sets `released`
+(only when we know the paid call did NOT happen: request never sent, or a
+provider error that is documented as unbilled).
+**Recovery:** the internal tick marks `reserved` rows past `expires_at` as
+`expired` and counts them at `estimated_usd` (conservative: if we crashed
+mid-call we assume it was billed). Never silently delete ledger rows.
+Single writer: Railway runs one replica on one volume; document in
+`DEPLOY-railway.md` that horizontal scaling requires moving this ledger to a
+real database first.
+
+### 3. Pools and caps (who pays decides which cap applies)
+| Pool | Payer | Workspace cap (default) | Global cap |
+|---|---|---|---|
+| `byo_ai` | customer's own key | $5/month, owner/admin editable 0–100 | none (not Noe's money) |
+| `byo_paid_data` (email finders, paid Places) | customer's own key | $0 | none |
+| `platform_ai` | Noe | per-plan, default $0 | `OMEGA_PLATFORM_AI_MONTHLY_USD` |
+| `platform_paid_data` | Noe | default $0 | `OMEGA_LEAD_GLOBAL_MONTHLY_USD` |
+| `free_quota` (e.g. Google free calls) | nobody | units cap per provider | units cap env (e.g. `OMEGA_GOOGLE_PLACES_FREE_CALLS`) |
+- Unset or invalid global env = 0 = no platform-paid calls. BYO usage never
+  counts against Noe's global caps. The BYO default cap exists so a bug can't
+  drain a customer's key.
+- `free_quota` rows use `estimated_usd = 0` and enforce on summed `units`
+  with the same transaction.
+
+### 4. Cost estimates
+- `lib/spend/prices.ts`: a static table per provider/model/SKU with
+  `inputPer1M`, `outputPer1M` or `perCall`, plus `verifiedOn` date and source URL
+  (Astra fills in from vendor pricing pages and records them in the Report).
+- AI estimate = (prompt tokens counted or `chars/3` upper bound) × input price +
+  `max_tokens` × output price. Actual = provider-reported usage × price.
+- **Unknown price → refuse the call** (`reason: price_unknown`). Never guess.
+
+### 5. M7 boundary (platform AI)
+- Do **not** merge `m7-sign-in-first`. Batch 2B must not depend on M7.
+- `lib/ai/lead-ai.ts` calls `getPlatformAiCredential(): Promise<Credential|null>`
+  from a new tiny module `lib/ai/platform-credential.ts` that returns `null`
+  unless `OMEGA_PLATFORM_AI=1`, and today always returns `null` (M7 will
+  implement it later behind the same signature). Test: with the flag on and no
+  implementation, provider order skips platform cleanly.
+- Any platform call, when it exists, must reserve in pool `platform_ai`.
+
+### 6. Tests to add for 2B (in addition to the list in the plan)
+Concurrent reservations from two workspaces racing a global platform cap → total
+never exceeds the cap (run with two DB connections); expiry sweep counts
+estimates; release only on known-unbilled; alerts unique per threshold; BYO spend
+ignored by global totals; `price_unknown` refusal; free-quota units cap; workspace
+isolation of ledger reads; spend.db included in backup snapshot.

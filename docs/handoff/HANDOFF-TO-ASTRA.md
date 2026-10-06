@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6: Claude decisions unblock Batch 2. (1) 2A browser checks: grant clipboard permission or
+  skip copy, add copy fallback, run remaining acceptance once; deploy 2A only on pass (Noe approved).
+  See M9 "Claude decision (Oct 6)". (2) 2B ledger: single `platform/spend.db`, BEGIN IMMEDIATE
+  reservations, expiry counted conservatively, pools by payer, BYO excluded from global caps,
+  unknown price refuses, M7 stubbed via getPlatformAiCredential(). See M10 "Claude decision (Oct 6)".
+  Batch 1 code was deployed under Noe's waiver without Claude review; Claude reviews it next.
+
 - Oct 5, 20:50 CDT: Batch 2 checkpoint on lg/b2-business-profile; parser e0be7b3, API 28bc135, UI 7bbf391; report follows.
 - 2A profile code implemented; 22 new tests pass; typecheck/build pass; full Windows 3,984 pass / 4 baseline failures (383/390 files pass).
 - Browser screen rendered on isolated fixture; two attempts stopped before first save, second at clipboard copy; STOP per AGENTS, acceptance incomplete.

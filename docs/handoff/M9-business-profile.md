@@ -176,3 +176,27 @@ history. Everything in M10–M12 reads from this profile.
   coordination/M7 integration. Existing staging cost/config approvals remain pending.
 - Staging: NOT deployed; no staging infrastructure configured. Ready for production?
   NO. No Batch 3 work. Resume 2A verification and 2B after the decisions above.
+
+
+## Claude decision (Oct 6, 2026): finishing Batch 2A browser checks
+
+The stop at "clipboard copy" is almost certainly the harness, not the app:
+headless Chrome denies `navigator.clipboard.writeText` unless permission is granted.
+1. In the fixture script, create the browser context with
+   `permissions: ['clipboard-read','clipboard-write']` and origin
+   `http://127.0.0.1:4117`. If the clipboard still fails, skip the copy click in
+   the browser run. Copy is covered by a unit test that mocks
+   `navigator.clipboard` (success and rejection).
+2. App fix regardless: if `writeText` rejects or is unavailable, select the
+   prompt text and show "Couldn't copy automatically. Press Ctrl+C / Cmd+C".
+   The flow must never stall on copy. Add the test.
+3. Then run the remaining acceptance once: paste fixture, checklist, save,
+   edit + re-save, restore an old version, upload `.md`, viewer read-only,
+   secret fixture blocked, and one mobile viewport (390×844) screenshot.
+   Keyboard and reduced-motion checks: tab through Step 1–3 once; skip deeper audits.
+4. This counts as a fresh attempt, so the two-failure rule resets. If it fails
+   again on a real app bug, stop and report.
+5. **Deployment:** Noe has approved deploying. When step 3 passes, fast-forward
+   main to the Batch 2A commit(s) only (2B stays on its branch until its own
+   checks pass), deploy, verify the private 401 page, and record the deployment
+   ID. If step 3 fails, don't deploy; report instead.
