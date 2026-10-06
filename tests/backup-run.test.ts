@@ -62,12 +62,13 @@ test('corrupt uploaded copy prevents all pruning, masks error and releases lock'
   const repo = backupRepository(path.join(f.data, 'control.db'));
   try { expect(repo.summary().running).toBeNull(); expect(repo.summary().lastError).toBe('Backup verification failed.'); } finally { repo.close(); }
 });
-test('SQLite lock prevents overlap across repository handles and survives a lost process without unsafe takeover', async () => {
+test('SQLite fresh running lock prevents overlap across repository handles, including across midnight', async () => {
   const f = await fixture(), filename = path.join(f.data, 'control.db'), a = backupRepository(filename), b = backupRepository(filename);
   try {
-    const id = a.claim(new Date('2026-10-05T08:00:00Z'), 'omegaos-2026-10-05-abcdef12.tar.gz');
+    const id = a.claim(new Date('2026-10-05T23:30:00Z'), 'omegaos-2026-10-05-abcdef12.tar.gz');
     expect(id).not.toBeNull();
-    expect(b.claim(new Date('2026-10-06T08:00:00Z'), 'omegaos-2026-10-06-abcdef12.tar.gz')).toBeNull();
+    expect(b.claim(new Date('2026-10-06T00:30:00Z'), 'omegaos-2026-10-06-abcdef12.tar.gz')).toBeNull();
+    expect(b.summary().running?.id).toBe(id);
     expect(b.summary(new Date('2026-10-07T08:00:00Z')).stale).toBe(true);
   } finally { a.close(); b.close(); }
 });

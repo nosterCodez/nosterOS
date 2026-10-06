@@ -109,10 +109,11 @@ load the real project's .env.local. Normal manual CLI use loads .env.local if pr
 
 The tick starts after 08:00 UTC and records at most one attempt per UTC date. A failed
 attempt is visible and the next scheduled attempt is the next day. Uploads are never
-overwritten. Interrupted runs retain the unique running-row lock; no unsafe automatic
-timeout takeover occurs. Stop all backup runners before an explicitly approved operator
-marks an abandoned run failed. A restored control.db contains the snapshot's running
-row and requires the same reviewed recovery step before backups are re-enabled.
+overwritten. At claim time, running rows older than two hours are marked failed with
+error code interrupted inside the same transaction as the new claim. Fresh locks
+continue to block overlapping runs. The one-attempt-per-UTC-day rule still applies;
+an interrupted run from today does not retry until the next UTC day. Restored running
+rows follow this same recovery rule when configured backups next attempt to claim.
 
 Temporary snapshots are private generated children of the OS temp directory, outside
 the live data tree. They are deleted after reading and in finally cleanup on errors;

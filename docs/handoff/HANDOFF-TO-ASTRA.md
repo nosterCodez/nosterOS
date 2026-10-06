@@ -45,6 +45,20 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 11:11 CDT: Claude approved F1 8184ed1 and F2's conflicting test revision via Noe's chat.
+- Fresh-lock test now spans midnight with only one hour elapsed; separate >2-hour recovery tests retained.
+- F2 focused checks 29/29 PASS and typecheck PASS; full batch verification follows. F2 is the second Batch 3 commit.
+- Earlier unsent Claude question is superseded; do not send it. Continue plan/preferences UI then runner/source per Batch 3.
+- Main/production still 712fa75; no new deployment, variables, keys, paid calls or cap changes.
+- Preserve unrelated provider docs and shared server 4100; request Claude review when Batch 3 is complete.
+
+- Oct 6, 10:43 CDT: live Batch 2B remains 712fa75; Batch 3 branch lg/b3-plan-engine at 8184ed1 (F1 pushed).
+- F1 passes 29 focused tests/typecheck. F2 code and three passing new tests remain uncommitted pending Claude's old-test assertion decision.
+- Full suite 4,029 pass / 5 fail: four baseline assertions plus the superseded permanent-backup-lock assertion; 390/398 files pass including three baseline EPERM failures.
+- Isolated build PASS; generated tsconfig changes removed. No new deployment or Railway settings changes.
+- Claude desktop contains an UNSENT review/decision draft; Noe's required send confirmation is pending. Do not assume it was queued or reviewed.
+- Preserve F2 working tree for its second Batch 3 commit; plan UI/engine not started. Shared server 4100 and unrelated docs untouched.
+
 - Oct 6, 10:32 CDT: Batch 2B deployed to main 712fa75 under Claude approval relayed by Noe.
 - Railway a32296db-4808-4547-9181-36ddbab60f8d SUCCESS; post-deploy public HTTP 401 / OmegaOS Private verified.
 - Batch 3 begins on lg/b3-plan-engine from deployed main; F1 then F2 must be its first commits.

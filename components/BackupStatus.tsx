@@ -22,7 +22,7 @@ export function BackupStatus({ status }: { status: PlatformBackupStatus }) {
       <div><dt className="text-os-muted">Latest run</dt><dd className="mt-2">{status.latest?.status ?? 'Not run'}</dd></div>
     </dl>
     {status.lastError && <p className="mt-5 text-sm text-os-warn">Last recorded error: {status.lastError}</p>}
-    {status.running && <p className="mt-5 text-sm text-os-muted">Run started {status.running.started_at}. Interrupted runs require operator review before releasing the lock.</p>}
+    {status.running && <p className="mt-5 text-sm text-os-muted">Run started {status.running.started_at}. The next backup check marks runs older than two hours interrupted. The daily attempt limit still applies.</p>}
     <p className="mt-5 text-xs text-os-muted">Schedule: daily after 08:00 UTC while the service is awake. Restore never overwrites live data.</p>
   </section>;
 }

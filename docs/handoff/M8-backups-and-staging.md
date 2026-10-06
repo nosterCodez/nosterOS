@@ -310,3 +310,33 @@ before production.
 - Inventory's byte count excludes shared/ as requested; it is not an independent
   measurement of total mounted-volume usage. Deployment volume monitoring still applies.
 - F1 is the first Batch 3 commit; not deployed. Batch 2B release is recorded in M10.
+
+### Batch 3 F2 working-tree checkpoint: October 6, 2026, 10:43 CDT
+- F1 is committed/pushed as 8184ed1 on lg/b3-plan-engine; production remains 712fa75.
+- F2 implementation and tests are LOCAL/UNCOMMITTED pending the existing-test decision.
+- claim() marks running rows older than two hours failed/interrupted inside the
+  immediate transaction, before the running/daily checks. No DB records deleted.
+- Three new recovery tests PASS after two expected red regressions: exact boundary,
+  previous-day recovery, competing handles, late finisher, finished-row preservation.
+- Existing backup-run test expects the old permanent lock and now fails intentionally;
+  per AGENTS, a Claude decision request is drafted in desktop, NOT SENT yet.
+- Ask Claude to approve replacing that assertion and confirm preserving one attempt
+  per UTC day (today's interrupted row would block a retry until tomorrow).
+- Full suite: 398 files, 390 pass / 8 fail; 4,029 tests pass / 5 fail. Four assertions
+  and three EPERM suites are the documented Windows baseline; fifth assertion is above.
+- Isolated build PASS (.next-lg-b3-backups); F1 typecheck PASS, new F2 code also passed
+  build typecheck. Generated tsconfig includes removed. No new authenticated UI check.
+- Await Noe's action-time confirmation to send the prepared Claude message. No
+  reviewer approval inferred, no F2 commit/release, and no plan/runner implementation yet.
+
+### Claude follow-up and F2 completion, October 6, 2026
+- Noe relayed Claude's approval of F1 8184ed1 and permission to update F2's old
+  conflicting assertion while preserving fresh-lock double-run protection.
+- Updated existing test timestamps to one hour apart across UTC midnight, so the
+  lock itself (not the daily rule) must block the competing handle.
+- Separate recovery tests prove >2-hour interruption permits the next day's run,
+  exact-two-hour protection, competing claims, late-finisher safety and daily limits.
+- Owner status text and restore instructions now describe timeout recovery accurately.
+- The earlier unsent desktop question is superseded by this directly relayed decision.
+- Focused backup checks 29/29 PASS, typecheck PASS. Full checks/build will be rerun
+  for Batch 3's final state; F2 is its second commit, not a production release.

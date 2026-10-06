@@ -13,6 +13,7 @@ export type BackupRun = z.infer<typeof BackupRun>;
 export const BACKUP_ERRORS = {
   snapshot: 'Database snapshot failed.', package: 'Backup packaging failed.', upload: 'Backup upload failed.',
   verify: 'Backup verification failed.', prune: 'Backup retention failed.',
+  interrupted: 'Backup interrupted after more than two hours.',
 } as const;
 export type BackupError = keyof typeof BACKUP_ERRORS;
 function summary(db: Database.Database, now: Date) {
@@ -37,6 +38,9 @@ export function backupRepository(filename: string) {
     claim(now: Date, name: string): string | null {
       archiveName(name); const started = now.toISOString();
       return db.transaction(() => {
+        const cutoff = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
+        db.prepare("UPDATE backup_runs SET status='failed',finished_at=?,error_code='interrupted',error_message=? WHERE status='running' AND started_at < ?")
+          .run(started, BACKUP_ERRORS.interrupted, cutoff);
         if (db.prepare("SELECT id FROM backup_runs WHERE status='running' OR substr(started_at,1,10)=? LIMIT 1").get(started.slice(0, 10))) return null;
         const id = randomUUID();
         db.prepare("INSERT INTO backup_runs(id,started_at,status,archive_name) VALUES (?,?,'running',?)").run(id, started, name);
