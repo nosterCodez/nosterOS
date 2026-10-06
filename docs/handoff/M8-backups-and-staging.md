@@ -1,6 +1,6 @@
 # M8: Nightly backups and a staging copy
 
-Status: Batch 1 code complete; Noe waived review/staging gates for code-only production deployment; infrastructure/drills pending
+Status: Batch 1 code deployed to production with Noe's waiver; backups inactive; infrastructure/drills pending
 Review by Claude: yes (data safety, secrets)
 Queue position: 1 of the lead-gen program (M8 → M9 → M10 → M11 → M12)
 
@@ -287,3 +287,19 @@ before production.
 - Read-only Railway check confirms production follows main, no staged changes,
   and no OMEGA_BACKUP_* configuration. Backups will remain inactive after deploy.
 - Code verification is unchanged from the 20:14 report; deployment outcome pending.
+
+### Production deployment result: October 5, 2026, 20:25 CDT
+- Main fast-forwarded and pushed to `dec9a9da5384c3fbc3a19aa2a6c1003d244cbb4d`.
+- Railway deployment `655eadf8-ac73-4dce-8d3d-f46a69536201` SUCCESS at
+  2026-10-06T01:24:44.239Z; service nosteros-web, production, branch main.
+- Railway build passed; runtime reports Next ready in 103ms; initial log sample
+  has no startup error. This is a startup check, not extended runtime monitoring.
+- Anonymous HTTPS GET / and /settings/platform both returned HTTP 401 and
+  title "OmegaOS - Private" (site uses a middle-dot separator), as expected.
+  Private beta gate remains intact. No authenticated owner-panel smoke performed.
+- No Railway variables, secrets, resources, DNS, spending limits or credentials
+  changed. Backup variables absent before deploy; no cloud backup/drill performed.
+- M8 merge prerequisite for M9 is now satisfied. Batch 2 implementation remains
+  unstarted; global spending coordination still needs Claude's decision per M10.
+- This result is committed/pushed on the batch branch only to avoid a redundant
+  production deployment. Main stays at dec9a9d; unrelated dirty docs preserved.

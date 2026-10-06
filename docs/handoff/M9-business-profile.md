@@ -125,3 +125,9 @@ history. Everything in M10–M12 reads from this profile.
   Batch 1 results are in M8, not claimed as Batch 2 verification.
 - Next: Claude reviews M8; approved staging setup/checks; merge M8 as authorized;
   then create the Batch 2 branch from updated main and implement M9 with TDD.
+
+### Prerequisite update: October 5, 2026, 20:25 CDT
+- Noe subsequently waived the review/staging gates for the code-only release.
+  M8 is merged into main at dec9a9d and its Railway deployment is SUCCESS.
+- M9's merge prerequisite is resolved. M9 implementation has not started;
+  Batch 2's independent global-spend decision remains documented in M10.

@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 20:25 CDT: Batch 0/1 code live on main/origin/main `dec9a9d`, with Noe's explicit review/staging waiver.
+- Railway `655eadf8-ac73-4dce-8d3d-f46a69536201` SUCCESS at 2026-10-06T01:24:44.239Z; startup ready, no initial error.
+- Public / and /settings/platform both HTTP 401 with OmegaOS private gate; no authenticated UI smoke claimed.
+- No variables/secrets/resources/DNS changed; backups remain inactive and live backup/restore/staging work still pending.
+- M9's merge prerequisite resolved; Batch 2 not implemented, M10 global reservation architecture decision remains open.
+- Result report goes only to lg/b1-backups-staging to avoid another deploy; main remains dec9a9d; other-session files untouched.
+
 - Oct 5, 20:22 CDT: Noe superseded the deployment hold: "actully no deploy it , i waive it".
 - This explicitly waives Claude review/staging checks for the Batch 1 code-only production deployment.
 - Deploy Batch 0/1 through a fast-forward main push; no resource, variable, secret, DNS or paid-service changes authorized.
