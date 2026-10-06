@@ -1,5 +1,6 @@
 import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status';
 import type { ConnectorStatus } from '@/lib/connectors/types';
+import { assertOutboundAllowed } from '@/lib/outbound-guard';
 
 // ManyChat (Instagram DM automation). Real-ready: honest `not_configured` until
 // a key lands, live account handle once it does. One GET to /fb/page/getInfo per
@@ -61,6 +62,8 @@ export async function sendManyChatText(
   env: Record<string, string | undefined> = process.env,
   doFetch: typeof fetch = fetch,
 ): Promise<ManyChatSendResult> {
+  try { assertOutboundAllowed('manychat', env); }
+  catch { return { ok: false, detail: 'Outbound messages are disabled in this environment.' }; }
   const key = env.MANYCHAT_API_KEY;
   if (!key) return { ok: false, detail: 'MANYCHAT_API_KEY not set — connect ManyChat to send DMs.' };
   try {

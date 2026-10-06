@@ -27,6 +27,7 @@
  * instance, which is what "add them to the weekly call" means.
  */
 
+import { assertOutboundAllowed } from '@/lib/outbound-guard';
 export type GcalFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
 export type GcalWriteCreds = { clientId: string; clientSecret: string; refreshToken: string };
@@ -130,6 +131,9 @@ export async function addEventGuests(opts: {
   const sendUpdates = opts.sendUpdates ?? 'none';
   const fetchImpl = opts.fetchImpl ?? fetch;
   const { ok: valid, bad: rejected } = validEmails(emails);
+
+  try { if (sendUpdates !== 'none') assertOutboundAllowed('calendar'); }
+  catch { return { ok: false, added: [], alreadyPresent: [], rejected, error: 'Outbound messages are disabled in this environment.' }; }
 
   if (!creds) {
     return { ok: false, added: [], alreadyPresent: [], rejected, error: 'no Google Calendar credentials (GCAL_CLIENT_ID / GCAL_CLIENT_SECRET / GCAL_REFRESH_TOKEN)' };

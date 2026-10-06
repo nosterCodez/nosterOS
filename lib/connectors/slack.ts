@@ -1,5 +1,6 @@
 import { GATED, connected as gatedConnected } from '@/lib/connectors/demo-status';
 import { WebClient } from '@slack/web-api';
+import { assertOutboundAllowed } from '@/lib/outbound-guard';
 import type { ConnectorStatus } from '@/lib/connectors/types';
 
 export type SlackMessage = { channel: string; user: string; text: string; ts: string };
@@ -49,6 +50,8 @@ export async function sendSlackMessage(
   text: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<SlackSendResult> {
+  try { assertOutboundAllowed('slack', env); }
+  catch { return { ok: false, detail: 'Outbound messages are disabled in this environment.' }; }
   const slack = client(env);
   if (!slack) return { ok: false, detail: 'SLACK_BOT_TOKEN not set — add it under Connections → API keys' };
   try {

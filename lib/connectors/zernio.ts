@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { CRED_FILES, resolveCred } from '@/lib/operator-creds';
 import type { ConnectorStatus } from '@/lib/connectors/types';
+import { assertOutboundAllowed } from '@/lib/outbound-guard';
 
 /** Optional local account map. Generic and env-overridable: nothing here may
  *  depend on a path that exists only on one person's machine. */
@@ -339,6 +340,8 @@ export async function zernioPublish(input: {
   platforms: string[];
   scheduledFor?: string | null;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  try { assertOutboundAllowed('social'); }
+  catch { return { ok: false, error: 'Outbound messages are disabled in this environment.' }; }
   const key = zernioKey();
   if (!key) return { ok: false, error: 'ZERNIO_API_KEY not configured' };
   const base = readConfig().baseUrl ?? 'https://getlate.dev/api';
