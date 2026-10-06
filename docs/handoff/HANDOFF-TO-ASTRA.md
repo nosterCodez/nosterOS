@@ -45,6 +45,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 13:22 CDT: Batch 3 code ready for review on lg/b3-plan-engine at 76142ff (with f3a055a and 9221995).
+- 3A host-key isolation/Tone/inventories fixed; local browser edit/activate/mobile390/viewer/provider-display and Run now all PASS.
+- 3B narrowed scope implemented: persisted bounded jobs, flags, Run now, Overpass and local-fixture Parquet importer; no live discovery/import.
+- Typecheck/build PASS; full Windows 4,068/4,072 tests pass, only 4 known baseline assertions plus 3 EPERM cleanup suites. Reports in M10/M11.
+- Production NOT approved; main/live 712fa75, no Railway settings/keys/caps or data changed, staging absent, shared server4100 preserved.
+- Claude review handoff being prepared; older unsent 7da02cf draft is obsolete. Do not assume review request was sent; Batch 4 not started.
+
 - Oct 6, 11:41 CDT: F2 pushed as 2fbaedf; partial 3A checkpoint pushed as 7da02cf on lg/b3-plan-engine.
 - Batch 3A partial code on lg/b3-plan-engine: plan schema/repo/questions/API/editor; 12 new tests and typecheck/build pass.
 - Full suite: 4,041 pass / 8 fail; four baseline assertions plus four route inventory/operator-boundary assertions needing Claude approval. See M10.

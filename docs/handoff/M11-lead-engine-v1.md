@@ -218,3 +218,59 @@ personalize → Funnel + Usage. Deploy each step to **staging** (M8) freely.
   remain unimplemented, as do jobs/runner/flags/Run now; no staging row count exists.
 - Staging is still not provisioned. Engine flags, workspace allowlist, credentials,
   spending caps and shared/production data remain untouched. No real lead searching.
+
+### Claude scope decision, October 6, 2026 (relayed by Noe)
+- Build runner, flags, Run now, LeadSource and local Parquet fixture now.
+- hyparquet is approved if no install scripts; do not obtain Foursquare access,
+  accept terms, use mirrors or use the declined Hugging Face route.
+- Move Overpass from Batch 6 into 3B: one query per city/run, 25s timeout,
+  ODbL attribution and polite User-Agent. Noe handles Places Portal access.
+- Request review after Batch 3. No production approval granted.
+
+### Batch 3B report: October 6, 2026, 13:22 CDT
+- COMPLETE for the narrowed code/fixture scope, awaiting review. Source/import
+  commit 9221995; runner/API/UI commit 76142ff on lg/b3-plan-engine.
+- Workspace lead_runs/lead_jobs persist idempotent schedule/item keys, attempts,
+  backoff, lease ownership, interrupted recovery and public candidate results.
+  Old lease owners cannot complete; stale plans/profiles do not run.
+- Internal-only tick wiring preserves the existing JSON response contract.
+  Flags default off with explicit workspace allowlist; round-robin bounded to
+  25 jobs / 20s, in-process overlap guard, 3 manual runs/UTC day, weekly cap
+  checked again atomically on completion. No paid provider or sending stage.
+- Owner/admin POST /api/leads/runs queues only; viewers read status. Session,
+  origin, role, active workspace/header and profile checks covered by tests.
+  /leads/plan shows private-beta state, Run now, recent runs and attribution.
+- Overpass uses fixed HTTPS endpoint, no redirects, one POST query/city/run,
+  server timeout 25s (runner aborts at its stricter 20s), 2 MiB response cap,
+  escaped city/state, bounded elements and rejection of ambiguous cities.
+  Dispatched Overpass jobs are not retried within that run, including crashes;
+  other retryable jobs get at most 3 attempts with 1m/10m backoff.
+- Sources currently return raw city-boundary candidates, not qualified leads.
+  Search phrases are retained on jobs; category/radius filtering, suppression,
+  scoring, website reading and publication remain later steps. UI states limits.
+- Parquet importer accepts an explicit LOCAL authorized file, bbox and release
+  date; no remote downloader/token use. Only public fields go to shared/places.db.
+  60 MiB file cap and 80% of 500 MiB data-volume guard; atomic publication refuses
+  replacement of existing imports. Monthly refresh needs a reviewed replacement
+  procedure rather than silently deleting existing data.
+- Synthetic original two-row fixture imports exactly 1 row inside bbox and
+  excludes the outside row. Tests validate date, source output, storage refusal,
+  preserved existing import, no workspace column and no network import.
+  No full RGV extract, live Overpass request, staging counts or lead quality
+  metrics claimed. Staging infrastructure remains unprovisioned.
+- Dependency: hyparquet 1.31.2 pinned, pure JS, MIT, no dependencies and no
+  preinstall/install/postinstall scripts. Installed with --ignore-scripts.
+  Package contains maintainer prepare=build:types; this did not execute.
+  No new account, access request, third-party terms or name/logo consent.
+- Source references: https://github.com/hyparam/hyparquet and
+  https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL . Prior Foursquare
+  access/license findings above still apply; no Google Places work in this batch.
+- Typecheck and isolated build PASS. Full suite: 399/406 files pass; 4,068/4,072
+  tests pass, only documented Windows baseline failures (see M10 report).
+  18 new 3B tests cover adapters/import, jobs, API and runtime; existing tick
+  tests additionally assert discovery executes only after internal auth.
+- Browser real local queue PASS plus M10 acceptance. No fixture job executed
+  a live source; background tick/outbound disabled and no vault keys supplied.
+- Review requested for source limits, leases/retries, cap behavior, workspace
+  boundaries and dependency. No main push/deploy, configuration/credential/cap
+  changes, real emails, purchases or edits to existing business data.

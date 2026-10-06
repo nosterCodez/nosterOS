@@ -351,3 +351,38 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - Claude checkpoint send confirmation requested in chat; do not assume sent or reviewed.
 - Partial implementation/report pushed as 7da02cf. Updated decision request replaces
   the obsolete F2 draft in Claude desktop; UNSENT pending action-time confirmation.
+
+### Claude checkpoint decisions, October 6, 2026 (relayed by Noe)
+- Add smoke inventories and exempt only /api/leads/plan from the host/operator
+  audit after proving non-operator empty-vault requests ignore both host AI keys,
+  make no provider fetch and write no spending rows. Keep other boundary checks.
+- Reset browser retry count; explicitly label Tone and locate by role/name.
+  Finish edit/activate, 390x844, viewer and mocked-provider display checks.
+- Split 3B into runner/flags/Run now/local Parquet fixture plus Overpass; M11
+  records that scope. No production approval for this checkpoint.
+
+### Batch 3A report: October 6, 2026, 13:22 CDT
+- COMPLETE for review on lg/b3-plan-engine: f3a055a adds the explicit real-helper
+  empty-vault/host-key test, Tone id/htmlFor/aria-label, and page inventory.
+  76142ff completes API inventory alongside the new discovery endpoint.
+- resolveCred already reads workspace vault only; no host fallback was changed.
+  The new route test uses actual runLeadAi with an isolated spending ledger:
+  rules result, zero provider calls, zero rows for both workspace IDs.
+- Typecheck PASS; isolated production build PASS after final auth/tick fixes.
+  Final full Windows suite: 406 files, 399 pass / 7 fail; 4,072 tests,
+  4,068 pass / 4 fail. Only known Windows baseline failures remain:
+  interaction-layer (BrainCore path), paths, skills-plugins, superset-dispatch;
+  lead-magnet-actions, lead-magnets-route, roadmap-mock-5h EPERM cleanup suites.
+- Browser PASS on isolated port 4118, real local auth/API/DB: generate, Skip,
+  Tone edit, activation, preference persistence/reload, stale-profile rejection,
+  viewer read-only, Run now queueing, keyboard and reduced-motion checks.
+  1440/1024/390x844/320 widths have no horizontal overflow; screenshots reviewed.
+  Provider/cost UI was response-mocked; no real AI call or cost incurred.
+- Artifacts: ignored .local/lg-b3-browser.ts, lg-b3-desktop.png,
+  lg-b3-mobile.png; build/test logs lg-b3-build-final.log and
+  lg-b3-tests-reviewed.log. Fixture server stopped; shared 4100 untouched.
+- New auth-audit and tick-response failures found during development were
+  fixed in implementation, not by weakening existing assertions. All pass now.
+- No staging provisioned or production deployed. Main/live remains 712fa75.
+  No Railway settings, credentials, spending caps, real messages or data changed.
+- Ready for architect review, NOT approved for production. Batch 4 not started.
