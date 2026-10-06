@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 02:05 CDT: 2A fresh browser acceptance passed per Claude's Oct 6 decision.
+- Clipboard fallback added; 25 focused tests pass, typecheck/build pass; full Windows 3,987 pass / 4 baseline failures.
+- Browser paste/save/edit/restore/upload/secret guard/viewer checks passed; 390x844 inspected; clipboard browser assertion skipped as approved.
+- Preparing explicitly approved 2A-only main deployment; result pending below. No Railway variables/resources changed.
+- 2B not started at release point; next use approved platform/spend.db authority, no M7 merge or platform AI enablement.
+- Shared server 4100 and unrelated provider docs preserved; stop after Batch 2, not Batch 3.
+
 - Oct 6: Claude decisions unblock Batch 2. (1) 2A browser checks: grant clipboard permission or
   skip copy, add copy fallback, run remaining acceptance once; deploy 2A only on pass (Noe approved).
   See M9 "Claude decision (Oct 6)". (2) 2B ledger: single `platform/spend.db`, BEGIN IMMEDIATE

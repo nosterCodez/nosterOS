@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Markdown } from '@/components/Markdown';
 import { BusinessProfile, ProfileVersion, PROFILE_SECTIONS } from '@/lib/business-profile/schema';
 import { PROFILE_PROMPT } from '@/lib/business-profile/prompt';
+import { copyProfilePrompt } from '@/lib/business-profile/copy';
 import { parseBusinessProfile, ProfileInputError } from '@/lib/business-profile/parser';
 const State = z.object({ current: BusinessProfile.nullable(), versions: z.array(ProfileVersion).max(20) });
 const button = 'inline-flex items-center justify-center gap-2 rounded-ctl border border-os-border-strong px-3 py-2 text-xs text-os-text hover:bg-os-surface disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-os-accent';
@@ -21,6 +22,8 @@ export function BusinessProfileEditor(props: Props) {
   const [serverLines, setServerLines] = useState<number[]>([]);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const promptDetails = useRef<HTMLDetailsElement>(null);
+  const promptField = useRef<HTMLTextAreaElement>(null);
   const preview = useMemo(() => {
     try { return { parsed: parseBusinessProfile(draft), error: '', lines: [] as number[] }; }
     catch (e) { return { parsed: null, error: e instanceof ProfileInputError ? e.message : 'Invalid profile.', lines: e instanceof ProfileInputError ? e.lines : [] }; }
@@ -76,12 +79,11 @@ export function BusinessProfileEditor(props: Props) {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 id="profile-prompt-title" className="text-base font-semibold">01 / Copy the prompt</h2>
           <button type="button" className={`pressable ${button}`} onClick={async () => {
-            try { await navigator.clipboard.writeText(PROFILE_PROMPT); setMessage('Prompt copied.'); setError(''); }
-            catch { setError('Clipboard unavailable. Select the prompt text to copy it.'); }
+            setError(''); setMessage(await copyProfilePrompt(promptDetails.current, promptField.current));
           }}><Copy size={15} aria-hidden="true" />Copy prompt</button>
         </div>
-        <details><summary className="cursor-pointer text-sm text-os-muted">Business profile prompt</summary>
-          <textarea aria-label="Business profile prompt" readOnly value={PROFILE_PROMPT} rows={10} className={`${inputStyle} mt-3 resize-y`} />
+        <details ref={promptDetails}><summary className="cursor-pointer text-sm text-os-muted">Business profile prompt</summary>
+          <textarea ref={promptField} aria-label="Business profile prompt" readOnly value={PROFILE_PROMPT} rows={10} className={`${inputStyle} mt-3 resize-y`} />
         </details>
         <div className="mt-3 flex flex-wrap gap-5 text-xs underline underline-offset-4">
           <a href="https://claude.ai/new" target="_blank" rel="noopener noreferrer">Open Claude</a>

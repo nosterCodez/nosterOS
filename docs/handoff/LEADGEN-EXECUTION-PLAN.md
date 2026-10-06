@@ -147,6 +147,9 @@ Acceptance per M9 "Done when". Staging smoke: save a fixture profile in a
 staging workspace, restore an older version.
 
 ### Step 2B: Shared foundations for M10/M11 (subset of M10)
+> **Superseded in part (Oct 6):** the ledger lives in `DATA_DIR/platform/spend.db`, not a
+> workspace table. Follow "Claude decision (Oct 6, 2026)" at the end of M10 for schema,
+> reservation algorithm, pools/caps and the M7 boundary.
 - `lib/spend/ledger.ts` + workspace table `spend_ledger`
   (`id`, `feature`, `provider`, `estimated_usd`, `actual_usd`, `status`:
   reserved|committed|released, `month`, `created_at`) and monthly cap lookup

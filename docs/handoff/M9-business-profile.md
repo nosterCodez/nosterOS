@@ -200,3 +200,20 @@ headless Chrome denies `navigator.clipboard.writeText` unless permission is gran
    main to the Batch 2A commit(s) only (2B stays on its branch until its own
    checks pass), deploy, verify the private 401 page, and record the deployment
    ID. If step 3 fails, don't deploy; report instead.
+
+### Batch 2A acceptance: October 6, 2026, 02:05 CDT
+- Implemented approved clipboard fallback: expand prompt, focus/select text, show
+  manual-copy instruction. Three new tests mock navigator.clipboard success,
+  rejection and absence; all 25 profile tests pass (red run preceded implementation).
+- Fresh isolated Chrome acceptance PASSED: paste/checklist/save, edit/re-save,
+  restore-as-new-version, .md upload, secret upload blocked, viewer read-only.
+  Copy browser wait skipped per decision; clipboard behavior covered by unit tests.
+- Mobile 390x844 screenshot inspected, no horizontal overflow; tabbed through
+  Steps 1-3 with reduced motion. Real local auth/API/DB with intercepted mail only.
+  Temporary server 4117 stopped; shared dev server 4100 untouched.
+- Typecheck/build PASS. Full Windows: 384/391 files pass; 3,987/3,991 tests pass.
+  Baseline only: BrainCore path assertion in interaction-layer, paths,
+  skills-plugins, superset-dispatch; EPERM cleanup in lead-magnet-actions,
+  lead-magnets-route, roadmap-mock-5h. No Linux verification claimed.
+- Noe approved 2A deployment on acceptance pass; promoting 2A only. 2B remains
+  unimplemented at this release point. Railway deployment result follows.
