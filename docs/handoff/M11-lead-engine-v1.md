@@ -274,3 +274,30 @@ personalize → Funnel + Usage. Deploy each step to **staging** (M8) freely.
 - Review requested for source limits, leases/retries, cap behavior, workspace
   boundaries and dependency. No main push/deploy, configuration/credential/cap
   changes, real emails, purchases or edits to existing business data.
+
+### Places Portal follow-up: October 6, 2026, 13:34 CDT
+- Noe says the Portal token is set as OMEGA_FOURSQUARE_PLACES_TOKEN and
+  authorizes wiring the importer and a first RGV import after fixture tests.
+- Railway describe-service confirms that VARIABLE NAME exists on production
+  nosteros-web; no variable values fetched, echoed, logged or saved.
+- Official access docs and public Portal OS Places > Access Data > DuckDB
+  inspected: https://docs.foursquare.com/data-products/docs/access-fsq-os-places
+  and https://places.foursquare.com/dataset/OS%20Places/details .
+- Portal specifies DuckDB >=1.4.0, httpfs, an in-memory ICEBERG secret, catalog
+  https://catalog.h3-hub.foursquare.com/iceberg, warehouse places and table
+  places.datasets.places_os. This is not a bearer-authenticated Parquet URL.
+- Current approved hyparquet reader handles local Parquet only, not Iceberg
+  catalog/manifest planning. No DuckDB/Iceberg dependency is approved or installed.
+- STOP for architect dependency/runtime decision under AGENTS.md. Proposed:
+  dedicated import-only DuckDB adapter, pinned engine/extensions, no persistent
+  secret, bounded regional query/export, then existing guarded SQLite importer.
+  Never pass token in CLI arguments, print raw SQL/provider errors, or persist it.
+- Runtime execution also unresolved: Railway tools expose no remote command
+  execution, local Railway CLI is absent, and Batch 3 code is not on production.
+  Do not deploy the whole unreviewed batch or provision a paid service to run it.
+  Need reviewed one-off execution/transfer plan with existing volume limits.
+- Existing local-fixture checks rerun: 2 files / 6 tests PASS; synthetic bbox
+  import selects 1 row. These are NOT real RGV import numbers.
+- Real RGV import NOT RUN: row count and file size unavailable, not zero.
+  No new code/dependency/account, secret read, terms acceptance, data write,
+  Railway setting or production deployment. Existing data/server preserved.

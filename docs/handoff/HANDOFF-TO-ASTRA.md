@@ -45,6 +45,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 13:34 CDT: Noe authorizes Portal-token importer/RGV import; variable NAME confirmed in Railway, value never fetched.
+- Portal uses Iceberg catalog, not a Parquet URL; official DuckDB recipe recorded in M11 follow-up.
+- Await Claude approval of import-only DuckDB/extension dependency and a one-off runtime execution plan; no Railway CLI/runtime-exec tool here.
+- Local importer/source fixture checks 6/6 PASS; real RGV import NOT RUN, count/size unavailable.
+- Batch 3 remains review-only at ca32329; no production push, settings, secrets or real/shared data changed.
+- M11 records exact blocker/proposed approach. Older unsent Claude draft remains obsolete; review send confirmation still pending.
+
 - Oct 6, 13:22 CDT: Batch 3 code ready for review on lg/b3-plan-engine at 76142ff (with f3a055a and 9221995).
 - 3A host-key isolation/Tone/inventories fixed; local browser edit/activate/mobile390/viewer/provider-display and Run now all PASS.
 - 3B narrowed scope implemented: persisted bounded jobs, flags, Run now, Overpass and local-fixture Parquet importer; no live discovery/import.
