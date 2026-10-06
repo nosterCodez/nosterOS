@@ -416,3 +416,35 @@ No UI in 2B except a hidden dev route is NOT allowed. Foundations only.
 | 8 | templates, approvals | legal text, secret, mailing address |
 | 9 | sending, replies | sending domain + mailbox |
 | 10 | outcomes, launch | first 5-email send approval |
+
+## Report
+
+### Batch 0 report: October 5, 2026, 19:02 CDT
+- Steps: A queue handoff docs = done; B baseline checks + disk-usage observation = done.
+- Branch / last implementation commit: `lg/b0-docs` @ `5c8d861`; report commit follows.
+  Base: local main `52dad03` (Etsy report), origin/main `d4d4689`; fetch/pull ff-only
+  confirmed current. Application code is unchanged from main for this baseline.
+- Typecheck: clean. Tests: 376 files, 369 passed / 7 failed; 3,925 tests,
+  3,921 passed / 4 failed. Only known Windows baseline failures: interaction-layer
+  (BrainCore path), paths, skills-plugins, superset-dispatch; EPERM cleanup suites
+  lead-magnet-actions, lead-magnets-route, roadmap-mock-5h. No baseline fixes made.
+- Build: passes using `.next-lg-b0` and `.local/lg-b0-build-data`; shared dev server
+  on 4100 untouched. Removed only generated tsconfig includes after completion.
+  Logs: `.local/lg-b0-test-output.txt`, `.local/lg-b0-build-output.txt` (not committed).
+- Disk: Railway production service DISK_USAGE_GB current/max 0.060473344 GB over
+  61 samples in the prior hour, about 60.5 MB / 12.1% of the documented 500 MB cap.
+  This is service disk telemetry, not a separate filesystem inventory of /data;
+  no threshold breach indicated. No data added or removed.
+- Staging: not deployed; environment/resources not provisioned by this batch.
+- Noe actions needed: 1. Say "continue" to start Batch 1. Infrastructure approvals
+  and exact costs will be requested in Batch 1's report before provisioning anything.
+- Decisions beyond spec: grouped preflight's three numbered items into two steps
+  (docs; baseline plus disk). Current chat explicitly says stop after every batch,
+  so it overrides Batch 0's written no-wait exception. Batch 1 has not started.
+- Self-review: docs-only diff; no credential patterns found; no routes, schemas,
+  network code, dependencies, legal copy or security behavior changed. Other-session
+  provider handoff files left untouched. Only this branch is authorized for push.
+- Risks / open questions for Claude: no new engineering blocker; Windows baseline
+  is not a Linux verification. Fallback architect authority has not been activated.
+- Ready for production? No production release requested; queue/preflight only.
+  Main/production untouched; Batch 0 docs remain for the later Batch 1 approval.

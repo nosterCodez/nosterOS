@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 19:02 CDT: Batch 0 done on `lg/b0-docs`; queue commit `5c8d861`, report follows.
+- Typecheck/build pass; 376 test files: 369 pass / 7 baseline fail; tests 3,921 pass / 4 baseline fail.
+- Railway service disk 0.060473344 GB (~60.5 MB), below documented 500 MB / 80% threshold.
+- Docs-only branch push; no main push, deploy, resource, credential or variable changes.
+- Full baseline failures, self-review and plan conflict recorded in LEADGEN-EXECUTION-PLAN.md Report.
+- STOP after Batch 0 per current chat; await "continue", then base Batch 1 on `lg/b0-docs`.
+
 - Oct 5, 18:07 CDT: M6k deployed with Noe's explicit approval; main/origin/main
   code d4d4689. Railway 39b605ec-7023-41ba-a127-2e4de43e420e SUCCESS at 23:06:03 UTC.
 - Added owner/admin-only fixed Etsy key ping and masked error_description support.
