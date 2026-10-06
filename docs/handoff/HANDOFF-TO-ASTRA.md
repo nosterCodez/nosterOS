@@ -45,6 +45,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 10:32 CDT: Batch 2B deployed to main 712fa75 under Claude approval relayed by Noe.
+- Railway a32296db-4808-4547-9181-36ddbab60f8d SUCCESS; post-deploy public HTTP 401 / OmegaOS Private verified.
+- Batch 3 begins on lg/b3-plan-engine from deployed main; F1 then F2 must be its first commits.
+- No Railway configuration, credentials, paid caps, platform AI or cloud backup enablement changed.
+- New delegation in AGENTS.md lets Claude approve specific lead-gen production commits; reserved decisions still require Noe.
+- Batch 3 implementation/report/review pending; unrelated provider docs and server 4100 preserved.
+
 - Oct 6, 02:32 CDT: Noe requested Batch 3 if prerequisites are clear; preflight only this turn.
 - Refreshed origin: main remains 72cb179; Batch 2B remains lg/b2-business-profile at f784e04.
 - No Claude acceptance of 2B is recorded in the current M10 spec or handoff.

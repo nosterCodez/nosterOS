@@ -297,3 +297,10 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - Batch 3 begins with the two backup fixes F1/F2 recorded in M8, one commit each.
 - Future lead-gen commits explicitly approved for production by Claude may
   be released under Noe's delegation in AGENTS.md; reserved decisions stay with Noe.
+
+### Batch 2B release: October 6, 2026, 10:32 CDT
+- Main/origin/main fast-forwarded to 712fa75: approved 2B code plus documentation.
+- Railway deployment a32296db-4808-4547-9181-36ddbab60f8d SUCCESS at 15:32:00 UTC.
+- After SUCCESS, public https://os.noepenaa.com returned HTTP 401 with title OmegaOS Private.
+- No Railway variables, keys, resources or caps changed. Backup configuration and platform AI remain off.
+- Batch 3 branch lg/b3-plan-engine created from this main release; no additional release implied.

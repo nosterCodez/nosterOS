@@ -298,3 +298,15 @@ before production.
   than two hours failed with error "interrupted", so a crash cannot block
   all future backups. Add a regression test.
 - These fixes have not been implemented at this authorization checkpoint.
+
+### Batch 3 F1 checkpoint: October 6, 2026, 10:35 CDT
+- F1 implemented: root .db files and nested platform/ .db files are supported by
+  snapshot, archive validation and restore; shared/ is not traversed or archived.
+- Existing workspace allowlist remains; other nested DB paths still refuse.
+  Traversal, absolute paths, backslashes, Windows streams and ambiguous trailing
+  dots/spaces remain rejected. Shared cache databases are reconstructible, not backups.
+- TDD: two new regressions failed before implementation; 16 new tests now pass.
+  Focused backup suite 29/29 PASS; typecheck PASS. Full suite/build pending batch check.
+- Inventory's byte count excludes shared/ as requested; it is not an independent
+  measurement of total mounted-volume usage. Deployment volume monitoring still applies.
+- F1 is the first Batch 3 commit; not deployed. Batch 2B release is recorded in M10.

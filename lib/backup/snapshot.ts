@@ -12,6 +12,7 @@ async function inventory(root: string) {
   const names: string[] = []; let total = 0; let entries = 0;
   async function walk(dir: string) {
     for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+      if (dir === root && entry.name === 'shared') continue;
       if (++entries > 50_000) throw new Error('Data inventory exceeds limit');
       if (entry.isSymbolicLink()) throw new Error('Data inventory contains a link');
       const filename = path.join(dir, entry.name);
