@@ -10,6 +10,20 @@ below is historical and no longer grants architect authority to Astra.
 and session instructions keep working. Read this current section before the
 historical roadmap; old "in progress" and "next" labels below are not current.
 
+## NEXT QUEUE - lead-gen program (Claude, Oct 5 evening, approved by Noe)
+
+Noe approved queueing this. Work in order; each spec is self-contained:
+1. `M8-backups-and-staging.md`: encrypted nightly backups, restore drill, staging env.
+2. `M9-business-profile.md`: copy-prompt → paste-markdown Business Profile.
+3. `M10-lead-plan-and-preferences.md`: plan, max 6 questions, stored preferences, spend ledger.
+4. `M11-lead-engine-v1.md`: find → read site → score → capped paid upgrade → openers; no sending.
+5. `M12-outreach-approval-and-sending.md`: approval queue, compliant sending, reply tracking.
+M7 (sign-in first) may run in parallel if files don't overlap.
+From M8 on, deploy feature work to **staging** freely; `main`/production still needs Noe's yes.
+Paid resources, variables, legal text and first real sends stop for Noe (see each spec).
+If Claude is unavailable and Noe says so in chat, follow `ARCHITECT-FALLBACK.md`.
+Etsy: M6k confirmed the production key works and the shop syncs (66739608); no Etsy work queued.
+
 ## Current checkout and deployment
 
 - Oct 5, 18:07 CDT: M6k deployed with Noe's explicit approval; main/origin/main
