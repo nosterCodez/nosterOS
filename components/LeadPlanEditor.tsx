@@ -92,7 +92,7 @@ export function LeadPlanEditor({ workspaceId, canEdit, canActivate, initial }: P
             {(['name', 'oneLiner', 'bestFor'] as const).map(key => <label key={key} className="min-w-0 text-xs text-os-muted">{key === 'oneLiner' ? 'One-line angle' : key === 'bestFor' ? 'Best for' : 'Angle name'}<input className={input} maxLength={key === 'name' ? 100 : 200} value={angle[key]} onChange={e => change('angles', draft.angles.map((a, n) => n === i ? { ...a, [key]: e.target.value } : a))} /></label>)}
             {canEdit && <button className={`pressable ${button} self-end justify-self-start`} title="Remove angle" aria-label={`Remove angle ${i + 1}`} onClick={() => change('angles', draft.angles.filter((_, n) => n !== i))}><Trash2 size={16} /></button>}
           </div>)}
-          <label className="block text-xs text-os-muted">Tone<textarea className={input} rows={2} maxLength={300} value={draft.tone} onChange={e => change('tone', e.target.value)} /></label>
+          <label htmlFor="lead-plan-tone" className="block text-xs text-os-muted">Tone<textarea id="lead-plan-tone" aria-label="Tone" className={input} rows={2} maxLength={300} value={draft.tone} onChange={e => change('tone', e.target.value)} /></label>
           <div className="grid min-w-0 gap-3 md:grid-cols-3">{(['businessName', 'website', 'mailingAddress'] as const).map(key => <label key={key} className="min-w-0 text-xs text-os-muted">{key === 'businessName' ? 'Sender business name' : key === 'mailingAddress' ? 'Mailing address' : 'Website'}<input className={input} maxLength={key === 'businessName' ? 200 : 500} value={draft.senderIdentity[key]} onChange={e => change('senderIdentity', { ...draft.senderIdentity, [key]: e.target.value })} /></label>)}</div>
         </section>
       </fieldset>

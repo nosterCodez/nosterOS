@@ -50,6 +50,7 @@ type PageEntry = {
 
 // Every app/**/page.tsx, with the props each needs to be invoked.
 const PAGES: PageEntry[] = [
+  { file: 'leads/plan/page.tsx', load: () => import('@/app/leads/plan/page') },
   { file: 'sign-in/page.tsx', load: () => import('@/app/sign-in/page'), props: { searchParams: Promise.resolve({}) } },
   { file: 'onboarding/page.tsx', load: () => import('@/app/onboarding/page') },
   { file: 'accept-invitation/page.tsx', load: () => import('@/app/accept-invitation/page'), props: { searchParams: Promise.resolve({ id: 'smoke-invite' }) } },

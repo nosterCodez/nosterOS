@@ -4,7 +4,9 @@ import { expect, test, vi } from 'vitest';
 import { appEntries, connectorDependency } from './connector-audit-helper';
 import { apiOperatorWorkspace, operatorWorkspaceForPage } from '@/lib/session';
 
-const entries = appEntries().filter(file => connectorDependency(file));
+// Workspace-only credential access is exercised end-to-end in lead-plan-api.test.ts.
+const workspaceRoutes = new Set(['app/api/leads/plan/route.ts']);
+const entries = appEntries().filter(file => connectorDependency(file) && !workspaceRoutes.has(file));
 const scopedDashboards = new Set(['app/page.tsx', 'app/analytics/page.tsx', 'app/finances/page.tsx', 'app/social/page.tsx']);
 test('reviewed cloud adapters cannot fall back to operator credentials or host files', () => {
   for (const file of ['lib/cloud-adapters.ts', 'lib/cloud-oauth.ts']) {

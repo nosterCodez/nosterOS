@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { openDb } from '@/lib/db';
+import { openSpendLedger } from '@/lib/spend/ledger';
 import { GET, POST } from '@/app/api/leads/plan/route';
 vi.unmock('@/lib/session');
 const auth = vi.hoisted(() => ({ session: vi.fn(), member: vi.fn(), organization: vi.fn(), open: vi.fn(), ai: vi.fn() }));
@@ -55,4 +56,27 @@ test('generation refuses a missing profile and rechecks membership after the AI 
 test('profile changes during generation discard the outdated result', async () => {
   auth.ai.mockImplementation(async () => { dbs.get(A)!.businessProfiles.save('## Business overview\nChanged', 'user'); return { value: null, generatedBy: 'rules', costUsd: 0 }; });
   expect((await POST(request())).status).toBe(409); expect(dbs.get(A)!.leadPlans.latest()).toBeNull();
+});
+
+test('non-operator workspace with an empty vault cannot use host AI keys or write spend', async () => {
+  vi.stubEnv('OPENAI_API_KEY', 'host-openai-must-not-be-used');
+  vi.stubEnv('ANTHROPIC_API_KEY', 'host-anthropic-must-not-be-used');
+  identity(B, 'owner');
+  dbs.get(B)!.businessProfiles.save('## Business overview\nClient fixture\n## Service area\nEdinburg', 'user');
+  expect(dbs.get(B)!.connectionRecords.all()).toEqual([]);
+  const ledger = openSpendLedger(':memory:');
+  const provider = vi.fn(() => { throw new Error('Host credentials reached provider'); });
+  vi.stubGlobal('fetch', provider);
+  try {
+    const real = await vi.importActual<typeof import('@/lib/ai/lead-ai')>('@/lib/ai/lead-ai');
+    auth.ai.mockImplementation((ctx, input) => real.runLeadAi(ctx, input, ledger));
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    const state = await response.json();
+    expect(state.latest.generatedBy).toBe('rules');
+    expect(state.generation.costUsd).toBe(0);
+    expect(provider).not.toHaveBeenCalled();
+    expect(ledger.forWorkspace(B).rows()).toEqual([]);
+    expect(ledger.forWorkspace(A).rows()).toEqual([]);
+  } finally { ledger.close(); vi.unstubAllGlobals(); }
 });
