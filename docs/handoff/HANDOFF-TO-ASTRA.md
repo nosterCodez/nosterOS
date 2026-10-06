@@ -45,6 +45,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 11:38 CDT: F2 pushed as 2fbaedf after Claude's explicit approval; fresh-lock protection remains.
+- Batch 3A partial code on lg/b3-plan-engine: plan schema/repo/questions/API/editor; 12 new tests and typecheck/build pass.
+- Full suite: 4,041 pass / 8 fail; four baseline assertions plus four route inventory/operator-boundary assertions needing Claude approval. See M10.
+- Browser generation/Skip passed; exact Tone locator failed twice (nested textarea value in label). Stop rule reached; edit/activation/mobile acceptance incomplete.
+- 3B blocked on Foursquare gated Portal/Hugging Face access and name/logo consent; no signup, dependency, runner/import or staging changes. See M11.
+- Review/decision send confirmation pending; old F2 draft superseded. Main/live remains 712fa75; no new deployment. Preserve unrelated docs and server 4100.
+
 - Oct 6, 11:11 CDT: Claude approved F1 8184ed1 and F2's conflicting test revision via Noe's chat.
 - Fresh-lock test now spans midnight with only one hour elapsed; separate >2-hour recovery tests retained.
 - F2 focused checks 29/29 PASS and typecheck PASS; full batch verification follows. F2 is the second Batch 3 commit.

@@ -304,3 +304,48 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - After SUCCESS, public https://os.noepenaa.com returned HTTP 401 with title OmegaOS Private.
 - No Railway variables, keys, resources or caps changed. Backup configuration and platform AI remain off.
 - Batch 3 branch lg/b3-plan-engine created from this main release; no additional release implied.
+
+### Batch 3 checkpoint: October 6, 2026, 11:38 CDT
+- Step 3A PARTIAL: schema/repositories, rules + structured AI plan orchestration,
+  fixed gap questions (maximum six, no custom questions), preferences, guarded
+  API and /leads/plan editor implemented on lg/b3-plan-engine after F2 2fbaedf.
+- Workspace lead_plans and lead_preferences are separate from the platform
+  spending ledger. Edits/answers create draft versions; activation is owner/admin
+  only, archives the prior active plan, and refuses stale profiles/empty cities.
+- Generation uses the approved 2B AI helper; unknown signals are dropped,
+  rules fallback is labeled, paid lookup default remains zero. Saved preferences
+  win, including edits made while generation awaits a provider. No cap writes.
+- API rechecks membership and workspace after body parsing and after generation;
+  a changed profile discards the generated result. No raw provider errors emitted.
+- UI has inline target/exclusion/signal/angle/sender edits, Skip/defaults,
+  active/latest status, profile-changed warning, provider and current-session cost.
+  Generation cost is not added to plan storage; ledger remains usage authority.
+- TDD: new foundation tests first failed on missing modules; eight foundation
+  tests pass. Four API tests pass: rules flow, isolation, roles/origin/input,
+  lost membership and changed profile. Corrected missing second-workspace profile
+  fixture without changing its cross-workspace 404 expectation.
+- Typecheck PASS; isolated production build PASS (.next-lg-b3). Full Windows
+  suite: 401 files, 391 pass / 10 fail; 4,049 tests, 4,041 pass / 8 fail.
+- Four baseline assertions: interaction-layer BrainCore path, paths,
+  skills-plugins, superset-dispatch. Three baseline EPERM cleanup suites:
+  lead-magnet-actions, lead-magnets-route, roadmap-mock-5h.
+- Four NEW assertions need architect decision: smoke page/API inventories omit
+  the new routes; connector-boundaries classifies /api/leads/plan as operator-only
+  through its AI dependency and expects an operator guard. M10 instead specifies
+  workspace access. Do not add an operator restriction or exempt the route silently.
+  Request approval to cover it with explicit workspace-vault/auth tests while
+  retaining host/operator boundary coverage, and add the smoke inventory entries.
+- Browser acceptance PARTIAL: isolated local auth/API/DB on 4118, outbound
+  disabled, no vault keys. Rules generation, questions and Skip/default persistence
+  passed. Edit/activate stopped twice at exact getByLabel('Tone') locator.
+  Diagnostic label text is 'ToneDirect, respectful and helpful'; screenshot shows
+  the field and coherent desktop layout. Likely nested-textarea label matching;
+  request permission to resume after the two-failure stop, fix explicit labeling
+  or locator, and finish activation, mobile, viewer and mocked-provider UI checks.
+- Ignored fixture .local/lg-b3-browser.ts and screenshot lg-b3-before-edit.png
+  retained; fixture server stopped; shared port 4100 untouched. No mobile pass claimed.
+- Step 3B BLOCKED at current Foursquare access requirements; see M11 checkpoint.
+  No runner/import implementation or dependency added. No staging infrastructure.
+- Not ready for production; no main push, deployment, settings/keys, purchases,
+  spending changes, data deletion, public signup or real outbound messages.
+- Claude checkpoint send confirmation requested in chat; do not assume sent or reviewed.

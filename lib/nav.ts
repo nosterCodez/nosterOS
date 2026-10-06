@@ -68,6 +68,7 @@ export const NAV_INTELLIGENCE: NavItem[] = [
 
 export const NAV_SYSTEM: NavItem[] = [
   { href: '/settings/business-profile', label: 'Business profile', icon: FileText },
+  { href: '/leads/plan', label: 'Lead plan', icon: Crosshair },
   { href: '/integrations', label: 'Connections', icon: Plug },
   { href: '/usage', label: 'Usage', icon: Gauge },
   { href: '/roadmap', label: 'Roadmap', icon: Map },

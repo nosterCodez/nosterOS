@@ -194,3 +194,27 @@ personalize → Funnel + Usage. Deploy each step to **staging** (M8) freely.
 - Staging run numbers:
 - What changed beyond the spec, and why:
 - Questions or blockers for Claude:
+
+### Batch 3B preflight: October 6, 2026, 11:38 CDT
+- BLOCKED before runner/import implementation. 3A is a partial code checkpoint;
+  its outstanding tests/browser checks are recorded in M10, not claimed complete.
+- Checked official Foursquare access documentation and the publisher's dataset card:
+  https://docs.foursquare.com/data-products/docs/access-fsq-os-places
+  https://huggingface.co/datasets/foursquare/fsq-os-places/blob/main/README.md
+- Apache-2.0 is still the stated data license. Access is no longer the assumed
+  anonymous public S3 release: official docs direct users to a Places Portal
+  account/token and Iceberg catalog. The publisher's Hugging Face alternative is
+  gated; current card points to release/dt=2026-09-15/places/parquet/*.parquet.
+- Hugging Face gate requests organization/title/country/intended use and consent
+  to using the organization's name/logo in partner descriptions/marketing.
+  No account, access token, consent or download was created/submitted.
+- Noe decision: approve a specific data-access route and any corresponding terms
+  before obtaining credentials. No purchase requested; no paid service provisioned.
+- Claude decision: select an approved access/import contract (Portal Iceberg vs
+  authorized Parquet files), then confirm whether to split runner from importer
+  while access is pending. Do not silently replace the source or use an old mirror.
+- hyparquet was investigated as a possible pure-JS MIT reader, not installed.
+  Bounding-box verification, 60 MB import enforcement and source fixture tests
+  remain unimplemented, as do jobs/runner/flags/Run now; no staging row count exists.
+- Staging is still not provisioned. Engine flags, workspace allowlist, credentials,
+  spending caps and shared/production data remain untouched. No real lead searching.
