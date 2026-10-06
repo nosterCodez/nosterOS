@@ -18,6 +18,10 @@ export function controlDbPath(env: Record<string, string | undefined> = process.
   return resolveDbPath('control.db', undefined, env);
 }
 
+export function spendDbPath(env: Record<string, string | undefined> = process.env): string {
+  return path.join(/*turbopackIgnore: true*/ dataDir(env), 'platform', 'spend.db');
+}
+
 export function workspaceDir(id: string, env: Record<string, string | undefined> = process.env): string {
   // Better Auth 1.7.7 defaults to 32 random ASCII alphanumeric characters.
   if (!/^[A-Za-z0-9]{32}$/.test(id)) throw new Error('Invalid workspace id');

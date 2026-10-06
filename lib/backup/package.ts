@@ -4,7 +4,7 @@ import { pack, extract } from 'tar-stream';
 import { z } from 'zod';
 
 export const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
-export const DatabaseName = z.string().regex(/^(control\.db|workspaces\/[A-Za-z0-9]{32}\/[A-Za-z0-9_-]+\.db)$/);
+export const DatabaseName = z.string().regex(/^(control\.db|platform\/spend\.db|workspaces\/[A-Za-z0-9]{32}\/[A-Za-z0-9_-]+\.db)$/);
 const FileRecord = z.object({ name: DatabaseName, size: z.number().int().nonnegative().max(MAX_ARCHIVE_BYTES),
   sha256: z.string().regex(/^[a-f0-9]{64}$/), schemaVersion: z.number().int().nonnegative() }).strict();
 const Manifest = z.object({ version: z.literal(1), appCommit: z.string().regex(/^[a-f0-9]{7,40}$/),

@@ -8,6 +8,7 @@ import { ollamaLane } from '@/lib/connectors/ollama-usage';
 import { combineSeats, combineOllama, type SeatUsage } from '@/lib/usage';
 
 import { isGated } from '@/lib/gate';
+import { workspaceSpendUsage } from '@/lib/spend/runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,8 +57,12 @@ export async function GET() {
   }
 
   const seats = [...(local ? [local] : []), ...pushed];
+  let leadSpend: ReturnType<typeof workspaceSpendUsage> | null = null;
+  try { leadSpend = workspaceSpendUsage(workspace.workspace.id, process.env, now); }
+  catch { errors.leadSpend = 'Spending usage unavailable.'; }
   return NextResponse.json({
     generatedAt: now.toISOString(),
+    leadSpend,
     claude: combineSeats(seats.filter((s) => s.kind === 'claude'), now),
     codex: combineSeats([...(codex ? [codex] : []), ...pushed.filter((s) => s.kind === 'codex')], now),
     ollama: combineOllama({ id: 'local', label: 'Local machine', lane: { ...await ollamaLane(), plan: null, requests: null } }, [], now),

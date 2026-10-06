@@ -1,5 +1,15 @@
 # Railway deploy: current state
 
+## October 6, 2026: lead spending deployment constraint
+- Production currently runs one replica on one persistent volume (confirmed read-only).
+- M10's authoritative billing ledger is `/data/platform/spend.db`, WAL with a
+  5-second busy timeout. All reservations use one immediate SQLite transaction.
+- Do not horizontally scale this deployment. Move the ledger to a shared transactional
+  database first; separate volume copies cannot safely enforce a global spending cap.
+- M8 backup inventory explicitly includes `platform/spend.db`; no secrets or business
+  content belong in this file. Keep existing restore/backup encryption requirements.
+- The original setup notes below are historical; current releases are in HANDOFF-TO-ASTRA.md.
+
 Set up by Claude on Oct 3, 2026, with Noe's approval. Nothing is deployed yet.
 
 ## What exists
