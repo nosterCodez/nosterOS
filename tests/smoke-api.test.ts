@@ -37,6 +37,8 @@ type RouteEntry = {
 // a real 200 (not a 400/404 for a missing arg). Live-connector routes
 // (connections, social/sync) must still answer 200 with honest state.
 const ROUTES: RouteEntry[] = [
+  { route: 'leads/runs', load: () => import('@/app/api/leads/runs/route'), url: 'http://localhost/api/leads/runs', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
+  { route: 'leads/plan', load: () => import('@/app/api/leads/plan/route'), url: 'http://localhost/api/leads/plan', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'business-profile', load: () => import('@/app/api/business-profile/route'), url: 'http://localhost/api/business-profile', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'business-profile/versions', load: () => import('@/app/api/business-profile/versions/route'), url: 'http://localhost/api/business-profile/versions', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'finances/imports', load: () => import('@/app/api/finances/imports/route'), url: 'http://localhost/api/finances/imports', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },

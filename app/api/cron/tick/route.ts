@@ -9,6 +9,7 @@ import { internalAllowed } from '@/lib/auth-boundary';
 import { runCloudTick } from '@/lib/cloud-jobs';
 import { runBackupTick } from '@/lib/backup/schedule';
 import { runSpendTick } from '@/lib/spend/runtime';
+import { runLeadTick } from '@/lib/leads/runtime';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 import { COLLECTORS } from '@/lib/collectors';
@@ -71,6 +72,7 @@ export async function POST(request?: Request) {
   const internal = internalAllowed('/api/cron/tick', requestHeaders.get('x-nosteros-internal'));
   if (internal) await runBackupTick();
   if (internal) runSpendTick();
+  if (internal) await runLeadTick();
   if (internal && process.env.NOSTEROS_OPERATOR_FEATURES !== '1') {
     return NextResponse.json({ ran: [], cloud: await runCloudTick() });
   }

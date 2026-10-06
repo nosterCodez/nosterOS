@@ -1,6 +1,7 @@
 import { UsageSnapshotSchema, type SeatUsage } from '@/lib/usage';
 import { createBusinessProfiles } from '@/lib/business-profile/repository';
 import { createLeadPlans } from '@/lib/leads/repository';
+import { createLeadJobs } from '@/lib/leads/jobs';
 import Database from 'better-sqlite3';
 import { createConnectionRecords } from '@/lib/connection-records';
 import { createVerificationRecords } from '@/lib/verification-records';
@@ -699,6 +700,7 @@ export function openDb(path: string) {
   const financialImports = createFinancialImports(db);
   const businessProfiles = createBusinessProfiles(db);
   const leadPlans = createLeadPlans(db);
+  const leadJobs = createLeadJobs(db);
   migrateAgentsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
@@ -2141,6 +2143,7 @@ export function openDb(path: string) {
     financialImports,
     businessProfiles,
     leadPlans,
+    leadJobs,
     departments,
     agents,
     tools,
