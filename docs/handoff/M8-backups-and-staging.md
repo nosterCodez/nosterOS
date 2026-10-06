@@ -1,6 +1,6 @@
 # M8: Nightly backups and a staging copy
 
-Status: Batch 1 partial; snapshot-policy decision and infrastructure approvals pending
+Status: Batch 1 runtime implemented; platform gate review and infrastructure approvals pending
 Review by Claude: yes (data safety, secrets)
 Queue position: 1 of the lead-gen program (M8 → M9 → M10 → M11 → M12)
 
@@ -87,7 +87,10 @@ before production.
   password manager; without it the backups are unreadable.
 
 ## Don't
-- No plaintext backups, ever. No backups into the same volume as the only copy.
+- No stored/uploaded plaintext backups. Noe approved a narrow exception on Oct 5
+  ("alright, continue" in reply to the temporary-snapshot question): private SQLite
+  temporary files outside the live data tree, immediate encryption and cleanup.
+  No backups into the same volume as the only recovery copy.
 - Don't log keys, bucket credentials, or archive contents.
 - Don't change the production deploy flow beyond adding staging.
 
@@ -173,3 +176,65 @@ before production.
   older Sundays; deletion is not wired yet. No Linux rerun performed this session.
 - Ready for production? NO. Stop here; continue Batch 1 after the decision above.
   Batch 2 has not started. Logs are under ignored `.local/lg-b1-*` paths.
+
+### Batch 1 continuation report: October 5, 2026, 20:07 CDT
+- Steps: 1A runtime/CLI = implemented and fixture-tested; owner UI = checkpoint,
+  BLOCKED on operator gate review; 1B code = implemented, live staging pending.
+- Branch: `lg/b1-backups-staging`; runtime `f34f7be`, UI checkpoint `636a485`;
+  documentation commit follows. No main/production push and no Batch 2 work.
+- Noe resolved the temporary snapshot exception in chat. db.backup now creates
+  private generated scratch files outside live data; source databases remain WAL,
+  temporary copies switch to DELETE journal mode for self-contained validation.
+  Files are removed after reading, and the generated directory in finally cleanup.
+  Abrupt process termination remains an explicit cleanup caveat, documented in STAGING.
+- Added idempotent backup_runs table/repo/Zod validation with a partial unique
+  running-row index and BEGIN IMMEDIATE claim. One attempt per UTC date; a crashed
+  runner keeps its lock for reviewed manual recovery, never an unsafe auto-takeover.
+  archive_count is stored with the successful run for offline status display.
+- Runner verifies a re-downloaded/decrypted manifest and every file hash before
+  pruning. Upload/verification failures never prune. Fixture pruning retains seven
+  daily dates plus four older Sundays. Error messages are constants, not provider text.
+- Internal cron tick schedules after 08:00 UTC and checks configuration safely;
+  unconfigured/failing service gets one generic warning per UTC day per process.
+  Cron loopback timeout is 120 seconds (others stay 20); auth boundaries unchanged.
+- backup:now and backup:restore commands added. Local store requires development
+  mode and a destination outside live data. Fixture CLI runs from a disposable cwd
+  with synthetic credentials, avoiding the real .env.local. No cloud calls or sends.
+- Fixture drill PASS: online snapshot -> encrypted local store -> CLI restore ->
+  identical rows and integrity_check=ok. Missing/wrong keys, invalid DB, hash/path
+  tampering, existing/live target, overlapping lock and failed upload are covered.
+  Full production-size memory/load measurement and real S3 restore drill remain pending.
+- Typecheck PASS. Build PASS using .next-lg-b1-complete, isolated build data and
+  disabled timers, before the final Doctor guard-order correction and smoke-list entry.
+  Generated tsconfig includes removed. Shared dev server 4100 left running untouched.
+- Focused backup/staging tests: 33/33 passed, followed by the additional cron-timeout
+  regression and unchanged internal-tick auth tests (8/8). No real messages used.
+- Last full suite: 386 files, 377 passed / 9 failed; 3,959 tests, 3,952 passed /
+  7 failed. Baseline: interaction-layer BrainCore path, paths, skills-plugins,
+  superset-dispatch; EPERM cleanup suites lead-magnet-actions, lead-magnets-route,
+  roadmap-mock-5h. New failures were Doctor guard order (2 assertions) and missing
+  platform page in the smoke registry (1). Doctor and smoke-list fixed in code;
+  assertions unchanged, new page added to coverage. Focused rerun: smoke 34/34,
+  backup-status 2/2, connector-boundaries 59/61; the two remaining failures now
+  correctly identify the new platform page missing the shared operator gate.
+- Stop rule reached: second failed connector-boundary pass. Proposed exact fix,
+  awaiting Noe/Claude approval: begin PlatformPage with operatorWorkspaceForPage
+  and OperatorUnavailable, then retain platformBackupStatus's additional bound
+  operator-owner/email check. This makes it unavailable with operator features off.
+  Do not weaken connector-boundaries assertions. New page currently protects owner
+  identity/membership but does not yet enforce the global operator feature flag.
+- Owner panel draft shows last success/time/size, archive count at last success,
+  latest run, last fixed error and interrupted-lock notice. Doctor's warning keeps
+  its existing operator entry gate. No browser smoke of authenticated UI performed.
+- Self-review: no raw SQL in pages/routes, no new public API or broader internal
+  header path, no plaintext keys/logs, no unrelated file edits. Archive parsing and
+  store boundaries retained. Data inventory refuses symlinks, unsupported DB paths,
+  changing file inventory and usage above 400 MB (80% of the documented 500 MB cap).
+- Noe actions: 1. Resolve the exact operator gate decision above. 2. Approve bucket
+  and staging cost allowance from STAGING.md (previous report's rates unchanged).
+  3. Approve separate secrets/variables and retain recovery keys in a password manager.
+  4. Set staging DNS and optional approved callbacks/system mail. 5. Only after green
+  tests, review and staging drill, separately approve main/production.
+- Staging: NOT deployed; no bucket/environment/volume/DNS/key/variable changes.
+  Restore promotion and abandoned-lock procedure documented, not executed.
+- Ready for production? NO. Preserve this checkpoint for review; remain in Batch 1.

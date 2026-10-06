@@ -70,3 +70,19 @@ In `lib/auth.ts` the invitation check compares `expiresAt > Date.now()`.
 If Better Auth stores `expiresAt` as ISO text in SQLite, that comparison is
 always true (TEXT sorts above INTEGER), so expired invitations would still
 allow sign-up. Add a test with an expired invitation and fix if it fails.
+
+## M8 restore promotion (manual, not performed)
+Never restore over /data. The backup:restore CLI writes only a new scratch directory
+outside live data after decrypting, checking manifest hashes and SQLite integrity.
+See STAGING.md for the fixture drill and the still-pending live restore drill.
+
+Production recovery requires Noe's explicit approval: stop the service and all writers,
+preserve the original volume/data, inspect the restored database inventory and app
+commit/schema compatibility, and retain the matching vault master key separately.
+Only then arrange the reviewed restored directory as the service's data root. Do not
+merge database files piecemeal, auto-copy environment files, or serve a production
+restore as another workspace. Keep a rollback copy until Noe approves its removal.
+Before restarting scheduled backups, inspect backup_runs for the captured running row;
+after confirming no runner exists, an approved operator must mark that exact abandoned
+run failed. Restart privately, verify owner/workspace isolation, sign-in, connections
+and a new backup. No volume swap, lock repair, or deletion is authorized by this runbook.

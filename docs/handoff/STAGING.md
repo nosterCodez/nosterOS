@@ -1,11 +1,12 @@
 # Staging and backup runbook
 
-Status: Batch 1 partial implementation; no staging environment or backup bucket
-has been created. No live backup or restore has been run. Archive packaging,
-encrypted S3/local stores, retention selection and fixture restore are implemented.
-SQLite snapshot creation, runner/lock/status, scheduler, status panel and CLI
-are still pending Step 1A. Temporary plaintext snapshots need an explicit exception
-to M8's "no plaintext backups, ever" rule before implementing db.backup(dest).
+Status: Batch 1 implementation checkpoint; no staging environment or backup bucket
+has been created. No live backup or restore has been run. Online snapshots, encrypted
+archive/storage, runner/lock/status, scheduling, retention and CLI restore are
+implemented and pass fixture tests. The owner panel still needs its existing
+operator-feature gate: two connector-boundary assertions fail until that is resolved.
+Noe approved private temporary snapshots in chat, followed by immediate encryption
+and cleanup. Do not rely on this branch in production before review and staging.
 The instructions below are a setup checklist, not a claim these resources exist.
 
 ## Approval and cost checkpoint
@@ -54,11 +55,12 @@ Checked October 5, 2026 against https://railway.com/pricing:
 ## Variable names (no credentials)
 
 Implemented staging controls: `OMEGA_ENV`, `OMEGA_OUTBOUND_DISABLED`.
-Backup key parsing implemented, scheduler not yet wired: `OMEGA_BACKUP_KEY`.
-Implemented store configuration (not wired to the tick): `OMEGA_BACKUP_S3_ENDPOINT`, `OMEGA_BACKUP_S3_BUCKET`,
+Backup encryption: `OMEGA_BACKUP_KEY`.
+Store configuration: `OMEGA_BACKUP_S3_ENDPOINT`, `OMEGA_BACKUP_S3_BUCKET`,
 `OMEGA_BACKUP_S3_ACCESS_KEY_ID`, `OMEGA_BACKUP_S3_SECRET_ACCESS_KEY`,
 `OMEGA_BACKUP_S3_REGION`. Object namespaces are production/, staging/, development/,
 derived from the server-side OMEGA_ENV value, never a visitor-supplied prefix.
+Commit identity: `RAILWAY_GIT_COMMIT_SHA`, with `OMEGA_BACKUP_APP_COMMIT` fallback.
 Existing isolation/auth: `DATA_DIR`, `NOSTEROS_BASE_URL`, `BETTER_AUTH_SECRET`,
 `NOSTEROS_MASTER_KEY`, `NOSTEROS_INTERNAL_SECRET`, `NOSTEROS_ACCESS_TOKEN`,
 `NOSTEROS_OWNER_EMAIL`, `NOSTEROS_SIGNUP_ALLOWLIST`, `NOSTEROS_OPERATOR_FEATURES`.
@@ -77,13 +79,11 @@ Do not treat a staging deployment as approval to deploy main. After Noe's explic
 yes: fast-forward main to the reviewed commit, push, verify Railway SUCCESS and
 the expected public private-beta 401 page; record commit and deployment ID.
 
-## Restore drill (CLI and live drill pending)
+## Backup and restore commands (live drill pending)
 
-Do not run backup commands yet: the scripts do not exist until Step 1A is complete.
-The library restore has passed fixture tests (SQLite integrity, identical row,
-wrong-key refusal, corrupt DB refusal, no overwrite, no target inside live data).
-This is not the required online-snapshot-to-restore drill or a production backup.
-Once implemented and approved, run backup:now, verify uploaded encrypted archive
+The fixture-only CLI drill passes: online SQLite snapshot, encrypted local store,
+restore to a new directory, identical rows and integrity checks. No real data was used.
+After deployment and resource approval, run backup:now, verify uploaded encrypted archive
 and manifest, then run backup:restore with the archive name and a new scratch
 directory outside the live data path. The restore must reject an existing target,
 validate hashes and PRAGMA integrity_check for every database, and leave production
@@ -93,6 +93,33 @@ Never overwrite /data or activate a restored copy without separate Noe approval.
 Retain original vault keys securely for future recovery; generating a new vault
 key will not decrypt restored workspace connections. Do not import a production
 vault key into staging's running app. Scratch cleanup also requires approval.
+
+Commands (never put keys in command arguments):
+```sh
+npm run backup:now
+npm run backup:restore -- --archive omegaos-YYYY-MM-DD-abcdefgh.tar.gz --to /scratch/new-restore
+```
+Use an actual archive name from the status record or bucket, not the placeholder.
+For development fixtures only, both commands accept `--local-dir <existing-directory>`;
+OMEGA_ENV must be development and the destination must be outside DATA_DIR. The
+automated CLI test uses a temporary cwd, synthetic key and databases; it does not
+load the real project's .env.local. Normal manual CLI use loads .env.local if present.
+
+The tick starts after 08:00 UTC and records at most one attempt per UTC date. A failed
+attempt is visible and the next scheduled attempt is the next day. Uploads are never
+overwritten. Interrupted runs retain the unique running-row lock; no unsafe automatic
+timeout takeover occurs. Stop all backup runners before an explicitly approved operator
+marks an abandoned run failed. A restored control.db contains the snapshot's running
+row and requires the same reviewed recovery step before backups are re-enabled.
+
+Temporary snapshots are private generated children of the OS temp directory, outside
+the live data tree. They are deleted after reading and in finally cleanup on errors;
+they are not an independent recovery copy. Abrupt process/host termination can prevent
+finally cleanup. Review leftover omega-snapshot-* directories after an interruption;
+never bulk-delete temp paths or promise cryptographic secure erasure. Persisted archives
+are encrypted. The live database stays WAL; only the isolated snapshot uses DELETE
+journal mode for self-contained restore validation. Databases are individually consistent,
+not a single atomic transaction across all workspace files. Inventory changes abort a run.
 
 ## Sender audit
 
