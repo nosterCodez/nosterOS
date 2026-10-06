@@ -1,4 +1,6 @@
 import { OperatorUnavailable } from '@/components/OperatorUnavailable';
+import { BackupWarning } from '@/components/BackupStatus';
+import { platformBackupStatus } from '@/lib/backup/status';
 import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { createGBrainProvider } from '@/lib/connectors/gbrain';
@@ -99,6 +101,7 @@ function FlowStep({ title, detail, dashed = false }: { title: string; detail: st
 export default async function DoctorPage() {
   const workspace = await operatorWorkspaceForPage();
   if (!workspace) return <OperatorUnavailable />;
+  const backup = await platformBackupStatus();
 
   const overview = await createGBrainProvider().overview();
   const { store, doctor } = overview;
@@ -126,6 +129,7 @@ export default async function DoctorPage() {
   return (
     <DoctorRunProvider>
       <Slab>
+        <BackupWarning status={backup} />
         <SlabTitle
           eyebrow="engine health"
           title="Doctor"
