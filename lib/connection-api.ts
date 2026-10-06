@@ -9,7 +9,7 @@ const SaveSchema = NameSchema.extend({ value: z.string().min(1).max(4096) }).str
 const VerifySchema = NameSchema.extend({ action: z.literal('verify') }).strict();
 const EmailSchema = z.object({ name: z.literal('email'), email: z.object({ host: z.string().max(255), account: z.string().max(512), password: z.string().max(4096) }).strict() }).strict();
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
-export async function limitedBody(request: Request, maxBytes = 8192) {
+export async function limitedBody(request: Request, maxBytes = 8192, strictUtf8 = false) {
   if (!request.headers.get('content-type')?.startsWith('application/json')) throw new Error('Invalid request');
   const reader = request.body?.getReader();
   if (!reader) throw new Error('Invalid request');
@@ -21,7 +21,8 @@ export async function limitedBody(request: Request, maxBytes = 8192) {
       if (size > maxBytes) { await reader.cancel(); throw new Error('Invalid request'); }
       chunks.push(result.value);
     }
-    return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
+    const bytes = Buffer.concat(chunks);
+    return JSON.parse(strictUtf8 ? new TextDecoder('utf-8', { fatal: true }).decode(bytes) : bytes.toString('utf8')) as unknown;
   } finally { reader.releaseLock(); }
 }
 export async function connectionRequest(request: Request) {

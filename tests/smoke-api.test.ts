@@ -37,6 +37,8 @@ type RouteEntry = {
 // a real 200 (not a 400/404 for a missing arg). Live-connector routes
 // (connections, social/sync) must still answer 200 with honest state.
 const ROUTES: RouteEntry[] = [
+  { route: 'business-profile', load: () => import('@/app/api/business-profile/route'), url: 'http://localhost/api/business-profile', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
+  { route: 'business-profile/versions', load: () => import('@/app/api/business-profile/versions/route'), url: 'http://localhost/api/business-profile/versions', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'finances/imports', load: () => import('@/app/api/finances/imports/route'), url: 'http://localhost/api/finances/imports', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'collectors', load: () => import('@/app/api/collectors/route'), url: 'http://localhost/api/collectors' },
   { route: 'metrics/points', load: () => import('@/app/api/metrics/points/route'), url: 'http://localhost/api/metrics/points?metric=smoke.count&business=nostermarketing&from=2026-10-01T00:00:00Z&to=2026-10-02T00:00:00Z&bucket=day' },
