@@ -34,7 +34,7 @@ export function createTickRequest(port: string) {
     if (rejected.has(route)) return null;
     const response = await fetch(`http://127.0.0.1:${port}${route}`, {
       method: 'POST', headers: internalRequestHeaders(process.env.NOSTEROS_INTERNAL_SECRET),
-      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(20_000),
+      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(route === '/api/cron/tick' ? 120_000 : 20_000),
     });
     // An environment update restarts the service and clears this circuit breaker.
     if (response.status === 401 || response.status === 403) rejected.add(route);

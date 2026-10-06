@@ -15,6 +15,8 @@
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
     "bootstrap-operator": "tsx scripts/bootstrap-operator.ts",
+    "backup:now": "tsx scripts/backup-now.ts",
+    "backup:restore": "tsx scripts/backup-restore.ts",
     "brain:docs": "tsx scripts/generate-brain-docs.ts"
   },
   "dependencies": {

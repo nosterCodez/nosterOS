@@ -7,6 +7,7 @@ import { apiWorkspace } from '@/lib/session';
 import { workspaceJob } from '@/lib/workspace-jobs';
 import { internalAllowed } from '@/lib/auth-boundary';
 import { runCloudTick } from '@/lib/cloud-jobs';
+import { runBackupTick } from '@/lib/backup/schedule';
 import { createRuntime } from '@/lib/agents/runtime';
 import { realAgents } from '@/lib/agents/real';
 import { COLLECTORS } from '@/lib/collectors';
@@ -66,7 +67,9 @@ export async function POST(request?: Request) {
   if (authError) return authError;
 
   const requestHeaders = request?.headers ?? new Headers();
-  if (internalAllowed('/api/cron/tick', requestHeaders.get('x-nosteros-internal')) && process.env.NOSTEROS_OPERATOR_FEATURES !== '1') {
+  const internal = internalAllowed('/api/cron/tick', requestHeaders.get('x-nosteros-internal'));
+  if (internal) await runBackupTick();
+  if (internal && process.env.NOSTEROS_OPERATOR_FEATURES !== '1') {
     return NextResponse.json({ ran: [], cloud: await runCloudTick() });
   }
   return workspaceJob('/api/cron/tick', async ({ db, workspace }) => {
