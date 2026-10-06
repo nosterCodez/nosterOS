@@ -333,6 +333,7 @@ export default async function FunnelPage(
   // Typeform leads, calendar bookings + Fathom calls, Trakyo attribution and
   // Stripe payments folded on, venture-filtered; seeded funnel otherwise.
   const composed = await withWorkspaceLease(workspace, db => composeFunnelJourneys(db, now, venture));
+  const hasBusinessProfile = await withWorkspaceLease(workspace, db => db.businessProfiles.current() !== null);
   const { attioLive, ghlLive, isLive } = composed;
   const excludedCount = (attioLive?.closedLost ?? 0) + (ghlLive?.excluded ?? 0);
   const liveLabel = [
@@ -372,6 +373,11 @@ export default async function FunnelPage(
 
   return (
     <Slab>
+      {!hasBusinessProfile && <section className="mb-5 border-b border-os-border pb-4 text-sm">
+        <h2 className="font-semibold">Your business profile</h2>
+        <p className="mt-1 text-os-muted">No business profile saved for this workspace.</p>
+        <Link href="/settings/business-profile" className="mt-2 inline-block text-os-accent underline underline-offset-4">Set up business profile</Link>
+      </section>}
       <SlabTitle
         eyebrow="client journeys · leads → conversations → sales"
         title="Funnel"

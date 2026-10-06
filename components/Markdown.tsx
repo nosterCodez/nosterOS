@@ -11,7 +11,7 @@ import { parseInline, parseMarkdown, type Inline } from '@/lib/markdown-blocks';
  * innerHTML on this path and an agent-authored file cannot inject markup.
  * Parsing and the link-scheme allowlist live in lib/markdown-blocks.ts.
  */
-function Marks({ text }: { text: string }) {
+function Marks({ text, safe = false }: { text: string; safe?: boolean }) {
   return (
     <>
       {parseInline(text).map((n: Inline, i) => {
@@ -25,6 +25,7 @@ function Marks({ text }: { text: string }) {
           );
         }
         if (n.type === 'link') {
+          if (safe) return <Fragment key={i}>{n.text} ({n.href})</Fragment>;
           return (
             <a
               key={i}
@@ -45,14 +46,14 @@ function Marks({ text }: { text: string }) {
 
 const HEADING_SIZE = ['text-[15px]', 'text-[14px]', 'text-[13px]', 'text-[12px]', 'text-[12px]', 'text-[12px]'];
 
-export function Markdown({ text }: { text: string }) {
+export function Markdown({ text, safe = false }: { text: string; safe?: boolean }) {
   const blocks = parseMarkdown(text);
   if (blocks.length === 0) {
     return <p className="font-mono text-[10.5px] text-os-dim">This file is empty.</p>;
   }
 
   return (
-    <div className="space-y-3 text-[12.5px] leading-relaxed text-os-muted">
+    <div className="min-w-0 space-y-3 break-words text-[12.5px] leading-relaxed text-os-muted">
       {blocks.map((b, i) => {
         switch (b.type) {
           case 'heading':
@@ -61,13 +62,13 @@ export function Markdown({ text }: { text: string }) {
                 key={i}
                 className={`${HEADING_SIZE[b.level - 1] ?? 'text-[12px]'} pt-1 font-semibold text-os-text`}
               >
-                <Marks text={b.text} />
+                <Marks text={b.text} safe={safe} />
               </h3>
             );
           case 'paragraph':
             return (
               <p key={i}>
-                <Marks text={b.text} />
+                <Marks text={b.text} safe={safe} />
               </p>
             );
           case 'list':
@@ -75,7 +76,7 @@ export function Markdown({ text }: { text: string }) {
               <ol key={i} className="list-decimal space-y-1 pl-5">
                 {b.items.map((it, j) => (
                   <li key={j}>
-                    <Marks text={it} />
+                    <Marks text={it} safe={safe} />
                   </li>
                 ))}
               </ol>
@@ -83,7 +84,7 @@ export function Markdown({ text }: { text: string }) {
               <ul key={i} className="list-disc space-y-1 pl-5">
                 {b.items.map((it, j) => (
                   <li key={j}>
-                    <Marks text={it} />
+                    <Marks text={it} safe={safe} />
                   </li>
                 ))}
               </ul>
@@ -91,7 +92,7 @@ export function Markdown({ text }: { text: string }) {
           case 'quote':
             return (
               <blockquote key={i} className="border-l-2 border-os-border-strong pl-3 italic text-os-dim">
-                <Marks text={b.text} />
+                <Marks text={b.text} safe={safe} />
               </blockquote>
             );
           case 'code':
@@ -113,7 +114,7 @@ export function Markdown({ text }: { text: string }) {
                     <tr className="border-b border-os-border-strong">
                       {b.header.map((h, j) => (
                         <th key={j} className="px-2 py-1.5 text-left font-semibold text-os-text">
-                          <Marks text={h} />
+                          <Marks text={h} safe={safe} />
                         </th>
                       ))}
                     </tr>
@@ -123,7 +124,7 @@ export function Markdown({ text }: { text: string }) {
                       <tr key={j} className="border-b border-os-border last:border-b-0">
                         {r.map((c, k) => (
                           <td key={k} className="px-2 py-1.5 align-top">
-                            <Marks text={c} />
+                            <Marks text={c} safe={safe} />
                           </td>
                         ))}
                       </tr>

@@ -13,6 +13,7 @@ export function WorkspaceSwitcher() {
     }}><option value="" disabled>Workspace</option>{workspaces?.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
     <a href="/onboarding?new=1" title="Create workspace" aria-label="Create workspace">+</a>
     <a href="/settings/members">Members</a>
+    <a href="/settings/business-profile">Business profile</a>
     <button className="pressable" onClick={async () => { const result = await authClient.signOut(); if (result.error) setError('Sign-out failed'); else window.location.assign('/sign-in'); }}>Sign out</button>
     {error && <span role="alert">{error}</span>}
   </div>;

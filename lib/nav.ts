@@ -28,6 +28,7 @@ import {
   Gauge,
   Crosshair,
   Waypoints,
+  FileText,
 } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: typeof Home };
@@ -66,6 +67,7 @@ export const NAV_INTELLIGENCE: NavItem[] = [
 ];
 
 export const NAV_SYSTEM: NavItem[] = [
+  { href: '/settings/business-profile', label: 'Business profile', icon: FileText },
   { href: '/integrations', label: 'Connections', icon: Plug },
   { href: '/usage', label: 'Usage', icon: Gauge },
   { href: '/roadmap', label: 'Roadmap', icon: Map },

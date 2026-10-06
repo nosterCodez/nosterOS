@@ -55,6 +55,7 @@ const PAGES: PageEntry[] = [
   { file: 'accept-invitation/page.tsx', load: () => import('@/app/accept-invitation/page'), props: { searchParams: Promise.resolve({ id: 'smoke-invite' }) } },
   { file: 'settings/members/page.tsx', load: () => import('@/app/settings/members/page') },
   { file: 'settings/platform/page.tsx', load: () => import('@/app/settings/platform/page') },
+  { file: 'settings/business-profile/page.tsx', load: () => import('@/app/settings/business-profile/page') },
   { file: 'page.tsx', load: () => import('@/app/page') },
   { file: 'comms/page.tsx', load: () => import('@/app/comms/page') },
   { file: 'social/page.tsx', load: () => import('@/app/social/page') },
