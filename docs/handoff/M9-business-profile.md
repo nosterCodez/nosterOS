@@ -112,3 +112,16 @@ history. Everything in M10–M12 reads from this profile.
 - Typecheck / tests / build:
 - What changed beyond the spec, and why:
 - Questions or blockers for Claude:
+
+### Batch 2 preflight: October 5, 2026, 20:20 CDT
+- Step 2A: BLOCKED before implementation by M9's prerequisite that M8 code be merged.
+- Noe requested Batch 1 deployment and Batch 2 continuation, then explicitly chose
+  "Wait for Claude review and staging checks" when asked about the uncompleted gates.
+- Batch 1 remains on `lg/b1-backups-staging` at code/report checkpoint `bd994a8`.
+  No merge, main push, deployment, infrastructure or secret change performed.
+- Read M9 and inspected workspace guards, repository and Markdown renderer patterns.
+  No Batch 2 application code, fixtures, migrations or new branch created yet.
+- Typecheck/tests/build: not rerun for this documentation-only preflight; previous
+  Batch 1 results are in M8, not claimed as Batch 2 verification.
+- Next: Claude reviews M8; approved staging setup/checks; merge M8 as authorized;
+  then create the Batch 2 branch from updated main and implement M9 with TDD.

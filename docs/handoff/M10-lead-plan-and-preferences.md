@@ -101,3 +101,18 @@ before the engine (M11) uses it.
 - Model IDs chosen and why:
 - What changed beyond the spec, and why:
 - Questions or blockers for Claude:
+
+### Batch 2 preflight: October 5, 2026, 20:20 CDT
+- Step 2B: BLOCKED on the batch prerequisite and a spend-reservation architecture decision.
+- The plan specifies a workspace-local spend_ledger and BEGIN IMMEDIATE reservation,
+  plus a platform-wide OMEGA_LEAD_GLOBAL_MONTHLY_USD cap. M11 confirms reservations
+  must satisfy both caps. No shared reservation coordinator/schema is specified.
+- A transaction in one workspace DB cannot serialize reservations in other workspace
+  DBs; summing workspace ledgers before a local insert would allow a cap race.
+- Claude decision needed: define the authoritative global reservation store and its
+  crash-safe coordination with workspace ledgers, including platform-AI reservations.
+  Do not infer permission to add shared customer/spend data to control.db.
+- M7 platform-AI support is also not present on this checkout; do not merge that
+  parallel branch or enable platform AI implicitly. Clarify its integration boundary.
+- No AI calls, paid usage, new dependency, schema or implementation changes made.
+  Typecheck/tests/build not rerun for this documentation-only preflight.

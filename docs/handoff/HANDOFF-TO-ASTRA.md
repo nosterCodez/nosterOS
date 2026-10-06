@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 20:20 CDT: Noe requested Batch 1 deployment + Batch 2, then chose to wait for Claude review and staging checks.
+- Deployment HOLD: no main push/merge, resource, secret or production change; Batch 1 code/report checkpoint `bd994a8`.
+- Batch 2 preflight only: M9 requires M8 code merged; no Batch 2 branch or implementation started.
+- Step 2B also needs Claude's global spend-reservation store/atomicity decision; workspace-local transactions cannot enforce a global cap alone.
+- M7 platform-AI support is absent from this checkout; no parallel-branch merge or AI enablement inferred; details in M9/M10 reports.
+- Docs-only checkpoint; tests not rerun; unrelated provider docs and shared dev server untouched. Resume after prerequisite/review decisions.
+
 - Oct 5, 20:14 CDT: Batch 1 code complete on `lg/b1-backups-staging`; gate fix `c2468aa`; report follows.
 - Existing operator gate now precedes owner-only backup status; unchanged boundary tests pass; all 35 new tests pass.
 - Typecheck/build pass; full Windows suite 379/386 files and 3,957/3,961 tests pass; only documented baseline failures.
