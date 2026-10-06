@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 20:50 CDT: Batch 2 checkpoint on lg/b2-business-profile; parser e0be7b3, API 28bc135, UI 7bbf391; report follows.
+- 2A profile code implemented; 22 new tests pass; typecheck/build pass; full Windows 3,984 pass / 4 baseline failures (383/390 files pass).
+- Browser screen rendered on isolated fixture; two attempts stopped before first save, second at clipboard copy; STOP per AGENTS, acceptance incomplete.
+- 2B still blocked on Claude's global reservation/cap coordination and M7 integration decisions; no paid AI call or shared schema invented.
+- Main remains dec9a9d, deployed in prior turn with Noe's waiver; no new deployment/resources/secrets; staging and live backup drills still pending.
+- M9/M10 hold factual report and next actions; fixture server stopped, shared 4100 untouched; preserve other-session docs; no Batch 3 work.
+
 - Oct 5, 20:22 CDT: Noe superseded the deployment hold: "actully no deploy it , i waive it".
 - This explicitly waives Claude review/staging checks for the Batch 1 code-only production deployment.
 - Deploy Batch 0/1 through a fast-forward main push; no resource, variable, secret, DNS or paid-service changes authorized.

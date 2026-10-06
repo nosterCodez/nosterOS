@@ -116,3 +116,15 @@ before the engine (M11) uses it.
   parallel branch or enable platform AI implicitly. Clarify its integration boundary.
 - No AI calls, paid usage, new dependency, schema or implementation changes made.
   Typecheck/tests/build not rerun for this documentation-only preflight.
+
+### Batch 2B checkpoint: October 5, 2026, 20:50 CDT
+- M8 merge prerequisite resolved (main dec9a9d is live); M9 code checkpoint on
+  lg/b2-business-profile at 7bbf391, browser acceptance incomplete. See M9 Report.
+- 2B remains BLOCKED: no architect decision has been added for a globally atomic
+  reservation store and crash coordination with workspace-local spend ledgers.
+  M7 platform-AI support is still absent from the checkout. No implicit merge.
+- No ledger/signals/AI implementation, paid requests, model-ID selection, new
+  dependency or provider verification performed for 2B. Do not claim 2B complete.
+- Claude: specify shared reservation schema/authority, atomicity and recovery,
+  whether BYO usage counts against the same global cap, and M7 integration contract.
+  Continue the existing default-$0/no-platform-AI policy until approved.

@@ -1,6 +1,6 @@
 # M9: Business Profile (copy prompt → paste markdown)
 
-Status: ready after M8 code is merged (resources may still be pending)
+Status: Batch 2A code implemented; browser verification incomplete; stopped for review
 Review by Claude: yes (untrusted input, AI prompt handling)
 
 ## Goal
@@ -125,3 +125,54 @@ history. Everything in M10–M12 reads from this profile.
   Batch 1 results are in M8, not claimed as Batch 2 verification.
 - Next: Claude reviews M8; approved staging setup/checks; merge M8 as authorized;
   then create the Batch 2 branch from updated main and implement M9 with TDD.
+
+### Batch 2 report: October 5, 2026, 20:50 CDT
+- Steps: 2A Business Profile = PARTIAL (code and automated tests pass; browser
+  acceptance incomplete); 2B AI/spend foundation = BLOCKED on Claude's decision.
+- Branch: `lg/b2-business-profile`, based on fetched/pulled main `dec9a9d`.
+  Commits: `e0be7b3` parser/repository, `28bc135` guarded APIs, `7bbf391` UI;
+  this report follows. Main/production not pushed or changed by Batch 2.
+- Implemented versioned prompt, 11-section parser/aliases, completeness, limits,
+  control stripping, UTF-8 validation, line-number-only secret rejection, and
+  escaped profileForPrompt data wrapper. Four synthetic Markdown fixtures included.
+- Workspace repository has idempotent DDL, immediate transactions, a single-current
+  index, newest-20 pruning and restore-as-new-version. No shared/control DB profile.
+- API uses existing beta/session/origin/workspace guards, stale-workspace header,
+  member minimum for writes, fresh membership check after body read, bounded strict
+  UTF-8 JSON, Zod input/output, no-store responses and non-echoing errors. Another
+  workspace's version ID returns 404; no arbitrary workspace selection added.
+- UI at /settings/business-profile: prompt copy, Markdown upload/paste, checklist,
+  secret-line selection, save, current/history view and restore. Viewers read-only.
+  Added Settings/navigation and missing-profile Funnel links. /leads link awaits M11.
+  Shared Markdown gained opt-in safe links-as-text mode; no images or raw HTML.
+- TDD red runs preceded parser/repo/API/render implementations. All 22 new tests
+  pass; focused profile/page/security checks 118/118 passed. Added new page/routes
+  to smoke registries without changing assertions; explicit pressable classes fix
+  the new-button audit. Existing test assertions were not weakened.
+- Final typecheck PASS and isolated production build PASS (.next-lg-b2).
+  Full suite: 390 files, 383 passed / 7 failed; 3,988 tests, 3,984 passed / 4 failed.
+  Only documented Windows baseline: interaction-layer (BrainCore path), paths,
+  skills-plugins, superset-dispatch; EPERM cleanup lead-magnet-actions,
+  lead-magnets-route, roadmap-mock-5h. No Linux run claimed. Generated tsconfig
+  includes removed; logs in ignored .local/lg-b2-final-tests.txt / final-build.txt.
+- Browser: disposable control/workspace DB, real Better Auth with intercepted
+  email, isolated server 127.0.0.1:4117, headless Chrome. Authenticated profile
+  screen renders; desktop screenshot .local/lg-b2-initial.png inspected.
+  Two browser attempts did NOT finish. Second diagnostic stopped at clipboard
+  copy before first save (could be clipboard/hydration/harness; cause unconfirmed).
+  Per AGENTS two-failure rule STOP. Mobile, browser save/edit/restore/upload,
+  keyboard and reduced-motion acceptance remain unverified, not passed.
+  Fixture script is ignored .local/lg-b2-browser.ts; both fixture servers stopped,
+  port 4117 has no listener. Shared dev server 4100 was never stopped or reconfigured.
+- Self-review: no secrets committed (secret fixtures deliberately fake), raw SQL
+  only in repository, no AI/provider call, no real send, no production data touched.
+  Profile text never used as executable instructions. API and renderer changes are
+  opt-in where shared; tests cover their contracts. No dependency added.
+- Decisions beyond spec: headings repeated through aliases concatenate within the
+  existing section limit; heading-less content retained as an extra Introduction.
+  Optional strictUtf8 argument on existing body reader preserves default behavior.
+- Noe actions needed: none for this code checkpoint. Claude needs to review the
+  browser failure and approve continuation/debugging, and decide M10 global spend
+  coordination/M7 integration. Existing staging cost/config approvals remain pending.
+- Staging: NOT deployed; no staging infrastructure configured. Ready for production?
+  NO. No Batch 3 work. Resume 2A verification and 2B after the decisions above.
