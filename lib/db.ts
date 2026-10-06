@@ -1,4 +1,5 @@
 import { UsageSnapshotSchema, type SeatUsage } from '@/lib/usage';
+import { createBusinessProfiles } from '@/lib/business-profile/repository';
 import Database from 'better-sqlite3';
 import { createConnectionRecords } from '@/lib/connection-records';
 import { createVerificationRecords } from '@/lib/verification-records';
@@ -695,6 +696,7 @@ export function openDb(path: string) {
   const connectionVerifications = createVerificationRecords(db);
   const cloudSources = createCloudSources(db);
   const financialImports = createFinancialImports(db);
+  const businessProfiles = createBusinessProfiles(db);
   migrateAgentsTable(db);
   migrateFunnelContactsTable(db);
   migrateSkillsTable(db);
@@ -2135,6 +2137,7 @@ export function openDb(path: string) {
     connectionVerifications,
     cloudSources,
     financialImports,
+    businessProfiles,
     departments,
     agents,
     tools,
