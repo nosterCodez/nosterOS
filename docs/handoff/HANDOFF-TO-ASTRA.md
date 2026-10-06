@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 6, 02:32 CDT: Noe requested Batch 3 if prerequisites are clear; preflight only this turn.
+- Refreshed origin: main remains 72cb179; Batch 2B remains lg/b2-business-profile at f784e04.
+- No Claude acceptance of 2B is recorded in the current M10 spec or handoff.
+- Batch 3 needs 2B, but the execution plan requires a latest-main base; no implicit main merge or deployment.
+- Await Claude review/release path, or explicit approval to build Batch 3 atop pending 2B on a separate review branch.
+- No application changes, tests, deployment, secrets, resources or real messages; shared server 4100 and unrelated docs untouched.
+
 - Oct 6, 02:24 CDT: Batch 2 complete for review; 2A passed browser acceptance and is LIVE at main/origin/main 72cb179.
 - Railway ada4ecca-d6be-4fef-844c-ccd9b6302601 SUCCESS; public os.noepenaa.com HTTP 401 / OmegaOS Private confirmed.
 - 2B on lg/b2-business-profile ONLY: 6a7294e single spending authority/recovery, 5cc128b metered structured AI/catalog; not deployed.

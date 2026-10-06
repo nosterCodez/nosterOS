@@ -277,3 +277,14 @@ isolation of ledger reads; spend.db included in backup snapshot.
 - Noe actions now: none to keep this checkpoint. Say continue after review for
   Batch 3; infrastructure/cost decisions in M8/STAGING.md remain separate.
 - STOP after Batch 2. Shared dev server 4100 and unrelated provider docs untouched.
+
+### Batch 3 preflight: October 6, 2026, 02:32 CDT
+- Noe requested continuing if ready; read current agreement, execution plan, M10/M11 and handoff.
+- Refreshed origin; main remains 72cb179, without Batch 2B's spending/AI foundation.
+- Current review branch remains lg/b2-business-profile at f784e04; no recorded Claude acceptance yet.
+- Both Batch 3 steps depend on that foundation; the execution plan requires a latest-main base.
+- No implicit production merge, review waiver, or alternate branch-base decision made.
+- Next decision: complete Claude review/release path, or explicitly approve a separate Batch 3 branch carrying pending 2B.
+- No application changes or new verification results; prior Batch 2 results remain as reported above.
+- No deployment, paid calls, credentials, resources or outbound messages; shared dev server untouched.
+- Other-session provider documents preserved; Batch 3 implementation has not started.
