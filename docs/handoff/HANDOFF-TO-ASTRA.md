@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 19:44 CDT: Batch 1 partial on `lg/b1-backups-staging`; code `bdec969`, `1d88b36`; report follows.
+- Encryption/archive/store/fixture restore implemented; staging badge and outbound guards tested; no live backup yet.
+- Typecheck/build pass; 382 files: 375 pass / 7 Windows baseline fail; tests 3,941 pass / 4 baseline fail; new 20/20.
+- BLOCKED: db.backup requires plaintext temporary snapshots but M8 forbids them; exception asked, not yet approved.
+- Snapshot/runner/lock/status/tick/CLI/panel pending; staging resources, variables and DNS still need Noe's cost approval.
+- No production changes or real sends; full Batch 1 report in M8 and costs/setup in STAGING.md; STOP before Batch 2.
+
 - Oct 5, 19:02 CDT: Batch 0 done on `lg/b0-docs`; queue commit `5c8d861`, report follows.
 - Typecheck/build pass; 376 test files: 369 pass / 7 baseline fail; tests 3,921 pass / 4 baseline fail.
 - Railway service disk 0.060473344 GB (~60.5 MB), below documented 500 MB / 80% threshold.

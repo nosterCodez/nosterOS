@@ -1,6 +1,6 @@
 # M8: Nightly backups and a staging copy
 
-Status: ready
+Status: Batch 1 partial; snapshot-policy decision and infrastructure approvals pending
 Review by Claude: yes (data safety, secrets)
 Queue position: 1 of the lead-gen program (M8 → M9 → M10 → M11 → M12)
 
@@ -99,10 +99,77 @@ before production.
   panel, and a restore drill into a scratch directory on staging recorded below.
 
 ## Report (Astra fills this in)
-- Status:
-- Commits:
-- Typecheck / tests / build:
-- What Noe needs to approve or click:
-- Restore drill result:
-- What changed beyond the spec, and why:
-- Questions or blockers for Claude:
+
+### Batch 1 report: October 5, 2026, 19:44 CDT
+- Steps: 1A encrypted backups + restore = PARTIAL / BLOCKED (snapshot exception
+  below); 1B staging support = code done, infrastructure and browser smoke pending.
+- Branch / last implementation commit: `lg/b1-backups-staging` @ `1d88b36`;
+  backup foundations `bdec969`. Based on Batch 0 docs as the plan explicitly requires.
+  Report/config commit follows. No main push or production deployment.
+- Implemented: independent backup-key validation; OBK1 AES-256-GCM encryption;
+  tar.gz manifest with database paths, sizes, SHA-256, schema versions and commit;
+  bounded parsing with no arbitrary path extraction, links or duplicate entries;
+  encrypted local-development and S3 stores, environment namespaces, bounded reads,
+  request timeout, paginated listings and conditional no-overwrite uploads;
+  seven daily plus four older Sunday retention selection; scratch-only restore
+  with hashes and SQLite integrity checks before filesystem writes.
+- Not implemented: online SQLite snapshot creation; backup_runs migration/repo and
+  lock; upload verification orchestration/pruning; tick schedule; backup CLI;
+  owner platform panel and doctor freshness warning. No live backup exists.
+- BLOCKED: M8 requires db.backup(dest), which writes a temporary plaintext SQLite
+  snapshot, but also says "No plaintext backups, ever." Asked Noe to approve
+  private temporary snapshots outside the live data volume, immediate encryption,
+  and cleanup. No answer yet; no exception assumed and no snapshot code written.
+  Claude should confirm the exception and cleanup expectations before that resumes.
+- Typecheck clean. Full suite: 382 files, 375 passed / 7 failed; 3,945 tests,
+  3,941 passed / 4 failed. Same Windows baseline as Batch 0: interaction-layer
+  (BrainCore path, not these buttons), paths, skills-plugins, superset-dispatch;
+  EPERM cleanup suites lead-magnet-actions, lead-magnets-route, roadmap-mock-5h.
+  New tests: 20/20 in six files. Existing assertions were not changed.
+- Build passes using `.next-lg-b1-final`, isolated DATA_DIR and disabled background
+  ticks. An earlier attempt hit Turbopack's internal Google font query resolution;
+  a fresh dist directory passed, and the final post-dependency build also passed.
+  Generated tsconfig includes removed; shared dev server 4100 left untouched.
+- Audit: production dependencies 0 advisories. Full npm audit reports 10 in
+  existing development tooling (3 moderate, 6 high, 1 critical); no unrelated
+  dependency upgrades made. Vitest UI server was not started.
+- Staging: not deployed; no environment, bucket, volume, DNS, variable, key or
+  real message changes. Badge tested by server rendering, not a browser screenshot.
+- Restore test: fixture SQLite row recovered with integrity_check=ok; wrong key,
+  malformed database, path/hash mismatches, existing target and live-data target
+  rejected. This is NOT the required db.backup -> upload -> restore drill.
+- Sender audit: SMTP replies/mail-guard, Slack, ManyChat, Zernio publishing and
+  Google Calendar notification modes all call the central guard before sending.
+  Fixed validated magic-link/workspace-invitation mail remains exempt. No invoice
+  sender exists; read-only invoice integrations unchanged. Paperclip internal
+  board actions and browser mailto/WhatsApp handoffs are not server mail senders.
+  Full list and boundaries: STAGING.md. Injected connector env cannot lift host ban.
+- Noe actions needed, in order:
+  1. Resolve temporary snapshot exception above (question already shown in chat).
+  2. Approve Railway backup bucket: $0.015/GB-month; about $0.01/month for eleven
+     60.5 MB archives, estimated, not a measured bill. No provisioning yet.
+  3. Approve staging environment/0.5 GB volume and compute allowance: volume about
+     $0.078/month; example compute+volume about $0.18/month at 20 awake hours or
+     $3.58/month always awake at 0.25 GB RAM/0.05 vCPU, excluding egress. Actual
+     usage is metered; current $8 alert/$10 cap remain. Sleeping is not guaranteed
+     when background polling creates outbound traffic. Rates and sources in STAGING.md.
+  4. Approve fresh backup/auth/vault/internal/beta secrets and environment variables;
+     retain backup/vault recovery keys in a password manager. No values generated.
+  5. Add staging.os DNS to Railway's assigned domain; optional approved connector
+     callbacks and system-mail setup. Never clone production credentials/data.
+  6. After completion/review/staging checks, explicitly approve main/production.
+- Decisions beyond spec: Noe approved tar-stream and its types in chat ("bet i
+  approve it"); AWS SDK already approved in M8. Shared guard uses a .mjs module
+  re-exported from .ts so plain-Node mail scripts use the exact same policy.
+  `.env.example` contains blank placeholders only: M8's explicit requirement wins
+  over the plan's general prohibition on committing .env* files.
+- Self-review: no new routes/tables/AI calls; no secrets/raw SQL added to pages;
+  storage endpoint is administrator configuration, HTTPS only; bounded responses,
+  timeouts, no raw provider errors logged. Namespace prevents cross-environment
+  pruning. No archive files written by tests except disposable encrypted fixtures
+  and explicit restore fixtures. Unrelated handoff edits preserved.
+- Risks for Claude: archive packing is buffered, so peak memory must be measured
+  before the full-volume production drill. Retention chooses seven dates plus four
+  older Sundays; deletion is not wired yet. No Linux rerun performed this session.
+- Ready for production? NO. Stop here; continue Batch 1 after the decision above.
+  Batch 2 has not started. Logs are under ignored `.local/lg-b1-*` paths.
