@@ -1,10 +1,12 @@
 # Staging and backup runbook
 
-Status: Batch 1 implementation checkpoint; no staging environment or backup bucket
+Status: Batch 1 code complete; no staging environment or backup bucket
 has been created. No live backup or restore has been run. Online snapshots, encrypted
 archive/storage, runner/lock/status, scheduling, retention and CLI restore are
-implemented and pass fixture tests. The owner panel still needs its existing
-operator-feature gate: two connector-boundary assertions fail until that is resolved.
+implemented and pass fixture tests. The owner panel now enforces the existing
+operator-feature gate before its additional bound-operator owner/email check.
+Typecheck/build pass; the full Windows suite has only documented baseline failures.
+Authenticated browser checks and the live S3 restore drill remain pending.
 Noe approved private temporary snapshots in chat, followed by immediate encryption
 and cleanup. Do not rely on this branch in production before review and staging.
 The instructions below are a setup checklist, not a claim these resources exist.

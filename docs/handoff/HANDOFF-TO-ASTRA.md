@@ -26,6 +26,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 5, 20:14 CDT: Batch 1 code complete on `lg/b1-backups-staging`; gate fix `c2468aa`; report follows.
+- Existing operator gate now precedes owner-only backup status; unchanged boundary tests pass; all 35 new tests pass.
+- Typecheck/build pass; full Windows suite 379/386 files and 3,957/3,961 tests pass; only documented baseline failures.
+- Fixture restore drill passed; no authenticated browser smoke, cloud backup, live S3 restore or staging deploy yet.
+- Claude review plus Noe's costs/resources/secrets/DNS approvals remain; see M8 final report and STAGING.md.
+- No main/production changes, real sends or live data changes; shared server untouched; STOP before Batch 2.
+
 - Oct 5, 20:07 CDT: Batch 1 continuation on `lg/b1-backups-staging`; runtime `f34f7be`, UI checkpoint `636a485`.
 - Snapshot exception approved; online backup/verified upload/prune/lock/tick/CLI implemented; disposable CLI restore drill passes.
 - Typecheck/build passed; full suite found integration issues; latest focused rerun leaves 2 platform-page gate assertions failing.

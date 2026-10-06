@@ -1,6 +1,6 @@
 # M8: Nightly backups and a staging copy
 
-Status: Batch 1 runtime implemented; platform gate review and infrastructure approvals pending
+Status: Batch 1 code complete; Claude review, infrastructure approvals and live drills pending
 Review by Claude: yes (data safety, secrets)
 Queue position: 1 of the lead-gen program (M8 → M9 → M10 → M11 → M12)
 
@@ -238,3 +238,44 @@ before production.
 - Staging: NOT deployed; no bucket/environment/volume/DNS/key/variable changes.
   Restore promotion and abandoned-lock procedure documented, not executed.
 - Ready for production? NO. Preserve this checkpoint for review; remain in Batch 1.
+
+### Batch 1 code-completion report: October 5, 2026, 20:14 CDT
+- Steps: 1A encrypted backups/restore = code complete, fixture drill passed;
+  1B staging support = code complete. Live infrastructure and drills remain blocked.
+- Branch / last implementation commit: `lg/b1-backups-staging` @ `c2468aa`;
+  report commit follows. Batch 2 has not started.
+- Noe's continuation approved the proposed gate fix. PlatformPage now applies
+  operatorWorkspaceForPage before the additional bound-operator owner/email check.
+  Regression test proves a disabled gate prevents owner/context and database reads.
+  Existing connector-boundary assertions were not changed or weakened.
+- Typecheck PASS. Focused backup-status/connector-boundaries/smoke: 98/98 PASS.
+  All 35 new backup/staging tests pass. Full suite: 386 files, 379 passed / 7 failed;
+  3,961 tests, 3,957 passed / 4 failed. Only documented Windows baseline failures:
+  interaction-layer (BrainCore backslash path), paths, skills-plugins,
+  superset-dispatch; EPERM cleanup lead-magnet-actions, lead-magnets-route,
+  roadmap-mock-5h. Linux review has not been run by this session.
+- Build PASS with isolated .next-lg-b1-verified and .local/lg-b1-build-data;
+  generated tsconfig includes removed; shared server 4100 untouched. Logs remain
+  ignored under .local/lg-b1-verified-*.txt. No test/build session left running.
+- Staging: NOT deployed. No cloud bucket, environment, volume, key, variable or
+  DNS changes; no production backup, S3 drill or authenticated browser smoke yet.
+- Noe actions needed: 1. Approve backup bucket and staging environment/volume
+  costs from STAGING.md (bucket roughly $0.01/month at the example size; staging
+  roughly $0.18/month for the example 20 awake hours or $3.58 always awake,
+  excluding egress; actual usage is metered, not a guaranteed fixed price).
+  2. Approve separate secrets/variables and retain recovery keys privately.
+  3. Configure staging DNS and optional approved callbacks/system mail.
+  4. After Claude review and staging checks, explicitly approve main/production.
+- Decisions beyond spec: only the previously approved private temporary snapshot
+  exception and dependencies; this continuation restores the established operator
+  gate rather than introducing another authorization policy.
+- Self-review: no secret values, raw provider error logs or SQL in pages/routes;
+  no new public write endpoint or expanded internal-header permission. Owner gate
+  is additive; shared backup_runs is explicitly specified. Storage uses a bounded
+  HTTPS administrator endpoint; no AI calls or real messages. Unrelated files preserved.
+- Risks for Claude: buffered archive peak memory still needs production-size
+  measurement; databases are individually consistent, not atomically snapshotted
+  together. Crash scratch cleanup and running-lock recovery require the documented
+  manual review. Review data safety before deployment; fixture tests are not a live drill.
+- Ready for production? NO. Batch 1 code is ready for review; infrastructure and
+  live acceptance remain pending. STOP here until Noe continues; no Batch 2 work.
