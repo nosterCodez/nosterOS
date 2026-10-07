@@ -45,6 +45,13 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 7, 10:08 CDT (Claude Code): Batch 3 deployed. main fast-forwarded 712fa75 -> cdf1b5f (origin/lg/b3-plan-engine).
+- Covered by Claude's APPROVED FOR PRODUCTION verdict in CLAUDE-CODE-BRIEF.md: 8184ed1, 2fbaedf, 7da02cf, f3a055a, 9221995, 76142ff, ca32329, cdf1b5f + docs.
+- Railway nosteros-web a7597bed-25ca-4f1c-98fd-171fc6f55a8e SUCCESS; nosterOS service aad5e443-4a58-411d-96cb-43c71bb7ecc9 SUCCESS.
+- Post-deploy public https://os.noepenaa.com HTTP 401 / "OmegaOS · Private" verified.
+- Engine flags remain unset in production, so discovery does not run. No Railway variables, keys, caps or data changed.
+- Next: Step 3C Foursquare Portal import + small Business Profile/Overpass fixes (CLAUDE-CODE-BRIEF.md step 2-3).
+
 - Oct 6, 13:34 CDT: Noe authorizes Portal-token importer/RGV import; variable NAME confirmed in Railway, value never fetched.
 - Portal uses Iceberg catalog, not a Parquet URL; official DuckDB recipe recorded in M11 follow-up.
 - Await Claude approval of import-only DuckDB/extension dependency and a one-off runtime execution plan; no Railway CLI/runtime-exec tool here.
