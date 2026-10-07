@@ -5,7 +5,9 @@ import { appEntries, connectorDependency } from './connector-audit-helper';
 import { apiOperatorWorkspace, operatorWorkspaceForPage } from '@/lib/session';
 
 // Workspace-only credential access is exercised end-to-end in lead-plan-api.test.ts.
-const workspaceRoutes = new Set(['app/api/leads/plan/route.ts']);
+// The Places Portal import reads one platform token behind the stricter platform-owner gate
+// (owner role + NOSTEROS_OWNER_EMAIL + bound operator workspace); covered by places-import-api.test.ts.
+const workspaceRoutes = new Set(['app/api/leads/plan/route.ts', 'app/api/platform/places-import/route.ts']);
 const entries = appEntries().filter(file => connectorDependency(file) && !workspaceRoutes.has(file));
 const scopedDashboards = new Set(['app/page.tsx', 'app/analytics/page.tsx', 'app/finances/page.tsx', 'app/social/page.tsx']);
 test('reviewed cloud adapters cannot fall back to operator credentials or host files', () => {

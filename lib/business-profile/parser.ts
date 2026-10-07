@@ -8,6 +8,14 @@ const aliases = new Map<string, SectionKey>([
   ['budget', 'monthly_budget_for_tools_and_ads'], ['voice', 'tone_and_voice'],
   ['differentiators', 'what_makes_us_different'], ['contact details', 'business_contact_details'],
 ]);
+/** A section is unknown only when its whole content says so (e.g. "unknown" or "- Unknown."). */
+function wholeSectionUnknown(text: string) {
+  const lines = text.split('\n')
+    .map(line => line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').replace(/[*_`>#.!:;,\s]+/g, ' ').trim().toLowerCase())
+    .filter(Boolean);
+  return lines.length > 0 && lines.every(line => line === 'unknown');
+}
+export const NO_SECTIONS_MESSAGE = "No sections found. Copy your AI's answer as Markdown (use its copy button).";
 export class ProfileInputError extends Error {
   constructor(message: string, public readonly lines: number[] = []) { super(message); }
 }
@@ -31,7 +39,7 @@ export function parseBusinessProfile(input: string) {
   const lines = secretLines(rawMarkdown);
   if (lines.length) throw new ProfileInputError('Remove possible secrets from the highlighted lines before saving.', lines);
   const sections: Partial<Record<SectionKey, string>> & { extra: { heading: string; text: string }[] } = { extra: [] };
-  let heading = 'Introduction', content: string[] = [], fence = '';
+  let heading = 'Introduction', content: string[] = [], fence = '', headings = 0;
   function flush() {
     const text = content.join('\n').trim();
     const key = aliases.get(normalizeHeading(heading));
@@ -47,13 +55,15 @@ export function parseBusinessProfile(input: string) {
       content.push(line); continue;
     }
     const match = !fence && line.match(/^##[ \t]+(.+)$/);
-    if (match) { flush(); heading = match[1].trim(); } else content.push(line);
+    if (match) { flush(); heading = match[1].trim(); headings++; } else content.push(line);
   }
   flush();
+  // Plain text pasted from an AI chat has no "##" headings; say so instead of a size error.
+  if (headings === 0) throw new ProfileInputError(NO_SECTIONS_MESSAGE);
   const validated = BusinessProfileSections.safeParse(sections);
   if (!validated.success) throw new ProfileInputError('Each section allows 4,000 characters; up to five extra sections allow 2,000 characters each.');
   const completeness = Completeness.parse(Object.fromEntries(PROFILE_SECTIONS.map(({ key }) => [key,
-    !validated.data[key]?.trim() ? 'missing' : /\bunknown\b/i.test(validated.data[key]!) ? 'unknown' : 'found'])));
+    !validated.data[key]?.trim() ? 'missing' : wholeSectionUnknown(validated.data[key]!) ? 'unknown' : 'found'])));
   return { rawMarkdown, sections: validated.data, completeness };
 }
 export function profileForPrompt(profile: { sections: unknown }) {

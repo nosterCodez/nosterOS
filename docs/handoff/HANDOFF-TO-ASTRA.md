@@ -45,6 +45,11 @@ Etsy: M6k confirmed the production key works and the shop syncs (66739608); no E
 
 ## Current checkout and deployment
 
+- Oct 7 (Claude Code): Step 3C (Places Portal import + profile/Overpass fixes) ready for review on lg/b3c-places-portal. NOT deployed; real RGV import NOT run.
+- Noe approved @duckdb/node-api and the Overpass contact noster@nostermarketing.com; Noe presses "Import RGV places" himself after deploy.
+- Open review items in the M11 3C report: platform page hidden while NOSTEROS_OPERATOR_FEATURES=0, possible avro extension need, DuckDB memory limit.
+- Second Railway service "nosterOS" (01f48a34): same repo/branch main, no domain, variables or volume, zero network traffic in 7 days; nothing references it. Left unchanged for Noe.
+
 - Oct 7, 10:08 CDT (Claude Code): Batch 3 deployed. main fast-forwarded 712fa75 -> cdf1b5f (origin/lg/b3-plan-engine).
 - Covered by Claude's APPROVED FOR PRODUCTION verdict in CLAUDE-CODE-BRIEF.md: 8184ed1, 2fbaedf, 7da02cf, f3a055a, 9221995, 76142ff, ca32329, cdf1b5f + docs.
 - Railway nosteros-web a7597bed-25ca-4f1c-98fd-171fc6f55a8e SUCCESS; nosterOS service aad5e443-4a58-411d-96cb-43c71bb7ecc9 SUCCESS.

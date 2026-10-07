@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { Place, publicWebsite, type LeadSource, type SourceQuery } from './types';
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+/** Polite contact per Overpass usage policy; noster@nostermarketing.com is an inbox Noe reads. */
+export const OVERPASS_USER_AGENT = 'OmegaOS/1.0 (read-only business discovery; https://os.noepenaa.com; noster@nostermarketing.com)';
 export const OSM_ATTRIBUTION = 'OpenStreetMap contributors (ODbL)';
 export function cityQuery(value: string) {
   if (!value.trim() || value.length > 100 || /[\x00-\x1f]/.test(value)) throw new Error('invalid_city');
@@ -18,7 +20,7 @@ export function overpassSource(request: typeof fetch = fetch): LeadSource {
     async find(input: SourceQuery) {
       const signal = AbortSignal.any([input.signal, AbortSignal.timeout(25000)]);
       const response = await request(OVERPASS_URL, { method: 'POST', redirect: 'error', signal,
-        headers: { 'content-type': 'application/x-www-form-urlencoded', 'User-Agent': 'OmegaOS/1.0 (read-only business discovery; https://os.noepenaa.com; noster@nostermarketing.com)' },
+        headers: { 'content-type': 'application/x-www-form-urlencoded', 'User-Agent': OVERPASS_USER_AGENT },
         body: new URLSearchParams({ data: cityQuery(input.city) }) });
       if (!response.ok || !response.body) { await response.body?.cancel(); throw new Error('source_unavailable'); }
       const reader = response.body.getReader(); const chunks: Uint8Array[] = []; let size = 0;

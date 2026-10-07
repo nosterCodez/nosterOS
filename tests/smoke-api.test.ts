@@ -39,6 +39,8 @@ type RouteEntry = {
 const ROUTES: RouteEntry[] = [
   { route: 'leads/runs', load: () => import('@/app/api/leads/runs/route'), url: 'http://localhost/api/leads/runs', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'leads/plan', load: () => import('@/app/api/leads/plan/route'), url: 'http://localhost/api/leads/plan', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
+  // Platform-owner only; the smoke identity is not the configured owner. Owner paths: places-import-api.test.ts.
+  { route: 'platform/places-import', load: () => import('@/app/api/platform/places-import/route'), url: 'http://localhost/api/platform/places-import', headers: { 'x-omegaos-workspace': 'T'.repeat(32) }, expectedStatus: 403 },
   { route: 'business-profile', load: () => import('@/app/api/business-profile/route'), url: 'http://localhost/api/business-profile', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'business-profile/versions', load: () => import('@/app/api/business-profile/versions/route'), url: 'http://localhost/api/business-profile/versions', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },
   { route: 'finances/imports', load: () => import('@/app/api/finances/imports/route'), url: 'http://localhost/api/finances/imports', headers: { 'x-omegaos-workspace': 'T'.repeat(32) } },

@@ -301,3 +301,64 @@ personalize → Funnel + Usage. Deploy each step to **staging** (M8) freely.
 - Real RGV import NOT RUN: row count and file size unavailable, not zero.
   No new code/dependency/account, secret read, terms acceptance, data write,
   Railway setting or production deployment. Existing data/server preserved.
+
+### Step 3C report: Places Portal import, October 7, 2026 (Claude Code)
+- READY FOR REVIEW on branch lg/b3c-places-portal. NOT deployed; the real RGV import has NOT run.
+  Noe will press "Import RGV places" himself after review and deploy.
+- Dependency: @duckdb/node-api 1.5.6-r.1 pinned exact (Noe approved, Oct 7). MIT. It and
+  @duckdb/node-bindings (+ per-platform binary packages) have no install scripts; installed with
+  --ignore-scripts. Linux x64 binary is about 71 MB unpacked. Added to serverExternalPackages.
+- Recipe follows the Portal's official DuckDB page (Access Data > DuckDB, checked Oct 7):
+  httpfs, CREATE SECRET (TYPE ICEBERG, TOKEN), ATTACH 'places' (TYPE iceberg, ENDPOINT
+  https://catalog.h3-hub.foursquare.com/iceberg), table places.datasets.places_os.
+- lib/leads/places-portal.ts (import-only): in-memory DuckDB, memory_limit 512MB, threads 2,
+  unsigned and community extensions off, autoinstall/autoload off, extension dir in a private temp
+  folder. Only INSTALL/LOAD httpfs and iceberg. CREATE TEMPORARY SECRET is the only statement with
+  the token; token read from OMEGA_FOURSQUARE_PLACES_TOKEN inside the function and shape-checked.
+  lock_configuration=true before any catalog query. Secret dropped, catalog detached, connection
+  and instance closed in finally; temp folder removed. Every failure is a fixed code; DuckDB
+  messages are discarded (they can echo statement text).
+- Query: country='US', region='TX', RGV bbox -99.20,25.84,-97.10,26.80, date_closed IS NULL,
+  excluding unresolved_flags closed/delete/privatevenue/doesnt_exist. Public fields only:
+  fsq_place_id, name, latitude, longitude, locality, fsq_category_labels, address, website, tel.
+  COUNT dry run first; refuses over 200,000 rows or an estimated 60 MiB, or an 80%-volume breach.
+  Exports snappy Parquet to temp, size-checked, then the existing guarded importer writes
+  shared/places.db. 10-minute deadline interrupts DuckDB. Release date = import date (UTC); the
+  Portal table has no release column.
+- Importer: replacement only with replace=true (owner confirmation), atomic rename after the new
+  file is complete; storage guard counts both files; refuses to publish an empty result. Any
+  failure leaves the old import untouched.
+- Job: single-flight (in-process + exclusive lock file shared/places-import.lock, stale after 20
+  min), background run, status file shared/places-import-status.json (state, times, counts, fixed
+  code; no user IDs or secrets). Logs carry counts or the code only.
+- API /api/platform/places-import: GET status, POST {action:'import', replace} strict. Session,
+  origin, owner role, platform owner (owner role + NOSTEROS_OWNER_EMAIL + bound operator
+  workspace, now shared via lib/platform-owner.ts with backup status), workspace header, fresh
+  re-check. 403 for everyone else; 409 busy / unconfirmed replace. No schedule or auto run.
+- UI: PlacesImportPanel on /settings/platform under Backup status. Shows current count, date,
+  size and last result; Replace needs a second confirm click; polls every 4s while running.
+- Small fixes: profile parser says "No sections found. Copy your AI's answer as Markdown (use its
+  copy button)" when no ## headings exist; a section is unknown only when its whole content is
+  unknown; headings after a list get extra top space in the profile view. Overpass User-Agent
+  contact confirmed noster@nostermarketing.com (Noe, Oct 7), now a tested constant.
+- Test changes needing review: (1) business-profile fixture assertion business_contact_details
+  unknown -> found ("Mailing address unknown." is one detail), per the brief. (2) connector-
+  boundaries exempts app/api/platform/places-import/route.ts like leads/plan (platform-owner gate
+  instead of apiOperatorWorkspace, which requires NOSTEROS_OPERATOR_FEATURES=1). (3) smoke-api
+  lists the route with documented 403 for a non-owner.
+- Verification: typecheck PASS; isolated build PASS with no Turbopack warnings (fs calls carry the
+  repo's turbopackIgnore comment). Full Windows suite 4,087/4,095 before the two inventory fixes;
+  after them all 9 touched files pass (169 tests). Remaining failures are the AGENTS.md baseline only
+  (lead-magnet-actions, lead-magnets-route, roadmap-mock-5h, paths, skills-plugins,
+  superset-dispatch, interaction-layer BrainCore.tsx:57). New tests: places-portal (10),
+  places-import-api (7), profile/render/page additions. No live Portal, DuckDB or network calls.
+- Open questions for review:
+  a) /settings/platform requires NOSTEROS_OPERATOR_FEATURES=1 (operatorWorkspaceForPage), but
+     production keeps it 0, so the panel (and the existing backup panel) is not visible in
+     production. Recommend gating that page on isPlatformOwner alone; this changes the
+     backup-status test "disabled operator gate returns unavailable". Not changed here.
+  b) DuckDB's iceberg extension may need the official avro extension for manifest reading; with
+     autoload off, the first run would fail with "provider". Approve adding avro to
+     APPROVED_EXTENSIONS, or keep two and see. Not verified: it would require downloading extensions.
+  c) Memory: Node heap is capped at 512 MB (NODE_OPTIONS) and DuckDB memory_limit is 512 MB on a
+     1 GB container. Consider memory_limit 384MB if the first run is tight.

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { parseBusinessProfile, profileForPrompt, secretLines } from '@/lib/business-profile/parser';
+import { NO_SECTIONS_MESSAGE, parseBusinessProfile, profileForPrompt, secretLines } from '@/lib/business-profile/parser';
 import { PROFILE_SECTIONS } from '@/lib/business-profile/schema';
 const fixture = (name: string) => fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/business-profile', `${name}.md`), 'utf8');
 
@@ -9,12 +9,25 @@ test('full profile, aliases, missing and unknown sections have explicit complete
   const full = parseBusinessProfile(fixture('complete'));
   expect(Object.keys(full.sections).filter(key => key !== 'extra')).toHaveLength(11);
   expect(full.completeness.business_overview).toBe('found');
-  expect(full.completeness.business_contact_details).toBe('unknown');
+  // "Mailing address unknown." is one unknown detail in a filled section (Claude brief, Oct 7).
+  expect(full.completeness.business_contact_details).toBe('found');
   const gaps = parseBusinessProfile(fixture('gaps'));
   expect(gaps.sections.services_and_prices).toBe('unknown');
   expect(gaps.completeness.services_and_prices).toBe('unknown');
   expect(gaps.completeness.ideal_customer).toBe('missing');
   expect(PROFILE_SECTIONS).toHaveLength(11);
+});
+test('a section is unknown only when its whole content is unknown', () => {
+  const parsed = parseBusinessProfile('## Pricing\n- Unknown.\n## Service area\n**unknown**\n\n## Business overview\nWe build sites. Founding year unknown.\n## Ideal customer\nunknown\nRestaurants in McAllen');
+  expect(parsed.completeness.services_and_prices).toBe('unknown');
+  expect(parsed.completeness.service_area).toBe('unknown');
+  expect(parsed.completeness.business_overview).toBe('found');
+  expect(parsed.completeness.ideal_customer).toBe('found');
+});
+test('plain text without ## headings asks for the Markdown copy instead of a size error', () => {
+  for (const text of ['Business overview\nWe build websites.', 'x'.repeat(3000), '# Only a title\nText']) {
+    expect(() => parseBusinessProfile(text)).toThrow(NO_SECTIONS_MESSAGE);
+  }
 });
 test('normalizes controls and CRLF, joins duplicate aliases without bypassing limits', () => {
   const parsed = parseBusinessProfile('## BUSINESS OVERVIEW\r\nA\0\x01\tB\r\n## Pricing\n100\n## Services and prices\n200\n## Extra\nNotes');

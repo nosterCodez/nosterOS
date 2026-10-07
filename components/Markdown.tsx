@@ -60,7 +60,7 @@ export function Markdown({ text, safe = false }: { text: string; safe?: boolean 
             return (
               <h3
                 key={i}
-                className={`${HEADING_SIZE[b.level - 1] ?? 'text-[12px]'} pt-1 font-semibold text-os-text`}
+                className={`${HEADING_SIZE[b.level - 1] ?? 'text-[12px]'} ${blocks[i - 1]?.type === 'list' ? 'pt-3' : 'pt-1'} font-semibold text-os-text`}
               >
                 <Marks text={b.text} safe={safe} />
               </h3>

@@ -8,7 +8,7 @@ import { Place, publicWebsite } from './sources/types';
 export const MAX_PLACES_BYTES = 60 * 1024 * 1024;
 export const BoundingBox = z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90), z.number().min(-180).max(180), z.number().min(-90).max(90)])
   .refine(([west, south, east, north]) => west < east && south < north, 'Invalid bounding box');
-function directoryBytes(dir: string): number {
+export function directoryBytes(dir: string): number {
   if (!fs.existsSync(dir)) return 0;
   return fs.readdirSync(dir, { withFileTypes: true }).reduce((size, entry) => {
     if (entry.isSymbolicLink()) throw new Error('Data symlinks are not supported');
@@ -16,13 +16,19 @@ function directoryBytes(dir: string): number {
     return size + (entry.isDirectory() ? directoryBytes(name) : fs.statSync(name).size);
   }, 0);
 }
-/** Only an explicitly supplied local, authorized Parquet file. Never downloads data or accepts access terms. */
-export async function importPlaces(options: { file: string; bbox: number[]; releaseDate: string; dataRoot: string; maxBytes?: number }) {
+/**
+ * Only an explicitly supplied local, authorized Parquet file. Never downloads data or accepts access terms.
+ * An existing import is replaced only when `replace` is true (an owner's explicit confirmation), by an
+ * atomic rename once the new file is complete; any failure leaves the existing import untouched.
+ */
+export async function importPlaces(options: { file: string; bbox: number[]; releaseDate: string; dataRoot: string; maxBytes?: number; replace?: boolean; requireRows?: boolean }) {
   const bbox = BoundingBox.parse(options.bbox);
   const release = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(s => !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s).parse(options.releaseDate);
   if (/^https?:/i.test(options.file)) throw new Error('Local authorized file required');
   const root = path.resolve(options.dataRoot), shared = path.join(root, 'shared'), output = path.join(shared, 'places.db');
-  if (fs.existsSync(output)) throw new Error('Existing import preserved; replacement requires a separately reviewed refresh');
+  if (fs.existsSync(output) && !options.replace) throw new Error('Existing import preserved; replacement requires explicit confirmation');
+  // Counts any file being replaced too: both exist on the volume until the swap.
+  const replacing = Boolean(options.replace) && fs.existsSync(output);
   const before = directoryBytes(root), max = Math.min(MAX_PLACES_BYTES, options.maxBytes ?? MAX_PLACES_BYTES);
   if (before >= 400 * 1024 * 1024) throw new Error('Data volume would exceed 80 percent of 500 MB');
   const input = await asyncBufferFromFile(options.file), metadata = await parquetMetadataAsync(input);
@@ -62,8 +68,10 @@ export async function importPlaces(options: { file: string; bbox: number[]; rele
     db.close(); open = false;
     const bytes = fs.statSync(temporary).size;
     if (bytes > max || before + bytes > 400 * 1024 * 1024) throw new Error('Import exceeds storage cap');
+    if (options.requireRows && count === 0) throw new Error('No places imported');
     // Hard-link publication fails if another importer already published; no existing data is replaced.
-    fs.linkSync(temporary, output);
-    return { count, bytes, releaseDate: release, bbox, output };
+    // A confirmed replacement renames over the old file, which is atomic on the same volume.
+    if (options.replace) fs.renameSync(temporary, output); else fs.linkSync(temporary, output);
+    return { count, bytes, releaseDate: release, bbox, output, replaced: replacing };
   } finally { if (open) db.close(); if (fs.existsSync(temporary)) fs.unlinkSync(temporary); }
 }
