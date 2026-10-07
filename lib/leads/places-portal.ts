@@ -11,8 +11,8 @@ import { directoryBytes, importPlaces, MAX_PLACES_BYTES } from './places-import'
  * - The Portal token is read here, from OMEGA_FOURSQUARE_PLACES_TOKEN, and only ever placed
  *   in one in-memory CREATE TEMPORARY SECRET statement. It is never logged, returned,
  *   written to disk, passed as an argument or included in an error.
- * - DuckDB runs in memory with unsigned/community extensions and auto-install/auto-load off;
- *   only httpfs and iceberg are installed and loaded, explicitly. Configuration is locked
+ * - DuckDB runs in memory (384MB, 2 threads) with unsigned/community extensions and auto-install/auto-load off;
+ *   only httpfs, iceberg and avro are installed and loaded, explicitly. Configuration is locked
  *   before any query against the catalog.
  * - Every failure becomes a fixed error code. DuckDB/provider messages are discarded because
  *   they can echo statement text.
@@ -21,7 +21,8 @@ export const PORTAL_ENDPOINT = 'https://catalog.h3-hub.foursquare.com/iceberg';
 export const PORTAL_TABLE = 'places.datasets.places_os';
 /** Rio Grande Valley: west, south, east, north. */
 export const RGV_BBOX = [-99.2, 25.84, -97.1, 26.8] as const;
-export const APPROVED_EXTENSIONS = ['httpfs', 'iceberg'] as const;
+/** iceberg reads manifests through the official avro extension (Claude review, Oct 7). */
+export const APPROVED_EXTENSIONS = ['httpfs', 'iceberg', 'avro'] as const;
 export const PORTAL_TIMEOUT_MS = 10 * 60 * 1000;
 export const MAX_PORTAL_ROWS = 200_000;
 /** Conservative bytes per exported row, used to refuse oversized extracts before exporting. */
@@ -60,7 +61,7 @@ const TOKEN_SHAPE = /^[A-Za-z0-9._~+/=-]{16,4096}$/;
 
 export function duckConfig(extensionDirectory: string): Record<string, string> {
   return {
-    memory_limit: '512MB',
+    memory_limit: '384MB',
     threads: '2',
     allow_unsigned_extensions: 'false',
     allow_community_extensions: 'false',

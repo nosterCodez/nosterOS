@@ -362,3 +362,19 @@ personalize → Funnel + Usage. Deploy each step to **staging** (M8) freely.
      APPROVED_EXTENSIONS, or keep two and see. Not verified: it would require downloading extensions.
   c) Memory: Node heap is capped at 512 MB (NODE_OPTIONS) and DuckDB memory_limit is 512 MB on a
      1 GB container. Consider memory_limit 384MB if the first run is tight.
+
+### Claude review of 3C (a1c5b68), October 7, 2026, relayed by Noe
+- Design approved. Required changes, all made in the follow-up commit:
+  1. /settings/platform gates on platformOwnerForPage (owner role + NOSTEROS_OWNER_EMAIL + operator
+     workspace) and 404s everyone else, independent of NOSTEROS_OPERATOR_FEATURES (flag unchanged).
+     Page shows only Backup status and the RGV import. Tests: owner sees exactly those two panels
+     with flag 0 and 1; non-owners (admin, other email, other workspace, no owner email) get 404
+     before any backup read; connector-boundaries checks the gate and 404; page smoke documents
+     the 404 for its non-owner identity.
+  2. APPROVED_EXTENSIONS = httpfs, iceberg, avro (only). Test pins the list and install order.
+  3. DuckDB memory_limit 384MB. Test updated.
+- Checks: typecheck PASS; isolated build PASS (no warnings); full Windows suite 4,092/4,097 tests,
+  400/408 files; remaining failures are the AGENTS.md baseline only (interaction-layer
+  BrainCore.tsx:57, lead-magnet-actions, lead-magnets-route, paths, roadmap-mock-5h,
+  skills-plugins, superset-dispatch); smoke.test platform page fixed afterwards (test-only).
+- Verdict: APPROVED FOR PRODUCTION once the checks pass (Claude, via Noe).

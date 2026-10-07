@@ -9,6 +9,9 @@ import { apiOperatorWorkspace, operatorWorkspaceForPage } from '@/lib/session';
 // (owner role + NOSTEROS_OWNER_EMAIL + bound operator workspace); covered by places-import-api.test.ts.
 const workspaceRoutes = new Set(['app/api/leads/plan/route.ts', 'app/api/platform/places-import/route.ts']);
 const entries = appEntries().filter(file => connectorDependency(file) && !workspaceRoutes.has(file));
+// Platform-owner screens gate on platformOwnerForPage (owner role + owner email + operator workspace)
+// and 404 everyone else, independent of NOSTEROS_OPERATOR_FEATURES (Claude review, Oct 7).
+const platformOwnerPages = new Set(['app/settings/platform/page.tsx']);
 const scopedDashboards = new Set(['app/page.tsx', 'app/analytics/page.tsx', 'app/finances/page.tsx', 'app/social/page.tsx']);
 test('reviewed cloud adapters cannot fall back to operator credentials or host files', () => {
   for (const file of ['lib/cloud-adapters.ts', 'lib/cloud-oauth.ts']) {
@@ -31,6 +34,11 @@ test('host and connector entry points deny access before business logic', () => 
         expect(body[2], file).toContain('await apiOperatorWorkspace(');
         expect(body[3], file).toContain('instanceof Response) return');
       } else {
+        if (platformOwnerPages.has(file)) {
+          expect(body[0], file).toContain('await platformOwnerForPage(');
+          expect(body[1], file).toMatch(/if \(!\w+\) notFound\(\)/);
+          continue;
+        }
         if (scopedDashboards.has(file)) {
           expect(body[0], file).toContain("process.env.NOSTEROS_OPERATOR_FEATURES !== '1'");
           expect(body[0], file).toContain('return <WorkspaceDashboard');
@@ -68,6 +76,11 @@ test('connector pages return the empty state for another workspace', async () =>
   vi.mocked(operatorWorkspaceForPage).mockResolvedValue(null);
   for (const file of entries.filter(file => file.endsWith('page.tsx'))) {
     const page = await import(/* @vite-ignore */ `../${file}`);
+    if (platformOwnerPages.has(file)) {
+      // The fixture identity owns another workspace and is not the configured platform owner.
+      await expect(page.default(), file).rejects.toMatchObject({ digest: expect.stringMatching(/404|NOT_FOUND/) });
+      continue;
+    }
     const result = await page.default({ params: Promise.resolve({ platform: 'instagram' }), searchParams: Promise.resolve({}) });
     expect(result.type.name, file).toBe(scopedDashboards.has(file) ? 'WorkspaceDashboard' : 'OperatorUnavailable');
   }

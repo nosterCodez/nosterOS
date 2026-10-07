@@ -52,10 +52,11 @@ test('imports the RGV extract with locked config, approved extensions only and t
   const logs = [vi.spyOn(console, 'log'), vi.spyOn(console, 'info'), vi.spyOn(console, 'warn'), vi.spyOn(console, 'error')];
   const result = await runPortalImport({ dataRoot, replace: false, openDuck: factory, tmpDir, now: () => new Date('2026-10-07T12:00:00Z') });
   expect(result).toMatchObject({ count: 1, releaseDate: '2026-10-07', replaced: false, extractRows: 2 });
-  expect(fake.configs).toEqual([expect.objectContaining({ memory_limit: '512MB', threads: '2', allow_unsigned_extensions: 'false', allow_community_extensions: 'false', autoinstall_known_extensions: 'false', autoload_known_extensions: 'false' })]);
+  expect(fake.configs).toEqual([expect.objectContaining({ memory_limit: '384MB', threads: '2', allow_unsigned_extensions: 'false', allow_community_extensions: 'false', autoinstall_known_extensions: 'false', autoload_known_extensions: 'false' })]);
   expect(fake.configs[0].extension_directory.startsWith(tmpDir)).toBe(true);
   const installs = fake.statements.filter(s => /^(INSTALL|LOAD) /.test(s));
-  expect(installs).toEqual(APPROVED_EXTENSIONS.flatMap(e => [`INSTALL ${e}`, `LOAD ${e}`]));
+  expect(APPROVED_EXTENSIONS).toEqual(['httpfs', 'iceberg', 'avro']);
+  expect(installs).toEqual(['INSTALL httpfs', 'LOAD httpfs', 'INSTALL iceberg', 'LOAD iceberg', 'INSTALL avro', 'LOAD avro']);
   const secrets = fake.statements.filter(s => s.includes(TOKEN));
   expect(secrets).toEqual([`CREATE TEMPORARY SECRET omega_portal (TYPE ICEBERG, TOKEN '${TOKEN}')`]);
   expect(fake.statements.some(s => /PERSISTENT/i.test(s))).toBe(false);

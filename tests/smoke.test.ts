@@ -46,6 +46,8 @@ type PageEntry = {
   // remain assignable to this generic invoker.
   load: () => Promise<{ default: (props?: any) => unknown }>;
   props?: unknown;
+  /** Documented 404 for the smoke identity (not the platform owner); owner render is tested elsewhere. */
+  notFoundForSmoke?: boolean;
 };
 
 // Every app/**/page.tsx, with the props each needs to be invoked.
@@ -55,7 +57,8 @@ const PAGES: PageEntry[] = [
   { file: 'onboarding/page.tsx', load: () => import('@/app/onboarding/page') },
   { file: 'accept-invitation/page.tsx', load: () => import('@/app/accept-invitation/page'), props: { searchParams: Promise.resolve({ id: 'smoke-invite' }) } },
   { file: 'settings/members/page.tsx', load: () => import('@/app/settings/members/page') },
-  { file: 'settings/platform/page.tsx', load: () => import('@/app/settings/platform/page') },
+  // Platform-owner only; owner panels are rendered in backup-status.test.ts.
+  { file: 'settings/platform/page.tsx', load: () => import('@/app/settings/platform/page'), notFoundForSmoke: true },
   { file: 'settings/business-profile/page.tsx', load: () => import('@/app/settings/business-profile/page') },
   { file: 'page.tsx', load: () => import('@/app/page') },
   { file: 'comms/page.tsx', load: () => import('@/app/comms/page') },
@@ -101,9 +104,13 @@ describe('platform smoke — every page renders without throwing', () => {
   // 20s: pages that shell out to the gbrain CLI or distill the brain-store
   // (/, /brain) legitimately exceed vitest's 5s default under a loaded
   // parallel suite — this is a does-it-throw net, not a performance gate.
-  test.each(PAGES)('$file renders', async ({ load, props }) => {
+  test.each(PAGES)('$file renders', async ({ load, props, notFoundForSmoke }) => {
     const mod = await load();
     const Page = mod.default;
+    if (notFoundForSmoke) {
+      await expect(Promise.resolve().then(() => Page(props))).rejects.toMatchObject({ digest: expect.stringMatching(/404|NOT_FOUND/) });
+      return;
+    }
     // Server components run their body (DB reads, data fetch) when invoked;
     // a throw here is exactly the failure we want to catch.
     await expect(Promise.resolve(Page(props))).resolves.toBeTruthy();
